@@ -1,7 +1,7 @@
 # Kaneo Clone - Project Management Application
 
 A full-featured project management application similar to Kaneo (demo.kaneo.app) built with Next.js 14, TypeScript, Prisma, MySQL, and shadcn/ui.
-
+ 
 ## 🚀 Features
 
 - **Authentication System**: JWT-based authentication with role-based access control
