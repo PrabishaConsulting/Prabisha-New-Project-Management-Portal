@@ -9,7 +9,6 @@ import {
   createProjectInDb,
   ProjectCreationData,
 } from "@/services/project-service/create-project.service";
-import { ProjectCreationError } from "@/utils/errors";
 // import { queueProjectCreatedNotification } from "@/services/notification-service/notification.service";
 /**
  * Fetches all projects for a given workspace, correctly identifying the project lead.

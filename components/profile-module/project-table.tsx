@@ -60,15 +60,12 @@ export const ProjectTable = ({
 }) => {
   const router = useRouter();
 
-
-
-
-
   return (
-    <Card className="">
-      <Table>
+    <Card className=" ">
+      <Table className=" ">
         <TableHeader>
           <TableRow>
+            <TableHead  >Id</TableHead>
             <TableHead>Name</TableHead>
             <TableHead className="hidden md:table-cell">Task No</TableHead>
             <TableHead className="hidden md:table-cell">Client Name</TableHead>
@@ -91,6 +88,17 @@ export const ProjectTable = ({
                 // Use a max-width for flexibility and add truncate
                 className="max-w-2xs font-medium cursor-pointer hover:underline capitalize truncate"
               >
+                {project.id.toString().slice(-4)}
+              </TableCell>
+              <TableCell
+                onClick={() =>
+                  router.push(
+                    `/projects/${project.id}?workspaceId=${workspaceId}`
+                  )
+                }
+                // Use a max-width for flexibility and add truncate
+                className="max-w-3xs font-medium cursor-pointer hover:underline capitalize truncate"
+              >
                 {project.name}
               </TableCell>
               <TableCell
@@ -99,7 +107,7 @@ export const ProjectTable = ({
                     `/projects/${project.id}?workspaceId=${workspaceId}`
                   )
                 }
-                className="font-medium cursor-pointer hover:underline"
+                className="font-medium  cursor-pointer hover:underline"
               >
                 {project._count.tasks}
               </TableCell>
@@ -216,7 +224,11 @@ const UserAvatar = ({ user }: { user: UserInfo | null }) => {
       .toUpperCase() || "";
   return (
     <Avatar className="h-6 w-6">
-      <AvatarImage className='object-cover' src={user?.avatar || undefined} alt={user?.name || ""} />
+      <AvatarImage
+        className="object-cover"
+        src={user?.avatar || undefined}
+        alt={user?.name || ""}
+      />
       <AvatarFallback>
         {initials || <UserIcon className="h-4 w-4" />}
       </AvatarFallback>

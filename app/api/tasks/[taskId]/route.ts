@@ -3,7 +3,10 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { TaskStatus, Priority } from '@prisma/client';
+import { TaskStatus, Priority, Prisma, } from '@prisma/client';
+import { logActivity } from '@/services/activity-user/activity-user.service';
+import {ACTIVITY_ACTIONS} from "@/services/activity-user/helper"
+
 
 const updateTaskSchema = z.object({
   title: z.string().min(1).optional(),
@@ -33,27 +36,32 @@ export async function PATCH(
     }
     const { status, ...updateData } = validation.data;
 
-    // Authorization Check
-    const task = await db.task.findUnique({
+    // 1. Authorization Check & Fetch Original Task for Comparison
+    const originalTask = await db.task.findUnique({
       where: { id: taskId },
-      select: { projectId: true, status: true },
+      include: {
+        assignee: { select: { name: true } }, // Include assignee name for logging
+      },
     });
-    if (!task) {
+
+    if (!originalTask) {
       return new NextResponse(JSON.stringify({ error: 'Task not found' }), { status: 404 });
     }
 
     const membership = await db.projectMember.findUnique({
-      where: { projectId_userId: { projectId: task.projectId, userId: currentUserId } },
+      where: { projectId_userId: { projectId: originalTask.projectId, userId: currentUserId } },
     });
     if (!membership) {
       return new NextResponse(JSON.stringify({ error: 'Forbidden' }), { status: 403 });
     }
-
-    // Transaction for Status Change
-    if (status && status !== task.status) {
-      const updatedTask = await db.$transaction(async (tx) => {
+    
+    // 2. Perform the Update
+    let updatedTask;
+    if (status && status !== originalTask.status) {
+      // Transaction for when the status (and therefore position) changes
+      updatedTask = await db.$transaction(async (tx) => {
         const newPosition = await tx.task.count({
-          where: { projectId: task.projectId, status: status },
+          where: { projectId: originalTask.projectId, status: status },
         });
 
         return tx.task.update({
@@ -65,20 +73,58 @@ export async function PATCH(
           },
         });
       });
-       return NextResponse.json(updatedTask);
     } else {
-       const updatedTask = await db.task.update({
-           where: { id: taskId },
-           data: updateData,
-       });
-       return NextResponse.json(updatedTask);
+      // Standard update for all other fields
+      updatedTask = await db.task.update({
+        where: { id: taskId },
+        data: updateData,
+      });
     }
+
+    // 3. Generate and Log Activity
+    const changes: string[] = [];
+    const currentUser = await db.user.findUnique({ where: { id: currentUserId }, select: { name: true }});
+    const userName = currentUser?.name || 'A user';
+
+    // Compare fields to build the description
+    if (updateData.title && updateData.title !== originalTask.title) {
+        changes.push(`renamed the task to **"${updateData.title}"**`);
+    }
+    if (status && status !== originalTask.status) {
+        changes.push(`moved the task to **${status}**`);
+    }
+    if (updateData.priority && updateData.priority !== originalTask.priority) {
+        changes.push(`changed the priority to **${updateData.priority}**`);
+    }
+    if (updateData.assigneeId !== undefined && updateData.assigneeId !== originalTask.assigneeId) {
+        if (updateData.assigneeId === null) {
+            changes.push(`unassigned **${originalTask.assignee?.name || 'a user'}**`);
+        } else {
+            const newAssignee = await db.user.findUnique({ where: { id: updateData.assigneeId }, select: { name: true } });
+            changes.push(`assigned the task to **${newAssignee?.name || 'a user'}**`);
+        }
+    }
+
+    // Only create a log if there were actual changes
+    if (changes.length > 0) {
+      const description = `${userName} ${changes.join(' and ')}.`;
+      await logActivity(db , {
+        userId: currentUserId,
+        projectId: originalTask.projectId,
+        taskId: taskId,
+        action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
+        description: description,
+       
+      });
+    }
+    
+    return NextResponse.json(updatedTask);
+
   } catch (error) {
     console.error('[TASK_PATCH]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
-
 
 export async function GET(
     request: NextRequest,

@@ -1,7 +1,11 @@
 import { db } from '@/lib/db';
-import { ProjectRole, TaskStatus } from '@prisma/client';
+import { ProjectRole, Task, TaskStatus } from '@prisma/client';
 import { authorizeProjectMember, AuthorizationError } from './auth.service';
-import { TaskFormData } from '@/lib/zod';
+import { TaskFormData } from '@/lib/zod'; // Assuming this type is defined elsewhere
+import { logActivity } from '../activity-user/activity-user.service';
+import { ACTIVITY_ACTIONS } from '../activity-user/helper';
+import { ProjectCreationError } from '@/utils/errors';
+
 type TaskUpdateData = {
   id: string;
   position: number;
@@ -9,22 +13,16 @@ type TaskUpdateData = {
 };
 
 /**
- * This is our new main service function. It handles all business logic.
- * 1. Authorizes the user.
- * 2. Fetches current task states.
- * 3. Applies granular permissions for status changes.
- * 4. Calls the function to update the database.
+ * Processes task updates, validates permissions, and logs all changes.
  */
 export async function processAndValidateTaskUpdates(
   userId: string,
   projectId: string,
   tasksToUpdate: TaskUpdateData[]
 ): Promise<void> {
-  // 1. Gatekeeper Authorization: Is the user even a member?
   const userRole = await authorizeProjectMember(userId, projectId);
   const isProjectLead = userRole === ProjectRole.LEAD;
 
-  // 2. Fetch Data: Get the current state of tasks for comparison.
   const taskIds = tasksToUpdate.map((t) => t.id);
   const existingTasks = await db.task.findMany({
     where: { id: { in: taskIds } },
@@ -32,8 +30,8 @@ export async function processAndValidateTaskUpdates(
   const existingTasksMap = new Map(existingTasks.map((task) => [task.id, task]));
 
   const tasksThatChanged: TaskUpdateData[] = [];
+  const logEntries = [];
 
-  // 3. Granular Logic: Loop through tasks and apply specific rules.
   for (const task of tasksToUpdate) {
     const existingTask = existingTasksMap.get(task.id);
     if (!existingTask) continue;
@@ -41,30 +39,56 @@ export async function processAndValidateTaskUpdates(
     const statusHasChanged = existingTask.status !== task.status;
     const positionHasChanged = existingTask.position !== task.position;
 
-    // If status is changing, apply the stricter check.
     if (statusHasChanged) {
       if (!isProjectLead && existingTask.assigneeId !== userId) {
         throw new AuthorizationError(
+          // FIX: Consistently use 'title' as per your Zod schema
           `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
         );
       }
+      logEntries.push({
+        userId: userId,
+        projectId: projectId,
+        taskId: existingTask.id,
+        action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
+        // FIX: Consistently use 'title'
+        description: `Task "${existingTask.title}" status changed from ${existingTask.status} to ${task.status}.`,
+        metadata: { from: existingTask.status, to: task.status },
+      });
     }
 
-    // If anything changed (and passed auth), add it to our final update list.
+    if (positionHasChanged) {
+      logEntries.push({
+        userId: userId,
+        projectId: projectId,
+        taskId: existingTask.id,
+        // FIX: Use a more appropriate action for reordering
+        action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
+        // FIX: Consistently use 'title'
+        description: `Task "${existingTask.title}" was reordered.`,
+        metadata: {
+          field: 'position',
+          from: existingTask.position,
+          to: task.position,
+          status: task.status,
+        },
+      });
+    }
+    
     if (statusHasChanged || positionHasChanged) {
       tasksThatChanged.push(task);
     }
   }
 
-  // 4. Execution: If there are changes, update the database.
   if (tasksThatChanged.length > 0) {
     await updateTaskOrder(tasksThatChanged);
+    const logPromises = logEntries.map(logData => logActivity(db, logData));
+    await Promise.all(logPromises);
   }
 }
 
 /**
  * Updates the order/status of multiple tasks in a single transaction.
- * This function does not change.
  */
 export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
   await db.$transaction(async (tx) => {
@@ -80,31 +104,13 @@ export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
   });
 }
 
-
-
-
-// lib/services/task.service.ts
-
-import { ProjectCreationError } from "@/utils/errors"; // Import your custom error
-
 /**
- * Creates a new task after performing business logic checks.
- * @param data - Validated data from the request body.
- * @param userId - The ID of the authenticated user.
- * @throws {ProjectCreationError} if the user is not a member of the project.
+ * Creates a new task and its attachments, then logs the creation event.
  */
-// lib/services/task.service.ts
 
-/**
- * Creates a new task and its associated attachments in a single transaction.
- * @param data - Validated data, including an optional 'attachments' array.
- * @param userId - The ID of the authenticated user.
- */
 export async function createTask(data: TaskFormData, userId: string) {
-  // 1. Separate the attachments from the rest of the task data
   const { attachments, ...taskData } = data;
 
-  // 2. Business Logic: Verify user membership (remains the same)
   const projectMember = await db.projectMember.findUnique({
     where: {
       projectId_userId: { projectId: taskData.projectId, userId: userId },
@@ -118,39 +124,68 @@ export async function createTask(data: TaskFormData, userId: string) {
     );
   }
 
-  // 3. Database Operation: Use a transaction for atomicity
   const newTask = await db.$transaction(async (tx) => {
-    // First, create the main task record
+    // Determine the position for the new task
+    const taskCount = await tx.task.count({
+      where: { projectId: taskData.projectId, status: taskData.status },
+    });
+    
     const createdTask = await tx.task.create({
       data: {
         ...taskData,
-        position: 0, // Your existing logic
-        actualHours: 0, // Your existing logic
+        position: taskCount,
+        // Set defaults if not provided
+        priority: taskData.priority || 'MEDIUM', 
+        dueDate: taskData.dueDate ? new Date(taskData.dueDate) : undefined,
       },
     });
 
-    // Second, if attachments were provided, create them
     if (attachments && attachments.length > 0) {
-      // Use createMany for efficiency
       await tx.taskAttachment.createMany({
         data: attachments.map((att) => ({
-          ...att, // Spread the attachment metadata (url, filename, etc.)
-          taskId: createdTask.id, // Link to the task we just created
-          userId: userId,         // Link to the user who uploaded
+          ...att,
+          taskId: createdTask.id,
+          userId: userId,
         })),
       });
     }
-
-    // The transaction returns the created task
+    
     return createdTask;
   });
 
-  // To return the task with its attachments, you might need a subsequent query
-  // This is optional, depending on what your frontend needs immediately after creation
+  // --- MODIFICATION START ---
+
+  // Fetch user and project names for a more descriptive activity log
+  const [user, project] = await Promise.all([
+    db.user.findUnique({
+      where: { id: userId },
+      select: { name: true }, // Select only the necessary field
+    }),
+    db.project.findUnique({
+      where: { id: newTask.projectId },
+      select: { name: true }, // Select only the necessary field
+    }),
+  ]);
+
+  // Use fallback names in case they are not found
+  const userName = user?.name || 'A user';
+  const projectName = project?.name || 'the project';
+
+  // Log the activity with the enhanced description
+  await logActivity(db, {
+    userId: userId,
+    projectId: newTask.projectId,
+    taskId: newTask.id,
+    action: ACTIVITY_ACTIONS.CREATE_TASK,
+    description: `${userName} created task "${newTask.title}" in ${projectName}`,
+  });
+  
+  // --- MODIFICATION END ---
+
   const taskWithAttachments = await db.task.findUnique({
     where: { id: newTask.id },
     include: {
-      attachments: true, // Include the newly created attachments in the response
+      attachments: true,
     },
   });
 

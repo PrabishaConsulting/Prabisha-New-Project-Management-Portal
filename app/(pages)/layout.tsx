@@ -119,7 +119,7 @@ export default function DashboardLayout({
       items: [
         {
           name: "Dashboard",
-          href: "/projects",
+          href: "/dashboard",
           icon: FolderOpen,
           children: [
             {

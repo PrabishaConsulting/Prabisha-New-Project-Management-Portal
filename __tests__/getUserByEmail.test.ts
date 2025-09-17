@@ -36,11 +36,12 @@ describe("getUserByEmail", () => {
     expect(result.error).toBeNull();
   });
 
-  // it("should handle database errors", async () => {
-  //   db.user.findUnique.mockRejectedValue(new Error("DB fail"));
+  
+  it("should handle database errors", async () => {
+    db.user.findUnique.mockRejectedValue(new Error("DB fail"));
 
-  //   const result = await getUserByEmail("test@example.com");
-  //   expect(result.success).toBe(false);
-  //   expect(result.error).toBe("Internal server error");
-  // });
+    const result = await getUserByEmail("test@example.com");
+    expect(result.success).toBe(false);
+    expect(result.error).toBe("Internal server error");
+  });
 });
