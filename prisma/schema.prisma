@@ -187,6 +187,8 @@ model Department {
   name    String    @unique
   project Project[]
   users   User[]
+  task     Task[]
+
 
   @@map("departments")
 }
@@ -329,6 +331,8 @@ model Task {
   reporter       User             @relation("TaskReporter", fields: [reporterId], references: [id])
   timeEntries    TimeEntry[]
   calendarItems  CalendarItem[]
+  departmentId   String?
+  department        Department?      @relation(fields: [departmentId], references: [id])
 
   @@index([assigneeId], map: "tasks_assigneeId_fkey")
   @@index([projectId], map: "tasks_projectId_fkey")
