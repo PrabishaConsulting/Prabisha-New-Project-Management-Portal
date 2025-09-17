@@ -16,7 +16,7 @@ const createTaskSchema = z.object({
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { projectId: string } }
+  { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
     const user = await getCurrentUser();
@@ -24,7 +24,7 @@ export async function POST(
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { projectId } = params;
+    const { projectId } = await params;
     const body = await request.json();
 
     const validation = createTaskSchema.safeParse(body);
