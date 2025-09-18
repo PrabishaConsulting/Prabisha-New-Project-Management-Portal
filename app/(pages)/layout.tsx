@@ -16,6 +16,7 @@ import {
   Home,
   Building2,
   PlusCircle,
+  TabletSmartphone,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -104,6 +105,12 @@ export default function DashboardLayout({
           href: "/dashboard",
           icon: FolderOpen,
           children: [
+            {
+              name: "Task",
+              href: "/all-task",
+              icon: TabletSmartphone,
+            }
+            ,
             {
               name: "All Projects",
               href: "/projects",

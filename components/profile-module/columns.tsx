@@ -83,41 +83,39 @@ export const columns = (
     header: "Project ID",
     cell: ({ row }) => {
       const id = row.getValue("id") as string;
-      // Extracts all numeric digits from the ID string
-      const allNumericDigits = id.replace(/\D/g, "");
-      // Takes only the first 4 digits from the result
-      const numericId = allNumericDigits.slice(0, 4);
 
-      return <div className="font-medium">PCP{numericId}</div>;
+      // Takes the LAST 6 characters of the original ID for better uniqueness.
+      // The end of a CUID or UUID is highly random.
+      const uniqueId = id.slice(-6).toUpperCase();
+
+      return <div className="font-medium">PCP-{uniqueId}</div>;
     },
   },
   {
     accessorKey: "startDate",
     header: ({ column }) => (
-
       <Button
-      className=""
+        className=""
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-        Start Date 
+      >
+        Start Date
       </Button>
-     
     ),
-   cell: ({ row }) => {
-  const date = new Date(row.getValue("startDate"));
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short', // This is the key change
-    day: 'numeric',
-  };
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("startDate"));
+      const options: Intl.DateTimeFormatOptions = {
+        year: "numeric",
+        month: "short", // This is the key change
+        day: "numeric",
+      };
 
-  return (
-    <div className="text-center">
-      {date.toLocaleDateString(undefined, options)}
-    </div>
-  );
-},
+      return (
+        <div className="text-center">
+          {date.toLocaleDateString(undefined, options)}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "name",
@@ -180,8 +178,11 @@ export const columns = (
         .toUpperCase();
       return (
         <div className="flex items-center space-x-2">
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={lead.avatar || undefined} />
+          <Avatar className="h-6 w-6 ">
+            <AvatarImage
+              className="object-cover"
+              src={lead.avatar || undefined}
+            />
             <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
           <span className="font-medium">{lead.name}</span>
@@ -202,23 +203,23 @@ export const columns = (
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Due Date 
+        Due Date
       </Button>
     ),
-   cell: ({ row }) => {
-  const date = new Date(row.getValue("startDate"));
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short', // This is the key change
-    day: 'numeric',
-  };
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("startDate"));
+      const options: Intl.DateTimeFormatOptions = {
+        year: "numeric",
+        month: "short", // This is the key change
+        day: "numeric",
+      };
 
-  return (
-    <div className="text-center">
-      {date.toLocaleDateString(undefined, options)}
-    </div>
-  );
-},
+      return (
+        <div className="text-center">
+          {date.toLocaleDateString(undefined, options)}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",

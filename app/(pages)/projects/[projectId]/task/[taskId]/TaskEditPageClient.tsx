@@ -1,12 +1,30 @@
-'use client';
+"use client";
 
 import { useState } from "react";
-import { type Task, type TaskComment, type TimeEntry, type User, type ProjectMember, TaskStatus, Priority } from "@prisma/client";
+import {
+  type Task,
+  type TaskComment,
+  type TimeEntry,
+  type User,
+  type ProjectMember,
+  TaskStatus,
+  Priority,
+} from "@prisma/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CalendarIcon, Trash2 } from "lucide-react";
@@ -22,23 +40,31 @@ type MemberWithUser = ProjectMember & {
 };
 
 // A client-safe version of TimeEntryWithUser where the date is a string
-type ClientTimeEntry = Omit<TimeEntry, 'date' | 'createdAt' | 'updatedAt'> & {
+type ClientTimeEntry = Omit<TimeEntry, "date" | "createdAt" | "updatedAt"> & {
   date: string;
   createdAt: string;
   updatedAt: string;
   user: { name: string | null; avatar: string | null };
-}
+};
 
 // A client-safe version of TaskComment where the date is a string
-type ClientComment = Omit<TaskComment, 'createdAt' | 'updatedAt'> & {
+type ClientComment = Omit<TaskComment, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
   user: { id: string; name: string | null; avatar: string | null };
-}
+};
 
 // The single, definitive, client-safe type for our task object.
 // All `Decimal` fields are `number` and all `DateTime` fields are `string`.
-type ClientTask = Omit<Task, 'actualHours' | 'estimatedHours' | 'createdAt' | 'updatedAt' | 'dueDate' | 'startDate'> & {
+type ClientTask = Omit<
+  Task,
+  | "actualHours"
+  | "estimatedHours"
+  | "createdAt"
+  | "updatedAt"
+  | "dueDate"
+  | "startDate"
+> & {
   actualHours: number;
   estimatedHours: number | null;
   createdAt: string;
@@ -87,8 +113,12 @@ export function TaskEditPageClient({
         ...prev,
         ...updatedTaskFromServer,
         actualHours: Number(updatedTaskFromServer.actualHours),
-        estimatedHours: updatedTaskFromServer.estimatedHours ? Number(updatedTaskFromServer.estimatedHours) : null,
-        dueDate: updatedTaskFromServer.dueDate ? new Date(updatedTaskFromServer.dueDate).toISOString() : null,
+        estimatedHours: updatedTaskFromServer.estimatedHours
+          ? Number(updatedTaskFromServer.estimatedHours)
+          : null,
+        dueDate: updatedTaskFromServer.dueDate
+          ? new Date(updatedTaskFromServer.dueDate).toISOString()
+          : null,
       }));
       toast.success("Task updated successfully.");
     } catch (error) {
@@ -132,11 +162,18 @@ export function TaskEditPageClient({
     }));
   };
 
-  const statusOrder = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW, TaskStatus.DONE];
-  const priorityOrder = [Priority.URGENT, Priority.HIGH, Priority.MEDIUM, Priority.LOW];
-
-
-
+  const statusOrder = [
+    TaskStatus.TODO,
+    TaskStatus.IN_PROGRESS,
+    TaskStatus.REVIEW,
+    TaskStatus.DONE,
+  ];
+  const priorityOrder = [
+    Priority.URGENT,
+    Priority.HIGH,
+    Priority.MEDIUM,
+    Priority.LOW,
+  ];
 
   const handleDeleteTask = async (taskId: string) => {
     setIsDeletingTask(true);
@@ -152,7 +189,21 @@ export function TaskEditPageClient({
       toast.error("Deletion Failed", { description: (error as Error).message });
       setIsDeletingTask(false);
     }
-  }
+  };
+
+  const formatStatus = (status: string) => {
+    if (!status) return "";
+
+    return status
+      .toLowerCase() // 1. -> "to_do"
+      .split("_") // 2. -> ["to", "do"]
+      .map(
+        (
+          word // 3. -> ["To", "Do"]
+        ) => word.charAt(0).toUpperCase() + word.slice(1)
+      )
+      .join(" "); // 4. -> "To Do"
+  };
 
   return (
     <div className="flex h-full p-4 md:p-6 text-foreground bg-background">
@@ -184,13 +235,18 @@ export function TaskEditPageClient({
               onChange={(e) => setComment(e.target.value)}
               className="bg-muted/30 border-border"
             />
-            <Button type="submit" disabled={isSubmittingComment}>Post</Button>
+            <Button type="submit" disabled={isSubmittingComment}>
+              Post
+            </Button>
           </form>
           <div className="space-y-4">
             {task.comments.map((c) => (
               <div key={c.id} className="flex gap-3 text-sm">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage className='object-cover' src={c.user.avatar || ""} />
+                  <AvatarImage
+                    className="object-cover"
+                    src={c.user.avatar || ""}
+                  />
                   <AvatarFallback>{c.user.name?.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div>
@@ -210,22 +266,42 @@ export function TaskEditPageClient({
       {/* Right Column: Sidebar */}
       <div className="w-72 border-l border-border pl-8 space-y-6">
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Status</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Status
+          </label>
           <Select
             value={task.status}
-            onValueChange={(val) => handleTaskUpdate({ status: val as TaskStatus })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            onValueChange={(val) =>
+              handleTaskUpdate({ status: val as TaskStatus })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {statusOrder.map((s) => (<SelectItem key={s} value={s}>{s.replace("_", " ")}</SelectItem>))}
+              {statusOrder.map((s) => (
+                <SelectItem key={s} value={s}>
+                  {formatStatus(s)}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Assign to</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Assign to
+          </label>
           <Select
             value={task.assigneeId || "unassigned"}
-            onValueChange={(val) => handleTaskUpdate({ assigneeId: val === "unassigned" ? null : val })}>
-            <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+            onValueChange={(val) =>
+              handleTaskUpdate({
+                assigneeId: val === "unassigned" ? null : val,
+              })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Unassigned" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="unassigned">Unassigned</SelectItem>
               {/* FIX: Map over projectMembers correctly */}
@@ -238,38 +314,68 @@ export function TaskEditPageClient({
           </Select>
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Priority</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Priority
+          </label>
           <Select
             value={task.priority}
-            onValueChange={(val) => handleTaskUpdate({ priority: val as Priority })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            onValueChange={(val) =>
+              handleTaskUpdate({ priority: val as Priority })
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {priorityOrder.map((p) => (<SelectItem key={p} value={p}>{p}</SelectItem>))}
+              {priorityOrder.map((p) => (
+                <SelectItem key={p} value={p}>
+                  {p}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground">Due Date</label>
+          <label className="text-xs font-medium text-muted-foreground">
+            Due Date
+          </label>
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className={cn("w-full justify-start text-left font-normal", !task.dueDate && "text-muted-foreground")}>
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !task.dueDate && "text-muted-foreground"
+                )}
+              >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {task.dueDate ? format(new Date(task.dueDate), "PPP") : <span>Pick a date</span>}
+                {task.dueDate ? (
+                  format(new Date(task.dueDate), "PPP")
+                ) : (
+                  <span>Pick a date</span>
+                )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0">
               <Calendar
                 mode="single"
                 selected={task.dueDate ? new Date(task.dueDate) : undefined}
-                onSelect={(date) => handleTaskUpdate({ dueDate: date ? date.toISOString() : null })}
+                onSelect={(date) =>
+                  handleTaskUpdate({
+                    dueDate: date ? date.toISOString() : null,
+                  })
+                }
               />
             </PopoverContent>
           </Popover>
         </div>
         <div className="pt-6">
-          <Button variant="destructive" className="w-full" disabled={isDeletingTask} onClick={() => handleDeleteTask(task.id)}>
+          <Button
+            variant="destructive"
+            className="w-full"
+            disabled={isDeletingTask}
+            onClick={() => handleDeleteTask(task.id)}
+          >
             <Trash2 className="mr-2 h-4 w-4" /> Delete Task
           </Button>
         </div>
