@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { LiveStatus } from '@prisma/client';
 import { checkSingleDomain } from '@/utils/domain-status-check';
-
-
-// This is a simple regex to check if a string looks like a valid domain name.
-
 
 /**
  * API Route to check and update the live status of a domain asset.
@@ -19,11 +14,12 @@ export async function POST(request: Request) {
 
     const asset = await db.asset.findUnique({ where: { id: id } });
     if (!asset || !asset.domainName) {
-      return NextResponse.json({ error: 'Asset not found or is not a domain' }, { status: 403 });
+      return NextResponse.json({ error: 'Asset not found or is not a domain' }, { status: 404 });
     }
 
     console.log('Checking live status for domain:', asset.domainName);
 
+    // This will now work correctly even if asset.domainName is a full URL
     const { liveStatus, lastChecked } = await checkSingleDomain(asset.domainName);
     console.log('Live Status:', liveStatus, 'at', lastChecked);
 
