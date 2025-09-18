@@ -378,7 +378,7 @@ export function AppSidebar({
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      Prabisha
+                      Prabisha Consulting
                     </a>
                   </span>
                 </p>
