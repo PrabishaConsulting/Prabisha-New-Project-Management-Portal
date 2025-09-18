@@ -125,7 +125,7 @@ export function Header({ session }: { session: any }) {
     <>
       <header className="sticky top-0 z-50 flex items-center justify-between h-[4.54rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm">
         {/* Left Section: Logo and App Name */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 overflow-hidden">
           <Button
             variant="outline"
             className="w-md  h-9 justify-between text-muted-foreground hover:text-foreground text-sm font-normal"

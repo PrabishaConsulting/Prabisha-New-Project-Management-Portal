@@ -33,12 +33,10 @@ export default function DashboardLayout({
   const router = useRouter();
   const params = useParams();
 
-  // State for workspaces
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch workspaces on component mount
   useEffect(() => {
     async function fetchWorkspaces() {
       setIsLoading(true);
@@ -63,7 +61,6 @@ export default function DashboardLayout({
     }
   }, [status]);
 
-  // Handler to switch workspace
   const handleSwitchWorkspace = async (workspaceId: string) => {
     const workspace = workspaces.find((w) => w.id === workspaceId);
     if (workspace) {
@@ -81,7 +78,6 @@ export default function DashboardLayout({
     }
   };
 
-  // Handler for adding a new workspace
   const handleAddWorkspace = async (name: string) => {
     const res = await fetch("/api/onboarding", {
       method: "POST",
@@ -99,21 +95,7 @@ export default function DashboardLayout({
     }
   };
 
-  // If session is loading, show a loader
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  // If not authenticated, show sign-in prompt
-
-
-  // Define navigation groups with proper structure
   const navigationGroups: NavigationGroup[] = [
-    
     {
       label: "Workspace",
       items: [
@@ -199,6 +181,15 @@ export default function DashboardLayout({
     },
   ];
 
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <ProjectContext.Provider
       value={{
@@ -208,7 +199,7 @@ export default function DashboardLayout({
     >
       <SidebarProvider>
         <div className="flex min-h-screen w-full">
-  
+ 
           {/* Sidebar */}
           <AppSidebar
             navigationGroups={navigationGroups}
@@ -221,17 +212,14 @@ export default function DashboardLayout({
             collapsible="icon"
           />
           
-          <SidebarInset className="flex-1 flex flex-col">
-            {/* Mobile Header with SidebarTrigger */}
+          {/* FIX 1: Added min-w-0 to the main content container */}
+          <SidebarInset className="flex-1 flex flex-col min-w-0">
             <MobileHeader />
             <Header session={session}/>
-            {/* <button  className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-5 left-[-0.9rem] and z-50" > */}
-              <SidebarTrigger className=" absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-5 left-[-0.9rem] and z-50"  />
+            <SidebarTrigger className=" absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-5 left-[-0.9rem] and z-50"  />
 
-            {/* </button> */}
-
-            {/* Page Content */}
-            <main className="flex-1 p-4 lg:p-6">
+            {/* FIX 2: Added overflow-x-auto to the main content section */}
+            <main className="flex-1 p-4 lg:p-6 overflow-x-auto">
               {children}
             </main>
           </SidebarInset>

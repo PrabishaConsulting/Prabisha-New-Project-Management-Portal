@@ -57,23 +57,7 @@ export async function processAndValidateTaskUpdates(
       });
     }
 
-    if (positionHasChanged) {
-      logEntries.push({
-        userId: userId,
-        projectId: projectId,
-        taskId: existingTask.id,
-        // FIX: Use a more appropriate action for reordering
-        action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
-        // FIX: Consistently use 'title'
-        description: `Task "${existingTask.title}" was reordered.`,
-        metadata: {
-          field: 'position',
-          from: existingTask.position,
-          to: task.position,
-          status: task.status,
-        },
-      });
-    }
+    
     
     if (statusHasChanged || positionHasChanged) {
       tasksThatChanged.push(task);
@@ -107,7 +91,6 @@ export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
 /**
  * Creates a new task and its attachments, then logs the creation event.
  */
-
 export async function createTask(data: TaskFormData, userId: string) {
   const { attachments, ...taskData } = data;
 
