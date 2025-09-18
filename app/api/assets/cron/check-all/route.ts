@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { checkSingleDomain } from '../../check/route'; 
-
+import { checkSingleDomain } from '@/utils/domain-status-check';
 export async function GET() {
   try {
     const assetsToCheck = await db.asset.findMany({

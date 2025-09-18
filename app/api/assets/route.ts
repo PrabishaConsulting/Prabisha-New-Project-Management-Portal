@@ -123,14 +123,26 @@ export async function GET() {
   try {
     const assets = await db.asset.findMany({});
 
+    // --- FIX IS HERE: Updated, safer sorting logic ---
     assets.sort((a, b) => {
-      if (statusPriority[a.status] < statusPriority[b.status]) return -1;
-      if (statusPriority[a.status] > statusPriority[b.status]) return 1;
-      return new Date(a.expiryDate).getTime() - new Date(b.expiryDate).getTime();
+      // 1. Safely handle status sorting with a fallback for unknown statuses
+      const priorityA = statusPriority[a.status] ?? 99;
+      const priorityB = statusPriority[b.status] ?? 99;
+
+      if (priorityA < priorityB) return -1;
+      if (priorityA > priorityB) return 1;
+
+      // 2. Safely handle null expiry dates by treating them as infinitely far in the future
+      const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
+      const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
+      
+      return dateA - dateB;
     });
 
     return NextResponse.json(assets);
   } catch (error) {
+    // It's helpful to log the actual error to the console for debugging
+    console.error("Failed to fetch or sort assets:", error);
     return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 });
   }
 }
