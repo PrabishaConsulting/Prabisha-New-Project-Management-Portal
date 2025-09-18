@@ -1,6 +1,8 @@
 import { db } from '@/lib/db';
-import { AppError , ProjectCreationError } from '@/utils/errors';
-
+import { ProjectCreationError } from '@/utils/errors';
+import { logActivity } from '../activity-user/activity-user.service';
+import { ACTIVITY_ACTIONS } from '../activity-user/helper';
+import { getCurrentUser } from '@/utils/getcurrentUser';
 export interface ProjectCreationData {
   name: string;
   workspaceId: string;
@@ -66,6 +68,16 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
           userId: projectData.userId,
           role: 'LEAD',
         },
+      });
+
+      const currentUser = await getCurrentUser()
+
+
+        await logActivity(db, {
+        userId: projectData.userId,
+        projectId: newProject.id,
+        action: ACTIVITY_ACTIONS.CREATE_PROJECT, // e.g., 'CREATE_PROJECT'
+        description: `${currentUser.name} created the project "${newProject.name}".`,
       });
 
       return { project: newProject, creatorId: projectData.userId };
