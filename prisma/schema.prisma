@@ -469,6 +469,8 @@ enum LiveStatus {
   ONLINE
   OFFLINE
   UNKNOWN
+  SSL_ERROR 
+  INVALID_DOMAIN // <-- Add this new status
 }
 
 enum UserType {
