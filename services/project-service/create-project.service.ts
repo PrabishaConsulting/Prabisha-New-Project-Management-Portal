@@ -1,8 +1,9 @@
-import { db } from '@/lib/db';
-import { ProjectCreationError } from '@/utils/errors';
-import { logActivity } from '../activity-user/activity-user.service';
-import { ACTIVITY_ACTIONS } from '../activity-user/helper';
-import { getCurrentUser } from '@/utils/getcurrentUser';
+import { db } from "@/lib/db";
+import { ProjectCreationError } from "@/utils/errors";
+import { logActivity } from "../activity-user/activity-user.service";
+import { ACTIVITY_ACTIONS } from "../activity-user/helper";
+import { getCurrentUser } from "@/utils/getcurrentUser";
+
 export interface ProjectCreationData {
   name: string;
   workspaceId: string;
@@ -14,11 +15,6 @@ export interface ProjectCreationData {
   internalProductId?: string;
 }
 
-
-/**
- * Creates a project and assigns the creator as the project lead in a single transaction.
- * @throws {ProjectCreationError} Throws a specific error if the operation fails.
- */
 export const createProjectInDb = async (projectData: ProjectCreationData) => {
   // --- VALIDATION ---
   if (projectData.isClientProject && !projectData.clientId) {
@@ -58,7 +54,9 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
           departmentId: projectData.departmentId,
           isClientProject: projectData.isClientProject,
           clientId: projectData.isClientProject ? projectData.clientId : null,
-          internalProductId: !projectData.isClientProject ? projectData.internalProductId : null,
+          internalProductId: !projectData.isClientProject
+            ? projectData.internalProductId
+            : null,
         },
       });
 
@@ -66,35 +64,33 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
         data: {
           projectId: newProject.id,
           userId: projectData.userId,
-          role: 'LEAD',
+          role: "LEAD",
         },
       });
 
-      const currentUser = await getCurrentUser()
-
-
-        await logActivity(db, {
-        userId: projectData.userId,
-        projectId: newProject.id,
-        action: ACTIVITY_ACTIONS.CREATE_PROJECT, // e.g., 'CREATE_PROJECT'
-        description: `${currentUser.name} created the project "${newProject.name}".`,
-      });
+      // NOTE: `getCurrentUser` needs to be mocked in tests for this to pass.
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        await logActivity(db, { // Pass the transactional client `tx` to the logger
+          userId: projectData.userId,
+          projectId: newProject.id,
+          action: ACTIVITY_ACTIONS.CREATE_PROJECT,
+          description: `${currentUser.name} created the project "${newProject.name}".`,
+        });
+      }
 
       return { project: newProject, creatorId: projectData.userId };
     });
 
     return result;
   } catch (error: any) {
-    // Known Prisma constraint error
-    if (error.code === 'P2002') {
+    if (error.code === "P2002") {
       throw new ProjectCreationError(
         "Project name already exists in this workspace.",
         "DB_CONSTRAINT_ERROR",
-        error // log details
+        error
       );
     }
-
-    // Log unexpected errors with full details
     console.error("[PROJECT_CREATION] Unexpected DB error:", {
       message: error.message,
       code: error.code,
@@ -108,14 +104,14 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
     );
   }
 };
-/**
- * Checks if a project with the given name already exists in a workspace.
- * @param {object} params - The parameters for the check.
- * @param {string} params.name - The project name to check.
- * @param {string} params.workspaceId - The workspace to check within.
- * @returns {Promise<Project | null>} The existing project object if found, otherwise null.
- */
-export const checkProjectNameExists = async ({ name, workspaceId }: { name: string; workspaceId: string; }) => {
+
+export const checkProjectNameExists = async ({
+  name,
+  workspaceId,
+}: {
+  name: string;
+  workspaceId: string;
+}) => {
   const existingProject = await db.project.findFirst({
     where: {
       name: name,
@@ -123,5 +119,5 @@ export const checkProjectNameExists = async ({ name, workspaceId }: { name: stri
     },
   });
 
-  return existingProject; // This will be the project object or null
+  return existingProject;
 };

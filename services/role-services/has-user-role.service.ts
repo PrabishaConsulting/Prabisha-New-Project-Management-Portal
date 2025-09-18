@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
-import { Role } from '@prisma/client'; // Assumes you have a UserRole enum
+import { ProjectRole, Role } from '@prisma/client'; // Assumes you have a UserRole enum
+
 
 /**
  * Checks if a user has a specific global role.
@@ -8,9 +9,7 @@ import { Role } from '@prisma/client'; // Assumes you have a UserRole enum
  * @returns A boolean: `true` if the user has the exact role, otherwise `false`.
  */
 export async function hasUserRole(
-  userId: string,
-  expectedRole: Role
-): Promise<boolean> {
+userId: string,  expectedRole: any): Promise<boolean> {
   const user = await db.user.findUnique({
     where: {
       id: userId,
