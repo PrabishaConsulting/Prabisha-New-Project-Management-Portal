@@ -8,6 +8,7 @@ export default async function EditProfilePage({ params }: { params: Promise<{ pr
   const { profileId } = await params;
 
   const currentUser = await getCurrentUser()
+  if (!currentUser) return null
 
   return (
     // It's good practice to wrap data-dependent components in Suspense
