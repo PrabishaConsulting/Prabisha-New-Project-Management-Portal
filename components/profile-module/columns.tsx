@@ -94,18 +94,30 @@ export const columns = (
   {
     accessorKey: "startDate",
     header: ({ column }) => (
+
       <Button
+      className=""
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Start Date <ArrowUpDown className="ml-2 h-4 w-4" />
+        >
+        Start Date 
       </Button>
+     
     ),
-    cell: ({ row }) => (
-      <div className="text-center">
-        {new Date(row.getValue("startDate")).toLocaleDateString()}
-      </div>
-    ),
+   cell: ({ row }) => {
+  const date = new Date(row.getValue("startDate"));
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short', // This is the key change
+    day: 'numeric',
+  };
+
+  return (
+    <div className="text-center">
+      {date.toLocaleDateString(undefined, options)}
+    </div>
+  );
+},
   },
   {
     accessorKey: "name",
@@ -190,12 +202,23 @@ export const columns = (
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
-        Due Date <ArrowUpDown className="ml-2 h-4 w-4" />
+        Due Date 
       </Button>
     ),
-    cell: ({ row }) => (
-      <div>{new Date(row.getValue("dueDate")).toLocaleDateString()}</div>
-    ),
+   cell: ({ row }) => {
+  const date = new Date(row.getValue("startDate"));
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short', // This is the key change
+    day: 'numeric',
+  };
+
+  return (
+    <div className="text-center">
+      {date.toLocaleDateString(undefined, options)}
+    </div>
+  );
+},
   },
   {
     accessorKey: "status",
