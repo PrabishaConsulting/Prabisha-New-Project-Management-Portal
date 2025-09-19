@@ -2,46 +2,35 @@ import { updateTaskOrder } from '@/services/task-service/task.service';
 import { db } from '@/lib/db';
 import { TaskStatus } from '@prisma/client';
 
-// The mock setup is correct.
 jest.mock('@/lib/db', () => ({
   db: {
-    $transaction: jest.fn(),
+    $executeRawUnsafe: jest.fn(),
   },
 }));
 
-// We remove the 'mockedDb' cast here too.
-
 describe('Task Service: updateTaskOrder', () => {
   beforeEach(() => {
-    (db.$transaction as jest.Mock).mockClear();
+    (db.$executeRawUnsafe as jest.Mock).mockClear();
   });
 
-  it('should call task.update for each task within a transaction', async () => {
+  it('should call $executeRawUnsafe with a bulk update query', async () => {
     const tasksToUpdate = [
       { id: 'task-1', position: 1, status: TaskStatus.IN_PROGRESS },
       { id: 'task-2', position: 2, status: TaskStatus.DONE },
     ];
 
-    // This is our mock transaction client that the service's callback will receive
-    const mockTx = { task: { update: jest.fn() } };
-
-    // ✨ FIX: Cast the specific method as a jest.Mock.
-    (db.$transaction as jest.Mock).mockImplementation(async (callback: (tx: any) => Promise<any>) => {
-      // Execute the callback passed from the service, giving it our mock transaction client
-      return callback(mockTx);
-    });
-
     await updateTaskOrder(tasksToUpdate);
 
-    expect(db.$transaction).toHaveBeenCalledTimes(1);
-    expect(mockTx.task.update).toHaveBeenCalledTimes(2);
-    expect(mockTx.task.update).toHaveBeenCalledWith({
-      where: { id: 'task-1' },
-      data: { position: 1, status: TaskStatus.IN_PROGRESS },
-    });
-    expect(mockTx.task.update).toHaveBeenCalledWith({
-        where: { id: 'task-2' },
-        data: { position: 2, status: TaskStatus.DONE },
-    });
+    expect(db.$executeRawUnsafe).toHaveBeenCalledTimes(1);
+
+    const calledQuery = (db.$executeRawUnsafe as jest.Mock).mock.calls[0][0] as string;
+
+    // Check that the query contains all task IDs and CASE WHEN for positions and statuses
+    expect(calledQuery).toContain('task-1');
+    expect(calledQuery).toContain('task-2');
+    expect(calledQuery).toContain('WHEN id = \'task-1\' THEN 1');
+    expect(calledQuery).toContain(`WHEN id = 'task-2' THEN 2`);
+    expect(calledQuery).toContain(`WHEN id = 'task-1' THEN 'IN_PROGRESS'`);
+    expect(calledQuery).toContain(`WHEN id = 'task-2' THEN 'DONE'`);
   });
 });

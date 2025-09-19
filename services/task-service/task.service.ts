@@ -30,7 +30,7 @@ export async function processAndValidateTaskUpdates(
   const existingTasksMap = new Map(existingTasks.map((task) => [task.id, task]));
 
   const tasksThatChanged: TaskUpdateData[] = [];
-  const logEntries: LogParams[] = [];
+  const logEntries = [];
 
   for (const task of tasksToUpdate) {
     const existingTask = existingTasksMap.get(task.id);
