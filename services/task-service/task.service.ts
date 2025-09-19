@@ -13,7 +13,7 @@ type TaskUpdateData = {
 };
 
 /**
- * Processes task updates, validates permissions, and logs all changes.
+ * Processes task updates, validates permissions, and logs status changes only.
  */
 export async function processAndValidateTaskUpdates(
   userId: string,
@@ -30,7 +30,7 @@ export async function processAndValidateTaskUpdates(
   const existingTasksMap = new Map(existingTasks.map((task) => [task.id, task]));
 
   const tasksThatChanged: TaskUpdateData[] = [];
-  const logEntries = [];
+  const logEntries: LogParams[] = [];
 
   for (const task of tasksToUpdate) {
     const existingTask = existingTasksMap.get(task.id);
@@ -39,26 +39,25 @@ export async function processAndValidateTaskUpdates(
     const statusHasChanged = existingTask.status !== task.status;
     const positionHasChanged = existingTask.position !== task.position;
 
+    // ✅ Only log status changes
     if (statusHasChanged) {
       if (!isProjectLead && existingTask.assigneeId !== userId) {
         throw new AuthorizationError(
-          // FIX: Consistently use 'title' as per your Zod schema
           `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
         );
       }
+
       logEntries.push({
-        userId: userId,
-        projectId: projectId,
+        userId,
+        projectId,
         taskId: existingTask.id,
         action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
-        // FIX: Consistently use 'title'
         description: `Task "${existingTask.title}" status changed from ${existingTask.status} to ${task.status}.`,
         metadata: { from: existingTask.status, to: task.status },
       });
     }
 
-    
-    
+    // ✅ Update DB if either status OR position changed
     if (statusHasChanged || positionHasChanged) {
       tasksThatChanged.push(task);
     }
@@ -66,27 +65,50 @@ export async function processAndValidateTaskUpdates(
 
   if (tasksThatChanged.length > 0) {
     await updateTaskOrder(tasksThatChanged);
-    const logPromises = logEntries.map(logData => logActivity(db, logData));
-    await Promise.all(logPromises);
+
+    // ✅ Bulk insert logs (only for status changes)
+    if (logEntries.length > 0) {
+      await db.activityLog.createMany({
+        data: logEntries.map((log) => ({
+          userId: log.userId,
+          projectId: log.projectId,
+          taskId: log.taskId,
+          action: log.action,
+          description: log.description,
+          metadata: log.metadata ? JSON.stringify(log.metadata) : null,
+        })),
+      });
+    }
   }
 }
 
 /**
- * Updates the order/status of multiple tasks in a single transaction.
+ * Bulk updates the order/status of multiple tasks using CASE WHEN for performance.
  */
 export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
-  await db.$transaction(async (tx) => {
-    for (const taskUpdate of tasks) {
-      await tx.task.update({
-        where: { id: taskUpdate.id },
-        data: {
-          position: taskUpdate.position,
-          status: taskUpdate.status,
-        },
-      });
-    }
-  });
+  if (tasks.length === 0) return;
+
+  // Build CASE WHEN statements for position and status
+  const positionCases = tasks
+    .map((t) => `WHEN id = '${t.id}' THEN ${t.position}`)
+    .join(" ");
+
+  const statusCases = tasks
+    .map((t) => `WHEN id = '${t.id}' THEN '${t.status}'`)
+    .join(" ");
+
+  const taskIds = tasks.map((t) => `'${t.id}'`).join(",");
+
+  // ✅ Single query to update all tasks
+  await db.$executeRawUnsafe(`
+    UPDATE tasks
+    SET 
+      position = CASE ${positionCases} ELSE position END,
+      status   = CASE ${statusCases} ELSE status END
+    WHERE id IN (${taskIds});
+  `);
 }
+
 
 /**
  * Creates a new task and its attachments, then logs the creation event.

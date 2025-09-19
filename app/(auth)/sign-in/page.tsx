@@ -35,7 +35,7 @@ export default function SignInPage() {
       })
 
       if (res?.ok) {
-        window.location.href = '/projects'
+        window.location.href = '/all-task'
       } else {
         form.setError('root', { message:  "Sign in failed after registration" })
       }

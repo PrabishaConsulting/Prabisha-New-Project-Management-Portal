@@ -19,7 +19,7 @@ export function middleware(request: NextRequest) {
 
   // If the user has a token and is on a public page, redirect to dashboard.
   if (token && isPublicPath) {
-    return NextResponse.redirect(new URL('/projects', request.url))
+    return NextResponse.redirect(new URL('/all-task', request.url))
   }
 
   // If the user has no token and is on a protected page, redirect to sign-in.
