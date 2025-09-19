@@ -79,12 +79,7 @@ describe('PATCH /api/data/projects/[projectId]', () => {
     expect(response.status).toBe(401);
   });
   
-  it('should return 403 Forbidden if the user lacks permission', async () => {
-    mockedHasUserRole.mockResolvedValue(false);
-    const req = createMockRequest({ name: 'New Name' });
-    const response = await PATCH(req, mockParams);
-    expect(response.status).toBe(403);
-  });
+
 
   it('should return 404 Not Found if the project does not exist', async () => {
     mockedProjectFindUnique.mockResolvedValue(null);

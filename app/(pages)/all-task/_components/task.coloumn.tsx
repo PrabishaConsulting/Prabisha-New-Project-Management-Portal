@@ -34,7 +34,7 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     header: "Task ID",
     cell: ({ row }) => {
       const serialNumber = String(row.index + 1).padStart(4, '0');
-      return <div className="font-medium">PTI{serialNumber}</div>;
+      return <div className="font-medium">PTI-{serialNumber}</div>;
     },
   },
   {
