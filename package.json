@@ -77,7 +77,9 @@
     "input-otp": "^1.4.2",
     "jotai": "^2.14.0",
     "jsonwebtoken": "^9.0.2",
-    "lucide-react": "^0.543.0",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
+    "lucide-react": "^0.544.0",
     "motion": "^12.23.12",
     "next": "latest",
     "next-auth": "^4.24.11",
@@ -96,6 +98,7 @@
     "use-debounce": "^10.0.5",
     "vaul": "^1.1.2",
     "whois": "^2.15.0",
+    "xlsx": "^0.18.5",
     "zod": "^4.0.14",
     "zustand": "^4.5.2"
   },

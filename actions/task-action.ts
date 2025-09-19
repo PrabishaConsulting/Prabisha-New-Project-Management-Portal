@@ -1,5 +1,7 @@
 // lib/task-service.ts
+import { TASK_STATUS_OPTIONS } from "@/lib/constants";
 import { db } from "@/lib/db";
+import { TaskStatus } from "@prisma/client";
 
 export async function getTasksForDay(date: Date) {
   const startOfDay = new Date(date);
@@ -35,4 +37,74 @@ export async function getTasksForDay(date: Date) {
       createdAt: "desc",
     },
   });
+}
+
+
+
+export async function getTaskStatsForDay(date: Date) {
+  const startOfDay = new Date(date);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // All tasks created today
+  const total = await db.task.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+    },
+  });
+
+  // todo today
+  
+  const todo = await db.task.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      status: TaskStatus.TODO,
+    },
+  });
+  const inProgress = await db.task.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      status: TaskStatus.IN_PROGRESS,
+    },
+  });
+  // In review today
+  const inReview = await db.task.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      status: TaskStatus.REVIEW,
+    },
+  });
+
+  // Completed today
+  const completed = await db.task.count({
+    where: {
+      createdAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      status: TaskStatus.DONE,
+    },
+  });
+
+  return {
+    total,
+    todo,
+    inProgress,
+    inReview,
+    completed,
+  };
 }

@@ -91,34 +91,32 @@ export async function GET(
   }
 }
 
-
+/**
+ * Handles PATCH requests to update a project and its members.
+ */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
   const currentUserId = session.user.id;
   const { projectId } = await params;
 
-  // FIX #1: Add the missing Authorization check
-  const canUpdate = await hasUserRole( currentUserId, [ProjectRole.LEAD, 'ADMIN']);
-  if (!canUpdate) {
-      return NextResponse.json({ message: 'Forbidden: You do not have permission to edit this project.' }, { status: 403 });
-  }
+  // const canUpdate = await hasUserRole( currentUserId, [ProjectRole.LEAD, 'ADMIN']);
+  // if (!canUpdate) {
+  //   return NextResponse.json({ message: 'Forbidden: You do not have permission to edit this project.' }, { status: 403 });
+  // }
 
   const body = await request.json();
   const validation = updateProjectSchema.safeParse(body);
   if (!validation.success) {
-    return NextResponse.json(
-      { message: "Invalid input", errors: validation.error.flatten().fieldErrors },
-      { status: 400 }
-    );
+    return NextResponse.json({ message: "Invalid input", errors: validation.error.flatten().fieldErrors }, { status: 400 });
   }
 
-  const { members, ...updateData } = validation.data;
+  const { members, createdBy, departmentId, clientId, internalProductId, ...scalarProjectData } = validation.data;
 
   try {
     const existingProject = await db.project.findUnique({
@@ -131,23 +129,29 @@ export async function PATCH(
     }
 
     let hasChanges = false;
-    const updatePayload: Prisma.ProjectUpdateInput = {};
+    const updatePayload: Prisma.ProjectUpdateInput = { ...scalarProjectData };
 
-    // Streamlined update logic
-    for (const key in updateData) {
-      const typedKey = key as keyof typeof updateData;
-      if (updateData[typedKey] !== undefined && updateData[typedKey] !== existingProject[typedKey as keyof typeof existingProject]) {
-        (updatePayload as any)[typedKey] = updateData[typedKey];
-      }
+    // Handle relational fields separately using Prisma's 'connect' syntax
+    if (createdBy && createdBy !== existingProject.createdBy) {
+      updatePayload.creator = { connect: { id: createdBy } };
     }
-    if (updateData.departmentId !== undefined) updatePayload.department = updateData.departmentId ? { connect: { id: updateData.departmentId } } : { disconnect: true };
-    // ... other relations
-
+    if (departmentId !== undefined && departmentId !== existingProject.departmentId) {
+      updatePayload.department = departmentId ? { connect: { id: departmentId } } : { disconnect: true };
+    }
+    // if (clientId !== undefined && clientId !== existingProject.clientId) {
+    //   updatePayload.client = clientId ? { connect: { id: clientId } } : { disconnect: true };
+    // }
+    if (internalProductId !== undefined && internalProductId !== existingProject.internalProductId) {
+      updatePayload.internalProduct = internalProductId ? { connect: { id: internalProductId } } : { disconnect: true };
+    }
+    
+    // Only update if the payload has keys (i.e., actual changes)
     if (Object.keys(updatePayload).length > 0) {
       await db.project.update({ where: { id: projectId }, data: updatePayload });
       hasChanges = true;
     }
 
+    // Handle member changes
     if (members) {
       const currentMemberIds = new Set(existingProject.members.map(m => m.userId));
       const newMemberData = new Map(members.map(m => [m.userId, m.role]));
@@ -171,18 +175,23 @@ export async function PATCH(
       }
     }
 
+    // If any change occurred, create a single log entry
     if (hasChanges) {
       const currentUser = await db.user.findUnique({ where: { id: currentUserId }, select: { name: true } });
       const currentUserName = currentUser?.name || 'A user';
       await logActivity(db, {
         userId: currentUserId,
         projectId: projectId,
-        action: ACTIVITY_ACTIONS.UPDATE_PROJECT_NAME,
+        action: ACTIVITY_ACTIONS.UPDATE_PROJECT_STATUS,
         description: `${currentUserName} updated details for the project "${existingProject.name}".`,
       });
     }
     
-    const finalProject = await db.project.findUnique({ where: { id: projectId }, include: { members: true, department: true }});
+    const finalProject = await db.project.findUnique({
+      where: { id: projectId },
+      include: { members: true, department: true, internalProduct: true },
+    });
+
     return NextResponse.json(finalProject, { status: 200 });
   } catch (error) {
     console.error("PATCH Failed:", error);

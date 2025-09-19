@@ -1,5 +1,7 @@
 import { PrismaClient, ActivityLog } from '@prisma/client';
 import { ActivityAction } from './helper';
+import { Prisma } from "@prisma/client"; // Make sure Prisma is imported
+
 
 // Define the parameters the function will accept
 interface LogParams {
@@ -27,7 +29,7 @@ interface LogResult {
  * @returns An object containing either the created log data or an error.
  */
 export async function logActivity(
-  prisma: PrismaClient,
+  prisma: Prisma.TransactionClient,
   params: LogParams
 ): Promise<LogResult> {
   try {

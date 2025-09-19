@@ -3,6 +3,7 @@ import { ProjectCreationError } from "@/utils/errors";
 import { logActivity } from "../activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "../activity-user/helper";
 import { getCurrentUser } from "@/utils/getcurrentUser";
+import { Prisma } from "@prisma/client"; // Import Prisma for the transaction client type
 
 export interface ProjectCreationData {
   name: string;
@@ -42,6 +43,12 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
     );
   }
 
+  // FIX #1: Get the current user *before* starting the transaction to prevent timeouts.
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+      throw new ProjectCreationError("User not found or not authenticated.", "AUTH_ERROR");
+  }
+
   // --- DB TRANSACTION ---
   try {
     const result = await db.$transaction(async (tx) => {
@@ -68,16 +75,14 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
         },
       });
 
-      // NOTE: `getCurrentUser` needs to be mocked in tests for this to pass.
-      const currentUser = await getCurrentUser();
-      if (currentUser) {
-        await logActivity(db, { // Pass the transactional client `tx` to the logger
-          userId: projectData.userId,
-          projectId: newProject.id,
-          action: ACTIVITY_ACTIONS.CREATE_PROJECT,
-          description: `${currentUser.name} created the project "${newProject.name}".`,
-        });
-      }
+      // FIX #2: Pass the transactional client `tx` to the logger.
+      // This makes the log part of the same atomic operation.
+      await logActivity(tx as unknown as Prisma.TransactionClient, {
+        userId: projectData.userId,
+        projectId: newProject.id,
+        action: ACTIVITY_ACTIONS.CREATE_PROJECT,
+        description: `${currentUser.name} created the project "${newProject.name}".`,
+      });
 
       return { project: newProject, creatorId: projectData.userId };
     });
