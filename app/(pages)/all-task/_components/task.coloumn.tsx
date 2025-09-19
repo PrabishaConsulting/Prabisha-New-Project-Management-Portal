@@ -3,10 +3,25 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Task as PrismaTask, TaskStatus, Priority, Project, User, Department } from "@prisma/client";
+import {
+  Task as PrismaTask,
+  TaskStatus,
+  Priority,
+  Project,
+  User,
+  Department,
+} from "@prisma/client";
 
 // This client-safe data type is correctly defined
-export type TaskData = Omit<PrismaTask, 'estimatedHours' | 'actualHours' | 'createdAt' | 'updatedAt' | 'dueDate' | 'startDate'> & {
+export type TaskData = Omit<
+  PrismaTask,
+  | "estimatedHours"
+  | "actualHours"
+  | "createdAt"
+  | "updatedAt"
+  | "dueDate"
+  | "startDate"
+> & {
   estimatedHours: number | null;
   actualHours: number;
   createdAt: string;
@@ -22,6 +37,17 @@ export type TaskData = Omit<PrismaTask, 'estimatedHours' | 'actualHours' | 'crea
 // Helper function to format text like "To Do" or "In Progress"
 const formatStatus = (status: string) => {
   if (!status) return "-";
+
+  const specialCases: Record<string, string> = {
+    TODO: "To Do",
+    IN_PROGRESS: "In Progress",
+    DONE: "Done",
+  };
+
+  if (specialCases[status]) {
+    return specialCases[status];
+  }
+
   return status
     .toLowerCase()
     .replace(/_/g, " ")
@@ -29,34 +55,91 @@ const formatStatus = (status: string) => {
 };
 
 export const taskColumns: ColumnDef<TaskData>[] = [
-  {
-    id: "pti-id",
-    header: "Task ID",
-    cell: ({ row }) => {
-      const serialNumber = String(row.index + 1).padStart(4, '0');
-      return <div className="font-medium">PTI-{serialNumber}</div>;
-    },
+ {
+  id: "pti-id",
+  header: "Task ID",
+  cell: ({ row, table }) => {
+    const totalRows = table.getRowModel().rows.length;
+    const serialNumber = String(totalRows - row.index).padStart(4, "0");
+    return <div className="font-medium">PTI-{serialNumber}</div>;
   },
+},
   {
-    accessorKey: "title",
+    accessorKey: "createdAt",
     header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Title
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Start Date
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
+    cell: ({ row }) => (
+      <div className="pl-4">
+        {new Date(row.original.createdAt).toLocaleDateString("en-GB", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        })}
+      </div>
+    ),
   },
+ {
+  accessorKey: "title",
+  header: ({ column }) => (
+    <Button
+      variant="ghost"
+      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+    >
+      Title
+      <ArrowUpDown className="ml-2 h-4 w-4" />
+    </Button>
+  ),
+  cell: ({ row }) => (
+    <span className=" capitalize ">
+      {row.getValue("title")}
+    </span>
+  ),
+},
+
   {
     accessorKey: "status",
     header: "Status",
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
-    cell: ({ row }) => formatStatus(row.original.status),
+    cell: ({ row }) => {
+      const status = row.original.status;
+      const formatted = formatStatus(status);
+
+      // Decide colors based on status
+      let colorClass = "text-gray-500"; // default
+      if (status === "TODO") colorClass = "text-red-500"; // Red
+      else if (status === "IN_PROGRESS")
+        colorClass = "text-amber-500"; // Amber/Yellow
+      else if (status === "DONE") colorClass = "text-green-600"; // Green
+
+      return <span className={`font-medium ${colorClass}`}>{formatted}</span>;
+    },
   },
   {
     accessorKey: "priority",
     header: "Priority",
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
-    cell: ({ row }) => formatStatus(row.original.priority),
+    cell: ({ row }) => {
+      const priority = row.original.priority;
+
+      let colorClass = "text-gray-500"; // default
+      if (priority === "LOW") colorClass = "text-green-600"; // Green
+      else if (priority === "MEDIUM") colorClass = "text-amber-500"; // Amber
+      else if (priority === "HIGH") colorClass = "text-orange-600"; // Orange
+      else if (priority === "URGENT") colorClass = "text-red-600"; // Red
+
+      return (
+        <span className={`font-medium capitalize ${colorClass}`}>
+          {priority.toLowerCase()}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "assignee.name",
@@ -75,25 +158,28 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     header: "Project",
     cell: ({ row }) => row.original.project?.name ?? "-",
   },
-  {
-    accessorKey: "createdAt",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Start Date
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
-    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString(),
-  },
+
   {
     accessorKey: "dueDate",
     header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
         Due Date
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) =>
-      row.original.dueDate ? new Date(row.original.dueDate).toLocaleDateString() : "-",
+    cell: ({ row }) => (
+      <div className="pl-4">
+        {row.original.dueDate
+          ? new Date(row.original.dueDate).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+            })
+          : "-"}
+      </div>
+    ),
   },
 ];

@@ -42,6 +42,9 @@ export default async function AllTaskPage() {
       project: true,
       department: true,
     },
+    orderBy: {
+      createdAt: "desc",
+    },
   });
 
   // ✅ Convert Decimal fields before passing to client
