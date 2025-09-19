@@ -4,9 +4,15 @@ import TaskTable from "./_components/task.table";
 import StatusCard from "./_components/task.stats";
 import { getTaskStatsForDay } from "@/actions/task-action";
 import { TaskData } from "./_components/task.coloumn";
+import TaskDashboard from "./_components/task-dashboard";
+import { getCurrentUser } from "@/utils/getcurrentUser";
 
 
 export default async function AllTaskPage() {
+
+  const user = await getCurrentUser();
+
+  if(!user) return null
   // Get today's date
   const today = new Date();
 
@@ -52,6 +58,17 @@ export default async function AllTaskPage() {
 
   return (
     <div>
+      <div className=" mx-auto p-4 flex justify-between items-center">
+        <h1 className="text-2xl font-bold mb-4">
+          All Tasks for {today.toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </h1>
+        <TaskDashboard userId={user?.id} />
+      </div>
       <StatusCard {...stats} />
       <TaskTable data={safeTasks} />
     </div>
