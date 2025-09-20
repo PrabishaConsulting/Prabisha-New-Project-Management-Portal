@@ -118,16 +118,16 @@ export const UserPerformanceClient = ({ user }: UserPerformanceClientProps) => {
           }}
         >
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-            <StatCard icon={<PieChart className="h-4 w-4 text-muted-foreground" />} title="Total Tasks" value={stats.totalTasks} description="All assigned tasks" />
+            <StatCard icon={<PieChart className="h-4 w-4 text-primary" />} title="Total Tasks" value={stats.totalTasks} description="All assigned tasks" />
           </motion.div>
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-            <StatCard icon={<Star className="h-4 w-4 text-muted-foreground" />} title="Completion Rate" value={`${stats.completionRate}%`} description={`${stats.completedTasks} tasks completed`} />
+            <StatCard icon={<Star className="h-4 w-4 text-secondary" />} title="Completion Rate" value={`${stats.completionRate}%`} description={`${stats.completedTasks} tasks completed`} />
           </motion.div>
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-            <StatCard icon={<ListTodo className="h-4 w-4 text-muted-foreground" />} title="Pending Tasks" value={stats.pendingTasks} description="To Do & In Progress" />
+            <StatCard icon={<ListTodo className="h-4 w-4 text-amber-500" />} title="Pending Tasks" value={stats.pendingTasks} description="To Do & In Progress" />
           </motion.div>
           <motion.div variants={{ hidden: { y: 20, opacity: 0 }, visible: { y: 0, opacity: 1 } }}>
-            <StatCard icon={<AlertTriangle className="h-4 w-4 text-muted-foreground" />} title="Overdue Tasks" value={stats.overdueTasks} description="Tasks past their due date" />
+            <StatCard icon={<AlertTriangle className="h-4 w-4 text-destructive" />} title="Overdue Tasks" value={stats.overdueTasks} description="Tasks past their due date" />
           </motion.div>
         </motion.div>
       </div>
