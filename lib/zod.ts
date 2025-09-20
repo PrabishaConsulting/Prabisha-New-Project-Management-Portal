@@ -28,14 +28,14 @@ export const taskFormSchema = z.object({
     attachments: z.array(attachmentSchema).optional(),
 
 }).refine((data) => {
-    // This comparison now works correctly because the values have been coerced into Date objects.
-    if (data.startDate && data.dueDate) {
-      return data.dueDate >= data.startDate;
-    }
-    return true;
-  }, {
-    message: "Due date cannot be before the start date.",
-    path: ["dueDate"],
+  if (data.startDate && data.dueDate) {
+    const minDue = new Date(data.startDate.getTime() + 3 * 60 * 60 * 1000);
+    return data.dueDate >= minDue;
+  }
+  return true;
+}, {
+  message: "Due date must be at least 3 hours after the start date.",
+  path: ["dueDate"],
 });
 
 // Output type (after parsing/defaults)

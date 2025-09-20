@@ -431,46 +431,63 @@ export function TaskFormDialog({
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    name="dueDate"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Due Date</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant="outline"
-                                className={cn(
-                                  "pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                )}
-                              >
-                                {/* FIX: Cast field.value to Date for the format function */}
-                                {field.value ? (
-                                  format(field.value as Date, "PPP")
-                                ) : (
-                                  <span>Pick a date</span>
-                                )}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            {/* FIX: Cast field.value for the selected prop */}
-                            <Calendar
-                              mode="single"
-                              selected={field.value as Date | undefined}
-                              onSelect={field.onChange}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+<FormField
+  name="dueDate"
+  control={form.control}
+  render={({ field }) => {
+    // Get startDate from form and assert type
+    const startDate = form.getValues("startDate") as Date | null | undefined;
+
+    // Compute minDueDate = startDate + 3 hours
+    const minDueDate = startDate
+      ? new Date(startDate.getTime() + 3 * 60 * 60 * 1000)
+      : undefined;
+
+    return (
+      <FormItem className="flex flex-col">
+        <FormLabel>Due Date</FormLabel>
+        <Popover>
+          <PopoverTrigger asChild>
+            <FormControl>
+              <Button
+                variant="outline"
+                className={cn(
+                  "pl-3 text-left font-normal",
+                  !field.value && "text-muted-foreground"
+                )}
+              >
+                {field.value
+                  ? format(field.value as Date, "PPP p")
+                  : <span>Pick a date</span>}
+                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+              </Button>
+            </FormControl>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={field.value as Date | undefined}
+              onSelect={(date) => {
+                if (!date) return;
+                // enforce minimum 3-hour difference
+                if (minDueDate && date < minDueDate) {
+                  field.onChange(minDueDate);
+                } else {
+                  field.onChange(date);
+                }
+              }}
+              // Disable all dates before minDueDate
+              disabled={(date) => minDueDate ? date < minDueDate : false}
+              initialFocus
+            />
+          </PopoverContent>
+        </Popover>
+        <FormMessage />
+      </FormItem>
+    );
+  }}
+/>
+
                 </div>
                 <FormField
                   name="description"
