@@ -261,6 +261,8 @@ model Project {
   name              String           @unique
   description       String?
   workspaceId       String
+  projectCode String?  @unique   // 👈 new field, optional at first
+
   status            ProjectStatus    @default(ACTIVE)
   priority          Priority         @default(MEDIUM)
   projectType       ProjectType      @default(FIXED_TERM) // <-- New field

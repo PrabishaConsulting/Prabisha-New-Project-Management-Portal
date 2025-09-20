@@ -53,6 +53,7 @@ export const ProjectTable = ({
       columns={tableColumns}
       data={projects}
       workspaceId={workspaceId}
+      
     />
   );
 };

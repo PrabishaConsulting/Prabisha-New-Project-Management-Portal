@@ -81,15 +81,11 @@ export const columns = (
   {
     accessorKey: "id",
     header: "Project ID",
-    cell: ({ row }) => {
-      const id = row.getValue("id") as string;
-
-      // Takes the LAST 6 characters of the original ID for better uniqueness.
-      // The end of a CUID or UUID is highly random.
-      const uniqueId = id.slice(-6).toUpperCase();
-
-      return <div className="font-medium">PCP-{uniqueId}</div>;
-    },
+   cell: ({ row, table }) => {
+    const totalRows = table.getRowModel().rows.length;
+    const serialNumber = String(totalRows - row.index).padStart(4, "0");
+    return <div className="font-medium">PCP-{serialNumber}</div>;
+  },
   },
   {
     accessorKey: "startDate",

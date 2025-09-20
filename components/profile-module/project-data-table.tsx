@@ -1,7 +1,9 @@
-// FILE: ./components/project-data-table.tsx
+// FILE: ./components/profile-module/project-data-table.tsx
 
 "use client";
 
+import { isValidElement } from "react";
+import ReactDOMServer from "react-dom/server";
 import * as React from "react";
 import {
   ColumnDef,
@@ -11,7 +13,6 @@ import {
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
@@ -33,7 +34,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown } from "lucide-react";
-// 1. Import the ScrollArea components
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 
@@ -43,26 +43,29 @@ interface DataTableProps<TData, TValue> {
   workspaceId: string;
 }
 
-export function ProjectDataTable<TData extends {id: string}, TValue>({
+
+export function ProjectDataTable<TData extends { id: string }, TValue>({
   columns,
   data,
   workspaceId,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
+    []
+  );
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
   const router = useRouter();
 
   const table = useReactTable({
     data,
     columns,
-    onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
     state: {
@@ -73,9 +76,50 @@ export function ProjectDataTable<TData extends {id: string}, TValue>({
     },
   });
 
+  // ✅ Excel Export
+const handleExportExcel = async () => {
+  const res = await fetch("/api/projects/export");
+  const blob = await res.blob();
+
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "projects.xlsx";
+  a.click();
+  window.URL.revokeObjectURL(url);
+};
+
+
+// ✅ Client-side function to call the server API
+const handleExportPDF = async () => {
+  try {
+    const response = await fetch("/api/projects/export/pdf", {
+      method: "GET",
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch PDF");
+    }
+
+    const blob = await response.blob(); // get the PDF blob
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "projects.pdf";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Error exporting PDF:", error);
+  }
+};
+
+
+
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center gap-2 py-4">
         <Input
           placeholder="Filter by project name..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
@@ -84,6 +128,8 @@ export function ProjectDataTable<TData extends {id: string}, TValue>({
           }
           className="max-w-sm"
         />
+
+        {/* Column visibility menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -94,42 +140,45 @@ export function ProjectDataTable<TData extends {id: string}, TValue>({
             {table
               .getAllColumns()
               .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                );
-              })}
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  className="capitalize"
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) =>
+                    column.toggleVisibility(!!value)
+                  }
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
+
+        {/* Export buttons */}
+        <Button variant="outline" onClick={handleExportExcel}>
+          Export Excel
+        </Button>
+        {/* <Button variant="outline" onClick={handleExportPDF}>
+          Export PDF
+        </Button> */}
       </div>
 
-      {/* 2. Wrap the Table with ScrollArea */}
       <ScrollArea className="rounded-md border">
         <Table className="text-xs">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </TableHead>
+                ))}
               </TableRow>
             ))}
           </TableHeader>
@@ -139,7 +188,11 @@ export function ProjectDataTable<TData extends {id: string}, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  onClick={() => router.push(`/projects/${row.original.id}?workspaceId=${workspaceId}`)}
+                  onClick={() =>
+                    router.push(
+                      `/projects/${row.original.id}?workspaceId=${workspaceId}`
+                    )
+                  }
                   className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
@@ -158,7 +211,6 @@ export function ProjectDataTable<TData extends {id: string}, TValue>({
             )}
           </TableBody>
         </Table>
-        {/* 3. Add the horizontal ScrollBar */}
         <ScrollBar orientation="horizontal" />
       </ScrollArea>
 
@@ -166,24 +218,6 @@ export function ProjectDataTable<TData extends {id: string}, TValue>({
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
-        </div>
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Previous
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Next
-          </Button>
         </div>
       </div>
     </div>
