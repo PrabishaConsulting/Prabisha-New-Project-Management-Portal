@@ -26,6 +26,7 @@ import {
   List,
   UserCheck,
   PlusCircle,
+  LucideSquareMousePointer,
 } from "lucide-react";
 import Link from "next/link";
 import { Task as PrismaTask } from "@prisma/client";
@@ -33,6 +34,7 @@ import { TaskFormDialog } from "@/components/modals/AddTaskDialog"; // --- NEW: 
 import { Project, User } from "@/types"; // --- NEW: Import types for the dialog ---
 import { TaskFormData } from "@/lib/zod";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 // --- Types for the main dashboard API response ---
 interface DashboardTask {
@@ -72,6 +74,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 // --- Main Page Component ---
 export default function MyWorkPage({ userId }: { userId: string }) {
   const [activeTab, setActiveTab] = useState<string>("all");
+  const router = useRouter();
 
   // --- NEW: State for controlling the dialog visibility ---
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -159,14 +162,47 @@ export default function MyWorkPage({ userId }: { userId: string }) {
   {/* Header with Title & Add Task Button */}
   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <h2 className="text-2xl font-semibold tracking-tight">My Tasks</h2>
+    <div className=" ">
+
     <Button
-      className="mt-4 sm:mt-0"
+      className="mt-4 mr-4 sm:mt-0"
       onClick={() => setIsDialogOpen(true)}
     >
       <PlusCircle className="mr-2 h-4 w-4" />
       Add Task
     </Button>
+    <Button
+      className="mt-4 sm:mt-0"
+      onClick={() => router.push(`all-user/${userId}`)}
+    >
+      <LucideSquareMousePointer className="mr-2 h-4 w-4" />
+      Your Performence
+    </Button>
+        </div>
+
   </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <StatCard
+              title={`My Tasks To Do`}
+              value={stats.todo}
+              icon={<CircleHelp className="h-5 w-5 text-muted-foreground" />}
+            />
+            <StatCard
+              title="My In Progress"
+              value={stats.inProgress}
+              icon={<Clock className="h-5 w-5 text-blue-500" />}
+            />
+            <StatCard
+              title="My In Review"
+              value={stats.review}
+              icon={<Star className="h-5 w-5 text-yellow-500" />}
+            />
+            <StatCard
+              title="My Completed"
+              value={stats.done}
+              icon={<CheckCircle className="h-5 w-5 text-green-500" />}
+            />
+          </div>
 
   {/* Card with Tabs */}
   <Card className="shadow-md rounded-2xl">

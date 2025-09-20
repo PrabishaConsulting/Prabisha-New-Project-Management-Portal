@@ -54,9 +54,7 @@ export default async function AllTaskPage() {
 
       <div className="mb-6 space-y-4">
         {/* Stats Card with Suspense */}
-        <Suspense fallback={<StatusCardSkeleton />}>
-          <StatusCard {...stats} />
-        </Suspense>
+       
 
         {/* Task Dashboard with Suspense */}
         <Suspense fallback={<TaskDashboardSkeleton />}>
@@ -75,6 +73,9 @@ export default async function AllTaskPage() {
       </h1>
 
       {/* Task Table with Suspense */}
+       <Suspense fallback={<StatusCardSkeleton />}>
+          <StatusCard {...stats} />
+        </Suspense>
       <Suspense fallback={<TaskTableSkeleton />}>
         <TaskTable data={safeTasks} />
       </Suspense>
