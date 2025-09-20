@@ -164,6 +164,16 @@ export default function DashboardLayout({
         },
       ],
     },
+    { 
+      label: "Analytics",
+      items: [
+        {
+          name: "Analytics",
+          href: "/all-user",
+          icon: BarChart3,
+        },
+      ],
+    },
     {
       label: "Account",
       items: [
