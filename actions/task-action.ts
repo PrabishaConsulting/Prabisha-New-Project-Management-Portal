@@ -3,26 +3,23 @@ import { TASK_STATUS_OPTIONS } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { TaskStatus } from "@prisma/client";
 
-export async function getTasksForDay(date: Date) {
-  const startOfDay = new Date(date);
-  startOfDay.setHours(0, 0, 0, 0);
+export async function getTasksForDay() {
+  const today = new Date();
 
-  const endOfDay = new Date(date);
-  endOfDay.setHours(23, 59, 59, 999);
 
-  return db.task.findMany({
+    const rawTasks  = await db.task.findMany({
     where: {
       OR: [
         {
           startDate: {
-            gte: startOfDay,
-            lte: endOfDay,
+            gte: new Date(today.setHours(0, 0, 0, 0)),
+            lte: new Date(today.setHours(23, 59, 59, 999)),
           },
         },
         {
           dueDate: {
-            gte: startOfDay,
-            lte: endOfDay,
+            gte: new Date(today.setHours(0, 0, 0, 0)),
+            lte: new Date(today.setHours(23, 59, 59, 999)),
           },
         },
       ],
@@ -37,6 +34,8 @@ export async function getTasksForDay(date: Date) {
       createdAt: "desc",
     },
   });
+
+  return rawTasks;
 }
 
 
