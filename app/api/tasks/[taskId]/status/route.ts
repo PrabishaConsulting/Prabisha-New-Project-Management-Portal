@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/utils/getcurrentUser';
 import { updateTaskStatusSchema } from '@/lib/zod';
 import { canUserAccessTask, updateTaskStatus } from '@/services/task-service/task-update.service';
+import { logActivity } from '@/services/activity-user/activity-user.service';
+import { ACTIVITY_ACTIONS } from '@/services/activity-user/helper';
+import { db } from '@/lib/db';
 
 // Correct App Router signature for a PUT request with dynamic params
 export async function PUT(
@@ -42,6 +45,16 @@ export async function PUT(
     // 4. Core Logic: Update the task status
     const { status } = validation.data;
     const result = await updateTaskStatus(taskId, status);
+    await logActivity(
+      db,
+      {
+        userId: user.id,
+        projectId: taskId,
+        taskId: taskId,
+        action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
+        description: `${user.name} has updated the task status to ${status}.`,
+      }
+    )
 
     if (result.error) {
       // This case is unlikely if authorization passed, but good for safety

@@ -5,6 +5,7 @@ import { TaskFormData } from '@/lib/zod'; // Assuming this type is defined elsew
 import { logActivity } from '../activity-user/activity-user.service';
 import { ACTIVITY_ACTIONS } from '../activity-user/helper';
 import { ProjectCreationError } from '@/utils/errors';
+import { sendTaskAssignmentEmail, sendTaskForReviewEmail } from '../mail-service/mail-assignment.service';
 
 type TaskUpdateData = {
   id: string;
@@ -109,6 +110,54 @@ export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
   `);
 }
 
+/**
+ * Handles sending notifications after a new task has been created.
+ * This function now fetches the user and project details it needs.
+ */
+async function handlePostCreationActions(newTask: Task) {
+  try {
+    // 1. Fetch all required details in parallel for efficiency
+    const [reporter, assignee, project] = await Promise.all([
+      db.user.findUnique({ where: { id: newTask.reporterId } }),
+      newTask.assigneeId ? db.user.findUnique({ where: { id: newTask.assigneeId } }) : Promise.resolve(null),
+      db.project.findUnique({ where: { id: newTask.projectId } })
+    ]);
+
+    // Guard against missing critical data
+    if (!reporter || !project) {
+        console.error("Could not find reporter or project for the new task.");
+        return;
+    }
+
+    "/projects/cmfp2xoy30003l504pb87fdt3/task/cmftlx3o0000lwg7c9vm033w3?workspaceId=cme1bv47a0002js04h223pd0s"
+    
+    const taskUrl = `${process.env.NEXT_PUBLIC_APP_URL}/projects/${project.id}/task/${newTask.id}?workspaceId=cme1bv47a0002js04h223pd0s`;
+
+    // 2. Notify the Reporter (the person who created the task)
+    if (reporter.email) {
+      await sendTaskForReviewEmail({
+        reviewerName: reporter.name!,
+        reviewerEmail: reporter.email,
+        taskTitle: newTask.title,
+        projectName: project.name,
+        taskUrl,
+      });
+    }
+
+    // 3. Notify the Assignee (if one was set on creation)
+    if (assignee && assignee.email) {
+      await sendTaskAssignmentEmail({
+        assigneeName: assignee.name!,
+        assigneeEmail: assignee.email,
+        taskTitle: newTask.title,
+        assignedBy: reporter.name!, // The creator is the one assigning
+        taskUrl,
+      });
+    }
+  } catch (emailError) {
+    console.error("Failed to send notification email during task creation:", emailError);
+  }
+}
 
 /**
  * Creates a new task and its attachments, then logs the creation event.
@@ -186,6 +235,9 @@ export async function createTask(data: TaskFormData, userId: string) {
   });
   
   // --- MODIFICATION END ---
+
+  await handlePostCreationActions(newTask);
+
 
   const taskWithAttachments = await db.task.findUnique({
     where: { id: newTask.id },
