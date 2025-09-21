@@ -3,7 +3,10 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { AssetStatus, LiveStatus } from '@prisma/client';
 import whois from 'whois';
-
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth'; // Assuming you have this
+import { logActivity } from '@/services/activity-user/activity-user.service'; // Assuming this path
+import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
 // You'll need to install these packages:
 // npm install whois
 // npm install @types/whois (if using TypeScript)
