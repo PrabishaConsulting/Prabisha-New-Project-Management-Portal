@@ -17,6 +17,7 @@ import {
   Building2,
   PlusCircle,
   TabletSmartphone,
+  SquaresIntersectIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -124,20 +125,25 @@ export default function DashboardLayout({
           ],
         },
         {
-          name: "Team",
+          name: "Contact",
           href: `/workspaces/${currentWorkspace?.id}/members`,
           icon: Users,
           children: [
             {
-              name: "All Members",
+              name: "Team",
               href: `/workspaces/${currentWorkspace?.id}/members`,
               icon: Users,
             },
             {
-              name: "Invite Members",
-              href: `/workspaces/${currentWorkspace?.id}/members`,
-              icon: PlusCircle,
+              name: "Clients",
+              href: `/workspaces/clients`,
+              icon: SquaresIntersectIcon
             },
+            // {
+            //   name: "Invite Members",
+            //   href: `/workspaces/${currentWorkspace?.id}/members`,
+            //   icon: PlusCircle,
+            // },
           ],
         },
       ],
