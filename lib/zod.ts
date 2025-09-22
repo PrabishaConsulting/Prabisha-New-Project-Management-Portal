@@ -93,3 +93,26 @@ export const updateTaskStatusSchema = z.object({
 export type UpdateTaskStatusDto = z.infer<typeof updateTaskStatusSchema>;
 
 
+// /lib/schemas/user-schemas.ts
+
+
+// Enums based on your Prisma Schema
+export enum UserType {
+  INTERNAL = "INTERNAL",
+  CLIENT = "CLIENT",
+}
+
+export enum Role {
+    ADMIN = "ADMIN",
+    MEMBER = "MEMBER",
+}
+
+// Zod schema for validating the new client form
+export const CreateClientSchema = z.object({
+  name: z.string().min(3, { message: "Full name must be at least 3 characters." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
+});
+
+// TypeScript type inferred from the schema
+export type CreateClientValue = z.infer<typeof CreateClientSchema>;

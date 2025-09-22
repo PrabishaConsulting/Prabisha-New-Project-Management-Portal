@@ -53,7 +53,7 @@ export async function DELETE(
     await logActivity(db, {
       userId: session.user.id,
       projectId: taskToDelete.projectId,
-      taskId: taskToDelete.id,
+
       action: ACTIVITY_ACTIONS.DELETE_TASK, // Assumes this action type exists
       description: `${userName} deleted the task "${taskToDelete.title}".`,
     });
