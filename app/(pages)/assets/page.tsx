@@ -3,6 +3,7 @@
 import DomainDashboard from '@/components/assets/DomainDashboard';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import AssetsPageComponent from './_components/assets';
 export default function HomePage() {
     const router = useRouter();
   return (
@@ -29,7 +30,7 @@ export default function HomePage() {
         </h2>
         <Button onClick={()=> router.push('/assets/create')} variant={'default'} size={'lg'}>Add New Asset </Button>
         </div>
-        <DomainDashboard />
+        <AssetsPageComponent/>
       </section>
     </main>
   );

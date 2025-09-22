@@ -117,11 +117,11 @@ export default function DashboardLayout({
               href: "/projects",
               icon: FolderOpen,
             },
-            {
-              name: "My Task",
-              href: `/projects/user-work/${session?.user?.id}`,
-              icon: FolderOpen,
-            },
+            // {
+            //   name: "My Task",
+            //   href: `/projects/user-work/${session?.user?.id}`,
+            //   icon: FolderOpen,
+            // },
           ],
         },
         {
@@ -155,13 +155,7 @@ export default function DashboardLayout({
           name: "Assets",
           href: "/assets",
           icon: Package,
-          children: [
-            {
-              name: "All Assets",
-              href: "/assets",
-              icon: Package,
-            },
-          ],
+
         },
         {
           name: "Workspaces",
