@@ -12,6 +12,8 @@ import { Button } from "../ui/button";
 import { PlusIcon } from "lucide-react";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { type Department } from "@prisma/client";
+
 
 type TaskWithAssignee = Task & {
   assignee: { id: string; name: string | null; avatar: string | null } | null;
@@ -28,6 +30,7 @@ interface KanbanColumnProps {
   currentUserId: string;
   members: MemberWithUser[];
   onTaskCreated: (newTask: any) => void;
+  departments: Department[];
 }
 
 export function KanbanColumn({
@@ -37,6 +40,7 @@ export function KanbanColumn({
   currentUserId,
   members,
   onTaskCreated,
+  departments,
 }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.status,
@@ -60,6 +64,7 @@ export function KanbanColumn({
           reporterId={currentUserId}
           members={members}
           onTaskCreated={onTaskCreated}
+          departments={departments}
         >
           <Button
             variant="ghost"

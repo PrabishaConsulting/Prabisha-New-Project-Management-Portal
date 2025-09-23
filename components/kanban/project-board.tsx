@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 // ✨ 1. ADD NEW IMPORTS
 import { LayoutGrid, List, CalendarDays } from "lucide-react";
 import { differenceInDays, isPast, isToday } from "date-fns";
+import { type Department } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProjectContext } from "@/context/project-context";
@@ -53,11 +54,14 @@ type BoardData = Project & {
 interface ProjectBoardProps {
   projectId: string;
   currentUserId: string;
+  departments: Department[];
+  
 }
 
 export default function ProjectBoard({
   projectId,
   currentUserId,
+  departments,
 }: ProjectBoardProps) {
   const [boardData, setBoardData] = useState<BoardData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -416,6 +420,7 @@ export default function ProjectBoard({
                   currentUserId={currentUserId}
                   members={boardData.members}
                   onTaskCreated={handleTaskCreated}
+                  departments={departments}
                 />
               ))}
             </main>

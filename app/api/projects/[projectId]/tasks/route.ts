@@ -1,10 +1,21 @@
+// app/api/projects/[projectId]/tasks/route.ts
+
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { createTask } from '@/services/task-service/task.service';
 import { getCurrentUser } from '@/utils/getcurrentUser';
 import { AuthorizationError } from '@/services/task-service/auth.service';
-import { Priority, TaskStatus } from '@/types';
+import { Priority, TaskStatus } from '@/types'; // Adjust this import if needed
 
+// 1. Define a schema for the attachment object
+const attachmentSchema = z.object({
+  url: z.string().url(),
+  filename: z.string(),
+  fileSize: z.number(),
+  mimeType: z.string(),
+});
+
+// 2. Update the main task schema to include attachments and departmentId
 const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   status: z.nativeEnum(TaskStatus),
@@ -12,11 +23,13 @@ const createTaskSchema = z.object({
   priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
   dueDate: z.string().datetime().optional(),
   assigneeId: z.string().optional(),
+  departmentId: z.string().optional(), // Added departmentId
+  attachments: z.array(attachmentSchema).optional(), // Added attachments array
 });
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
+  { params }: { params: Promise<{ projectId: string }> } // Simplified params type
 ) {
   try {
     const user = await getCurrentUser();
@@ -29,18 +42,21 @@ export async function POST(
 
     const validation = createTaskSchema.safeParse(body);
     if (!validation.success) {
-      return new NextResponse(JSON.stringify(validation.error.format()), { status: 400 });
+      return new NextResponse(JSON.stringify(validation.error.format()), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
     }
-        const { dueDate, ...taskData } = validation.data;
-
+    
+    // 3. The validated data now includes attachments and other new fields
+    const { dueDate, ...taskData } = validation.data;
 
     const newTask = await createTask(
       {
-        ...taskData,
+        ...taskData, // This now correctly passes attachments to your service
         projectId,
         reporterId: user.id,
-         dueDate: dueDate ? new Date(dueDate) : undefined,
-
+        dueDate: dueDate ? new Date(dueDate) : undefined,
       },
       user.id
     );
@@ -52,13 +68,12 @@ export async function POST(
       return new NextResponse(error.message, { status: 403 });
     }
     if (error instanceof z.ZodError) {
-        return new NextResponse(JSON.stringify(error.format()), { status: 400 });
+      return new NextResponse(JSON.stringify(error.format()), { status: 400 });
     }
-    
     if (error instanceof Error) {
-      return new NextResponse(error.message, { status: 500 });
+      // Avoid sending detailed internal error messages to the client in production
+      return new NextResponse("An internal error occurred.", { status: 500 });
     }
-
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

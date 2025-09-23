@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { getAllDepartment } from "@/actions/department-action";
 
 // Define a clear type for the page's props.
 // This is the standard pattern that satisfies Next.js's internal type checks.
@@ -14,7 +15,9 @@ type ProjectPageProps = {
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const session = await getServerSession(authOptions);
   const { projectId } = await params;
+  const department = await getAllDepartment()
 
+  if(!department) return 
   // 1. Check for a valid session and user ID
   if (!session?.user?.id) {
     redirect("/(auth)/sign-in"); // Redirect to your sign-in page
@@ -39,7 +42,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   return (
     <div className="flex-1 min-h-0">
       <div className="flex-1 min-h-0">
-        <ProjectBoard projectId={projectId} currentUserId={currentUserId} />
+        <ProjectBoard projectId={projectId} currentUserId={currentUserId} departments={department} />
       </div>
     </div>
   );

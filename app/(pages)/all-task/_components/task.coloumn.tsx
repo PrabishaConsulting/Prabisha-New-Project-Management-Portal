@@ -92,7 +92,7 @@ export const taskColumns: ColumnDef<TaskData>[] = [
       variant="ghost"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
-      Title
+      Task
       <ArrowUpDown className="ml-2 h-4 w-4" />
     </Button>
   ),
