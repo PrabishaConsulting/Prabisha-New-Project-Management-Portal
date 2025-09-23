@@ -1,81 +1,44 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import useSWR, { useSWRConfig } from "swr";
 import { useDebounce } from "use-debounce";
 import axios from "axios";
 import { toast } from "sonner";
+
+// Component Imports
 import { ProjectCard } from "@/components/profile-module/project-card";
 import { ProjectTable } from "@/components/profile-module/project-table";
+import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
+import { DeleteProjectDialog } from "@/components/modals/DeleteProjectDialog";
+
 // UI Components
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 
 // Icons
-import {
-  Pencil,
-  Briefcase,
-  FolderKanban,
-  LayoutGrid,
-  List,
-  User as UserIcon,
-  Building,
-  CheckCircle,
-  AlertTriangle,
-  MoreVertical,
-  Trash2 as Delete,
-} from "lucide-react";
-import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
-import { DeleteProjectDialog } from "@/components/modals/DeleteProjectDialog";
+import { Briefcase, Building, CheckCircle, AlertTriangle, FolderKanban, LayoutGrid, List } from "lucide-react";
 
 // --- Types ---
 type ViewType = "grid" | "table";
 
 interface UserInfo {
-  id : string
-
+  id: string;
   name: string | null;
   avatar: string | null;
 }
 type ProjectMember = {
   user: UserInfo;
 };
- interface Project {
+interface Project {
   id: string;
   name: string;
   dueDate: string | number | Date;
@@ -86,8 +49,8 @@ type ProjectMember = {
   internalProduct?: { id: string; name: string };
   members: ProjectMember[];
   _count: {
-    tasks : number
-  }
+    tasks: number;
+  };
 }
 
 interface DepartmentStats {
@@ -108,22 +71,31 @@ const fetcher = (url: string) =>
     return res.json();
   });
 
-// --- Main Page Component ---
+// --- Main Page Component with Suspense ---
 export default function ProjectPage() {
+  return (
+    // useSearchParams requires a Suspense boundary in Next.js App Router
+    <Suspense fallback={<DashboardLoader />}>
+      <ProjectPageContent />
+    </Suspense>
+  );
+}
+
+// --- Content Component with Core Logic ---
+function ProjectPageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { mutate } = useSWRConfig();
 
-  const [workspace, setWorkspace] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  // --- State Initialization from URL Search Params ---
+  const [workspace, setWorkspace] = useState<{ id: string; name: string } | null>(null);
   const [view, setView] = useState<ViewType>("grid");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
   const [filters, setFilters] = useState({
-    search: "",
-    status: "ALL",
-    departmentId: "ALL",
+    search: searchParams.get('search') || "",
+    status: searchParams.get('status') || "ALL",
+    departmentId: searchParams.get('departmentId') || "ALL",
   });
   const [debouncedSearch] = useDebounce(filters.search, 500);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
@@ -134,7 +106,6 @@ export default function ProjectPage() {
     fetcher
   );
 
-
   const projectsApiUrl = useMemo(() => {
     if (!workspace) return null;
     const params = new URLSearchParams({
@@ -144,7 +115,6 @@ export default function ProjectPage() {
       search: debouncedSearch,
       status: filters.status,
       departmentId: filters.departmentId,
-
     });
     return `/api/data/projects?${params.toString()}`;
   }, [workspace, page, debouncedSearch, filters.status, filters.departmentId]);
@@ -153,7 +123,7 @@ export default function ProjectPage() {
     data: projectsData,
     error: projectsError,
     isLoading: isProjectsLoading,
-  } = useSWR(projectsApiUrl, fetcher);
+  } = useSWR(projectsApiUrl, fetcher, { keepPreviousData: true });
 
   const { data: departmentsData } = useSWR(
     workspace ? `/api/departments?workspaceId=${workspace.id}` : null,
@@ -167,6 +137,19 @@ export default function ProjectPage() {
   );
 
   // --- Effects ---
+
+  // Effect to update URL when page or filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (page > 1) params.set('page', String(page));
+    if (debouncedSearch) params.set('search', debouncedSearch);
+    if (filters.status !== 'ALL') params.set('status', filters.status);
+    if (filters.departmentId !== 'ALL') params.set('departmentId', filters.departmentId);
+
+    // Using replace to avoid adding to browser history for filter changes
+    router.replace(`?${params.toString()}`, { scroll: false });
+  }, [page, debouncedSearch, filters, router]);
+
   useEffect(() => {
     const savedView = localStorage.getItem("projectView") as ViewType;
     if (savedView) setView(savedView);
@@ -193,6 +176,10 @@ export default function ProjectPage() {
   const handleFilterChange = (key: string, value: string) => {
     setPage(1); // Reset to first page on any filter change
     setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+  
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
   };
 
   const handleSetView = (newView: ViewType) => {
@@ -311,7 +298,7 @@ export default function ProjectPage() {
               </Tabs>
             </div>
 
-            {isProjectsLoading ? (
+            {isProjectsLoading && projects.length === 0 ? (
               view === "grid" ? (
                 <ProjectGridLoader />
               ) : (
@@ -338,7 +325,7 @@ export default function ProjectPage() {
                 <PaginationControls
                   currentPage={page}
                   totalPages={totalPages}
-                  onPageChange={setPage}
+                  onPageChange={handlePageChange}
                 />
               </>
             ) : (
@@ -361,7 +348,8 @@ export default function ProjectPage() {
   );
 }
 
-// --- Sub-Components ---
+
+// --- Sub-Components (Unchanged) ---
 
 const ProjectFilters = ({
   filters,

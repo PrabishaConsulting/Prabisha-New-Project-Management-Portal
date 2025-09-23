@@ -70,10 +70,6 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <h1 className="text-3xl font-bold mb-4">
         Attachments for: {projectWithAttachments.name}
       </h1>
-      <p className="mb-8 text-muted-foreground">
-        The fetched data has been logged to your **server console** (your terminal, not the browser console).
-      </p>
-
       {/* Example of how you could render this data */}
       <div className="space-y-4">
         {allAttachmentsList.length > 0 ? (
