@@ -18,6 +18,7 @@ import {
   PlusCircle,
   TabletSmartphone,
   SquaresIntersectIcon,
+  Package2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -155,6 +156,23 @@ export default function DashboardLayout({
           name: "Assets",
           href: "/assets",
           icon: Package,
+           children: [
+            {
+              name: "Assets",
+              href: "/assets",
+              icon: TabletSmartphone,
+            },
+            {
+              name: "Our Product",
+              href: "/our-product",
+              icon: Package2,
+            },
+            // {
+            //   name: "My Task",
+            //   href: `/projects/user-work/${session?.user?.id}`,
+            //   icon: FolderOpen,
+            // },
+          ],
 
         },
         {
