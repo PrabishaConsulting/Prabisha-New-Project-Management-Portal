@@ -1,6 +1,9 @@
+// app/our-product/_components/client.tsx
+
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { products } from "@prisma/client";
 import { ColumnDef } from "@tanstack/react-table";
@@ -12,25 +15,17 @@ import { DataTable } from "./data-table";
 interface ProductClientProps {
   initialData: products[];
   columns: ColumnDef<products>[];
+  pageCount: number;
+  onDataChange: () => void;
 }
 
-export function ProductClient({ initialData, columns }: ProductClientProps) {
-  const [data, setData] = useState(initialData);
+export function ProductClient({ initialData, columns, pageCount, onDataChange }: ProductClientProps) {
+  const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleProductCreated = (newProduct: products) => {
-    setData((current) => [newProduct, ...current]);
-  };
-
-  const handleProductUpdated = (updatedProduct: products) => {
-    setData((current) =>
-      current.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
-  };
-  
-  const handleProductDeleted = (deletedProductIds: string | string[]) => {
-    const idsToDelete = new Set(Array.isArray(deletedProductIds) ? deletedProductIds : [deletedProductIds]);
-    setData((current) => current.filter((p) => !idsToDelete.has(p.id)));
+  // This handler is called after a create, update, or delete action is successful
+  const handleSuccess = () => {
+    onDataChange(); // Calls the server action to revalidate and refetch
   };
 
   return (
@@ -38,11 +33,11 @@ export function ProductClient({ initialData, columns }: ProductClientProps) {
       <ProductFormModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSuccess={handleProductCreated}
+        onSuccess={handleSuccess}
       />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Our Products ({data.length})</CardTitle>
+          <CardTitle>Our Products</CardTitle>
           <Button onClick={() => setIsModalOpen(true)}>
             <Plus className="mr-2 h-4 w-4" /> Add New
           </Button>
@@ -50,10 +45,10 @@ export function ProductClient({ initialData, columns }: ProductClientProps) {
         <CardContent>
           <DataTable
             columns={columns}
-            data={data}
+            data={initialData}
             searchKey="title"
-            onProductUpdated={handleProductUpdated}
-            onProductDeleted={handleProductDeleted}
+            pageCount={pageCount}
+            onSuccess={handleSuccess} // Pass handler for edit/delete actions
           />
         </CardContent>
       </Card>

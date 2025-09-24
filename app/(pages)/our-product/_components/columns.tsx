@@ -1,3 +1,5 @@
+// app/our-product/_components/columns.tsx
+
 "use client";
 
 import { products } from "@prisma/client";
@@ -6,14 +8,13 @@ import { format } from "date-fns";
 import { CellAction } from "./cell-action";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { cn } from "@/lib/utils";
 
 export const columns: ColumnDef<products>[] = [
   {
     id: "select",
     header: ({ table }) => (
       <Checkbox
-        checked={ table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
+        checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && "indeterminate")}
         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
@@ -28,24 +29,34 @@ export const columns: ColumnDef<products>[] = [
     enableSorting: false,
     enableHiding: false,
   },
+  {
+    id: "serial_number",
+    header: "S.No.",
+    cell: ({ row, table }) => {
+      const { pageIndex, pageSize } = table.getState().pagination;
+      const serialNumber = pageIndex * pageSize + row.index + 1;
+      return <span>{serialNumber}</span>;
+    },
+    enableSorting: false,
+  },
   { accessorKey: "title", header: "Title" },
   {
     accessorKey: "url",
     header: "URL",
     cell: ({ row }) => (
-        <a href={row.original.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-            {row.original.url}
-        </a>
+      <a href={row.original.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        {row.original.url}
+      </a>
     )
   },
   {
     accessorKey: "status",
     header: "Status",
-     cell: ({ row }) => (
-        <Badge variant={row.original.status === "ACTIVE" ? "default" : "secondary"}>
-          {row.original.status}
-        </Badge>
-      ),
+    cell: ({ row }) => (
+      <Badge variant={row.original.status === "ACTIVE" ? "default" : "secondary"}>
+        {row.original.status}
+      </Badge>
+    ),
   },
   {
     accessorKey: "createdAt",
