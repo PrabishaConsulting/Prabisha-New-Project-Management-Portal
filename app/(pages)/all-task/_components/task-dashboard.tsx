@@ -159,13 +159,13 @@ export default function MyWorkPage({ userId }: { userId: string }) {
     <h2 className="text-2xl font-semibold tracking-tight">My Tasks</h2>
     <div className=" ">
 
-    <Button
+    {/* <Button
       className="mt-4 mr-4 sm:mt-0"
       onClick={() => router.push(`/clients/new`)}
     >
       <User2 className="mr-2 h-4 w-4" />
       Add Client
-    </Button>
+    </Button> */}
     <Button
       className="mt-4 mr-4 sm:mt-0"
       onClick={() => setIsDialogOpen(true)}
