@@ -1,11 +1,14 @@
-import { db } from '@/lib/db';
-import { ProjectRole, Task, TaskStatus } from '@prisma/client';
-import { authorizeProjectMember, AuthorizationError } from './auth.service';
-import { TaskFormData } from '@/lib/zod'; // Assuming this type is defined elsewhere
-import { logActivity } from '../activity-user/activity-user.service';
-import { ACTIVITY_ACTIONS } from '../activity-user/helper';
-import { ProjectCreationError } from '@/utils/errors';
-import { sendTaskAssignmentEmail, sendTaskForReviewEmail } from '../mail-service/mail-assignment.service';
+import { db } from "@/lib/db";
+import { ProjectRole, Task, TaskStatus } from "@prisma/client";
+import { authorizeProjectMember, AuthorizationError } from "./auth.service";
+import { TaskFormData } from "@/lib/zod"; // Assuming this type is defined elsewhere
+import { logActivity } from "../activity-user/activity-user.service";
+import { ACTIVITY_ACTIONS } from "../activity-user/helper";
+import { ProjectCreationError } from "@/utils/errors";
+import {
+  sendTaskAssignmentEmail,
+  sendTaskForReviewEmail,
+} from "../mail-service/mail-assignment.service";
 
 type TaskUpdateData = {
   id: string;
@@ -28,7 +31,9 @@ export async function processAndValidateTaskUpdates(
   const existingTasks = await db.task.findMany({
     where: { id: { in: taskIds } },
   });
-  const existingTasksMap = new Map(existingTasks.map((task) => [task.id, task]));
+  const existingTasksMap = new Map(
+    existingTasks.map((task) => [task.id, task])
+  );
 
   const tasksThatChanged: TaskUpdateData[] = [];
   const logEntries = [];
@@ -119,28 +124,44 @@ async function handlePostCreationActions(newTask: Task) {
     // 1. Fetch all required details in parallel for efficiency
     const [reporter, assignee, project] = await Promise.all([
       db.user.findUnique({ where: { id: newTask.reporterId } }),
-      newTask.assigneeId ? db.user.findUnique({ where: { id: newTask.assigneeId } }) : Promise.resolve(null),
-      db.project.findUnique({ where: { id: newTask.projectId } })
+      newTask.assigneeId
+        ? db.user.findUnique({ where: { id: newTask.assigneeId } })
+        : Promise.resolve(null),
+      db.project.findUnique({ where: { id: newTask.projectId } }),
     ]);
 
     // Guard against missing critical data
     if (!reporter || !project) {
-        console.error("Could not find reporter or project for the new task.");
-        return;
+      console.error("Could not find reporter or project for the new task.");
+      return;
     }
 
-    "/projects/cmfp2xoy30003l504pb87fdt3/task/cmftlx3o0000lwg7c9vm033w3?workspaceId=cme1bv47a0002js04h223pd0s"
-    
+    ("/projects/cmfp2xoy30003l504pb87fdt3/task/cmftlx3o0000lwg7c9vm033w3?workspaceId=cme1bv47a0002js04h223pd0s");
+
     const taskUrl = `${process.env.NEXT_PUBLIC_APP_URL}/projects/${project.id}/task/${newTask.id}?workspaceId=cme1bv47a0002js04h223pd0s`;
+    const iso = newTask.dueDate?.toISOString(); // string | undefined
+
+    const dateOnlyUTC = iso
+      ? new Date(iso).toLocaleDateString("en-GB", {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          timeZone: "UTC",
+        })
+      : ""; // or 'TBD' / undefined depending on needs
+
+    // "24 Sep 2025"
 
     // 2. Notify the Reporter (the person who created the task)
-    if (reporter.email) {
+    if (reporter.email && assignee?.email) {
       await sendTaskForReviewEmail({
         reviewerName: reporter.name!,
         reviewerEmail: reporter.email,
         taskTitle: newTask.title,
         projectName: project.name,
         taskUrl,
+        assignerName: assignee.name!, // The creator is the one assigning
+        dueDate: dateOnlyUTC ? dateOnlyUTC : undefined,
       });
     }
 
@@ -155,7 +176,10 @@ async function handlePostCreationActions(newTask: Task) {
       });
     }
   } catch (emailError) {
-    console.error("Failed to send notification email during task creation:", emailError);
+    console.error(
+      "Failed to send notification email during task creation:",
+      emailError
+    );
   }
 }
 
@@ -173,8 +197,8 @@ export async function createTask(data: TaskFormData, userId: string) {
 
   if (!projectMember) {
     throw new ProjectCreationError(
-      'You are not authorized to create tasks in this project.',
-      'FORBIDDEN'
+      "You are not authorized to create tasks in this project.",
+      "FORBIDDEN"
     );
   }
 
@@ -183,13 +207,13 @@ export async function createTask(data: TaskFormData, userId: string) {
     const taskCount = await tx.task.count({
       where: { projectId: taskData.projectId, status: taskData.status },
     });
-    
+
     const createdTask = await tx.task.create({
       data: {
         ...taskData,
         position: taskCount,
         // Set defaults if not provided
-        priority: taskData.priority || 'MEDIUM', 
+        priority: taskData.priority || "MEDIUM",
         dueDate: taskData.dueDate ? new Date(taskData.dueDate) : undefined,
       },
     });
@@ -203,7 +227,7 @@ export async function createTask(data: TaskFormData, userId: string) {
         })),
       });
     }
-    
+
     return createdTask;
   });
 
@@ -222,8 +246,8 @@ export async function createTask(data: TaskFormData, userId: string) {
   ]);
 
   // Use fallback names in case they are not found
-  const userName = user?.name || 'A user';
-  const projectName = project?.name || 'the project';
+  const userName = user?.name || "A user";
+  const projectName = project?.name || "the project";
 
   // Log the activity with the enhanced description
   await logActivity(db, {
@@ -233,11 +257,10 @@ export async function createTask(data: TaskFormData, userId: string) {
     action: ACTIVITY_ACTIONS.CREATE_TASK,
     description: `${userName} created task "${newTask.title}" in ${projectName}`,
   });
-  
+
   // --- MODIFICATION END ---
 
   await handlePostCreationActions(newTask);
-
 
   const taskWithAttachments = await db.task.findUnique({
     where: { id: newTask.id },

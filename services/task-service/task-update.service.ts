@@ -121,6 +121,13 @@ async function handlePostUpdateActions(
           taskTitle: updatedTask.title,
           projectName: originalTask.assignee?.name || "The assignee",
           taskUrl,
+          assignerName: actor.name!,
+          dueDate: updatedTask.dueDate?.toLocaleDateString("en-GB", {
+            year: "numeric",
+            month: "short",
+            day: "2-digit",
+            timeZone: "UTC",
+          }),
         });
       }
     }
