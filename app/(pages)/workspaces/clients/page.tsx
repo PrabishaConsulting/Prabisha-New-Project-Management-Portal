@@ -3,7 +3,6 @@
 import { db } from "@/lib/db";
 import ClientsComponent from "./_components/client.component";
 import { revalidatePath } from "next/cache";
-export const dynamic = 'force-dynamic';
 
 export default async function ClientPage() {
   const [clients, internalProducts] = await Promise.all([
@@ -37,9 +36,11 @@ export default async function ClientPage() {
   
   // Merge and sort
   const combinedData = [...clientsWithType, ...productsWithType];
+  combinedData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
   // Server Action to refresh data
   async function refreshData() {
+    'use server';
     revalidatePath('/workspaces/clients');
   }
 
