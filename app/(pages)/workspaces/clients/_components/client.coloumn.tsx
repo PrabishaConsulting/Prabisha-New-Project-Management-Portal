@@ -2,7 +2,7 @@
 
 "use client";
 
-import { ColumnDef, Row, Table } from "@tanstack/react-table";
+import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -31,6 +31,16 @@ const getInitials = (name: string | null) => {
 };
 
 export const clientColumns: ColumnDef<ClientData>[] = [
+  // --- NEW: Custom Serial Number Column ---
+  {
+    id: 'serialNumber',
+    header: "ID",
+    cell: ({ row }) => {
+      // Format the row index to be three digits with leading zeros (e.g., 1 -> 001)
+      const formattedNumber = String(row.index + 1).padStart(3, '0');
+      return <span>{`PC-${formattedNumber}`}</span>;
+    },
+  },
   {
     accessorKey: "name",
     header: "Client Name",
@@ -47,10 +57,36 @@ export const clientColumns: ColumnDef<ClientData>[] = [
       );
     },
   },
-  { accessorKey: "industry", header: "Industry", cell: ({ row }) => row.original.industry ?? 'N/A' },
-    { accessorKey: "location", header: "Location", cell: ({ row }) => row.original.location ?? 'N/A' },
-  { accessorKey: "email", header: "Email", cell: ({ row }) => row.original.email ?? 'N/A' },
-
+  // --- UPDATED: Sortable Industry Column ---
+  {
+    accessorKey: "industry",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Industry <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div className="pl-4">{row.original.industry ?? 'N/A'}</div>,
+  },
+  // --- UPDATED: Sortable Location Column ---
+  {
+    accessorKey: "location",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Location <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div className="pl-4">{row.original.location ?? 'N/A'}</div>,
+  },
+  // --- UPDATED: Sortable Email Column ---
+  {
+    accessorKey: "email",
+    header: ({ column }) => (
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Email <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => <div className="pl-4">{row.original.email ?? 'N/A'}</div>,
+  },
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
@@ -65,7 +101,6 @@ export const clientColumns: ColumnDef<ClientData>[] = [
     cell: ({ row, table }) => {
       const record = row.original;
       const meta = table.options.meta as { openEditModal: (record: ClientData) => void };
-
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
