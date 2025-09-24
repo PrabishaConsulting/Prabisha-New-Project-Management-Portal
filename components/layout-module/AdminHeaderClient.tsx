@@ -19,5 +19,5 @@ export function AdminHeaderClient() {
   const { data: session } = useSession();
   // Render nothing until session is available to avoid flicker
   if (!session) return null;
-  return <Header session={session} />;
+  return <Header session={session} className=""/>;
 }

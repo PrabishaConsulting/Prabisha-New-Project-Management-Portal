@@ -148,20 +148,20 @@ export function AppSidebar({
   const { state } = useSidebar();
 
   // Local state
-  const [isAddWorkspaceOpen, setIsAddWorkspaceOpen] = useState(false);
-  const [newWorkspaceName, setNewWorkspaceName] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
+  // const [isAddWorkspaceOpen, setIsAddWorkspaceOpen] = useState(false);
+  // const [newWorkspaceName, setNewWorkspaceName] = useState("");
+  // const [isSubmitting, setIsSubmitting] = useState(false);
+  // const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [openGroups, setOpenGroups] = useState<Set<string>>(new Set());
 
   // Handle workspace switching
-  const handleSwitchWorkspace = async (workspaceId: string) => {
-    const workspace = workspaces.find((w) => w.id === workspaceId);
-    if (workspace && onWorkspaceSwitch) {
-      await onWorkspaceSwitch(workspaceId);
-      setIsSwitcherOpen(false);
-    }
-  };
+  // const handleSwitchWorkspace = async (workspaceId: string) => {
+  //   const workspace = workspaces.find((w) => w.id === workspaceId);
+  //   if (workspace && onWorkspaceSwitch) {
+  //     await onWorkspaceSwitch(workspaceId);
+  //     setIsSwitcherOpen(false);
+  //   }
+  // };
 
   // Handle adding new workspace
 
@@ -218,7 +218,11 @@ export function AppSidebar({
           side={side}
           collapsible={collapsible}
           // Use the state from the useSidebar hook to control the width
-          className={cn("border-r", state === "collapsed" && "w-14", className)}
+          className={cn(
+            "border-r",
+            state === "collapsed" ? "w-32" : "w-[16.5rem]", // Increased both sizes
+            className
+          )}
         >
           {/* === SIDEBAR HEADER === */}
           {/* <SidebarHeader className="border-b">
@@ -373,7 +377,7 @@ export function AppSidebar({
                   Powered by{" "}
                   <span className="font-medium">
                     <a
-                      className="text-blue-500"
+                      className="text-secondary"
                       href="https://prabisha.com"
                       target="_blank"
                       rel="noopener noreferrer"

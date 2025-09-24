@@ -4,6 +4,55 @@
 @source "../node_modules/@blocknote/shadcn";
 @custom-variant dark (&:is(.dark *));
 
+:root {
+  --sidebar-width: 288px; /* 72 * 4px = 288px (w-72) */
+  --sidebar-collapsed-width: 48px; /* typical collapsed width */
+}
+
+/* Sidebar trigger positioning */
+.sidebar-trigger {
+  position: fixed;
+  top: 2.5rem; /* top-10 */
+  left: calc(var(--sidebar-width) - 10px);
+  z-index: 50;
+  transition: left 0.2s ease-in-out;
+}
+
+/* When sidebar is collapsed */
+[data-sidebar="collapsed"] .sidebar-trigger {
+  left: calc(var(--sidebar-collapsed-width) - 10px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .sidebar-trigger {
+    left: 10px;
+  }
+  }
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Utility classes */
+.font-poppins {
+  font-family: 'Poppins', sans-serif !important;
+}
+
+.font-montserrat {
+  font-family: 'Montserrat', sans-serif !important;
+}
+
+/* Or use with Tailwind's @layer directive */
+@layer utilities {
+  .font-poppins {
+    font-family: 'Poppins', sans-serif;
+  }
+  
+  .font-montserrat {
+    font-family: 'Montserrat', sans-serif;
+  }
+}
 /* This block allows Tailwind to understand your CSS variables for utility classes like `bg-primary` */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);

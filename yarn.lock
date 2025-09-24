@@ -9186,6 +9186,8 @@ __metadata:
     ts-node: ^10.9.2
     tsx: ^4.20.5
     tw-animate-css: ^1.3.6
+    typeface-montserrat: ^1.1.13
+    typeface-poppins: ^1.1.13
     typescript: ^5.9.2
     use-debounce: ^10.0.5
     vaul: ^1.1.2
@@ -10845,6 +10847,20 @@ __metadata:
   version: 4.41.0
   resolution: "type-fest@npm:4.41.0"
   checksum: 7055c0e3eb188425d07403f1d5dc175ca4c4f093556f26871fe22041bc93d137d54bef5851afa320638ca1379106c594f5aa153caa654ac1a7f22c71588a4e80
+  languageName: node
+  linkType: hard
+
+"typeface-montserrat@npm:^1.1.13":
+  version: 1.1.13
+  resolution: "typeface-montserrat@npm:1.1.13"
+  checksum: f4efa1308731dc75b2e04aa9e61e9b0ca359be412742d5ccac5823ed13a6651a605caebb2a2fab5e7b3ee8ad77276e53d0e468d44250f9644f0556965cccfff5
+  languageName: node
+  linkType: hard
+
+"typeface-poppins@npm:^1.1.13":
+  version: 1.1.13
+  resolution: "typeface-poppins@npm:1.1.13"
+  checksum: 8c39d59c49d83e34be14e57303f13b0f66a6d0531d8a3e93f299bd354ac8633ba73a72f0e46c3a7a1428f3e035f8727802a4cd3b4b91b0ccb3412b6504950d28
   languageName: node
   linkType: hard
 

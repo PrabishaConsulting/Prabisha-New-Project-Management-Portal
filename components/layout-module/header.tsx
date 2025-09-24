@@ -90,7 +90,7 @@ const userMenuItems: UserMenuItem[] = [
   },
 ];
 
-export function Header({ session }: { session: any }) {
+export function Header({ session , className }: { session: any , className: string}) {
   const router = useRouter();
 
   const user = session?.user;
@@ -123,7 +123,7 @@ export function Header({ session }: { session: any }) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 flex items-center justify-between h-[4.54rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+  <header className={`sticky top-0 flex items-center justify-between h-[4.5rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm ${className}`}>
         {/* Left Section: Logo and App Name */}
         <div className="flex items-center gap-4 overflow-hidden">
           <Button

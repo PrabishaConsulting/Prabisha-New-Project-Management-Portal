@@ -226,40 +226,57 @@ export default function DashboardLayout({
   }
 
   return (
-    <ProjectContext.Provider
-      value={{
-        workspaceId: params.workspaceId as string,
-        projectId: params.projectId as string,
-      }}
-    >
-      <SidebarProvider>
-        <div className="flex min-h-screen w-full">
- 
-          {/* Sidebar */}
-          <AppSidebar
-            navigationGroups={navigationGroups}
-            workspaces={workspaces}
-            currentWorkspace={currentWorkspace}
-            onWorkspaceSwitch={handleSwitchWorkspace}
-            onWorkspaceAdd={handleAddWorkspace}
-            showWorkspaceSwitcher={true}
-            variant="sidebar"
-            collapsible="icon"
+<ProjectContext.Provider
+  value={{
+    workspaceId: params.workspaceId as string,
+    projectId: params.projectId as string,
+  }}
+>
+  <SidebarProvider>
+    <div className="flex min-h-screen w-full bg-background">
+      {/* Sidebar with improved laptop sizing */}
+      <AppSidebar
+        navigationGroups={navigationGroups}
+        workspaces={workspaces}
+        currentWorkspace={currentWorkspace}
+        onWorkspaceSwitch={handleSwitchWorkspace}
+        onWorkspaceAdd={handleAddWorkspace}
+        showWorkspaceSwitcher={true}
+        variant="sidebar"
+        collapsible="icon"
+        className="border-r border-border/40 backdrop-blur-sm z-50"
+      />
+      
+      {/* ENHANCED FIX: Main content container with proper flex and overflow handling */}
+      <SidebarInset className="flex-1 flex flex-col min-w-0 max-w-full">
+        <MobileHeader  />
+        
+        {/* Header with laptop-optimized spacing */}
+        <div className="relative">
+          <Header 
+            session={session} 
+            className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
           />
           
-          {/* FIX 1: Added min-w-0 to the main content container */}
-          <SidebarInset className="flex-1 flex flex-col min-w-0">
-            <MobileHeader />
-            <Header session={session}/>
-            <SidebarTrigger className=" absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-5 left-[-0.9rem] and z-50"  />
-
-            {/* FIX 2: Added overflow-x-auto to the main content section */}
-            <main className="flex-1 p-4 lg:p-6 overflow-x-auto">
-              {children}
-            </main>
-          </SidebarInset>
+          {/* Improved SidebarTrigger positioning for laptops */}
+          <SidebarTrigger className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-9 left-[-0.85rem] and z-50" />
         </div>
-      </SidebarProvider>
-    </ProjectContext.Provider>
+
+        {/* ENHANCED FIX: Main content with optimized laptop layout */}
+        <main className="flex-1 relative">
+          {/* Content wrapper with proper padding and max-width for laptops */}
+          <div className="h-full w-full">
+            <div className="container mx-auto h-full px-4 py-6 lg:px-8 lg:py-8 max-w-7xl">
+              {/* Scrollable content area */}
+              <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                {children}
+              </div>
+            </div>
+          </div>
+        </main>
+      </SidebarInset>
+    </div>
+  </SidebarProvider>
+</ProjectContext.Provider>
   );
 }

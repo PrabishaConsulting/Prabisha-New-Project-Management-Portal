@@ -96,6 +96,8 @@
     "sonner": "^2.0.7",
     "swr": "^2.3.6",
     "tailwind-merge": "^3.3.1",
+    "typeface-montserrat": "^1.1.13",
+    "typeface-poppins": "^1.1.13",
     "use-debounce": "^10.0.5",
     "vaul": "^1.1.2",
     "whois": "^2.15.0",
