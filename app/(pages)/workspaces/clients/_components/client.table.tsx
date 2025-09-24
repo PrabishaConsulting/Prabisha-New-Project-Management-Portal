@@ -1,4 +1,4 @@
-// app/(pages)/workspaces/clients/client-table.tsx
+// app/(pages)/workspaces/clients/_components/client-table.tsx
 
 "use client";
 
@@ -11,25 +11,24 @@ import {
   getFilteredRowModel,
   flexRender,
   SortingState,
-  ColumnFiltersState, // Import ColumnFiltersState
+  ColumnFiltersState,
 } from "@tanstack/react-table";
 import { ClientData, clientColumns } from "./client.coloumn";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EditRecordModal } from "@/components/modals/EditRecordModal";
+import { DeleteConfirmationModal } from "./DeleteConfirmationModal";
 import { Input } from "@/components/ui/input";
 
 interface ClientTableProps {
   data: ClientData[];
-  onDataChange: () => void;
 }
 
-export default function ClientTable({ data, onDataChange }: ClientTableProps) {
+export default function ClientTable({ data }: ClientTableProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState<ClientData | null>(null);
 
   const [sorting, setSorting] = useState<SortingState>([]);
-  
-  // --- NEW: State for column-specific filters ---
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
 
@@ -41,23 +40,26 @@ export default function ClientTable({ data, onDataChange }: ClientTableProps) {
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
-      columnFilters, // Add columnFilters to state
+      columnFilters,
       globalFilter,
     },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters, // Add the handler
+    onColumnFiltersChange: setColumnFilters,
     onGlobalFilterChange: setGlobalFilter,
     meta: {
       openEditModal: (record: ClientData) => {
         setSelectedRecord(record);
         setIsEditModalOpen(true);
       },
+      openDeleteModal: (record: ClientData) => {
+        setSelectedRecord(record);
+        setIsDeleteModalOpen(true);
+      },
     },
   });
 
   return (
     <div className="space-y-4">
-      {/* --- UPDATED: Filter Section --- */}
       <div className="flex items-center gap-4 flex-wrap">
         <Input
           placeholder="Search all columns..."
@@ -67,9 +69,7 @@ export default function ClientTable({ data, onDataChange }: ClientTableProps) {
         />
         <Input
           placeholder="Filter by location..."
-          // Get the current filter value for the 'location' column
           value={(table.getColumn("location")?.getFilterValue() as string) ?? ""}
-          // Set the filter value for the 'location' column
           onChange={(e) =>
             table.getColumn("location")?.setFilterValue(e.target.value)
           }
@@ -77,9 +77,7 @@ export default function ClientTable({ data, onDataChange }: ClientTableProps) {
         />
         <Input
           placeholder="Filter by industry..."
-          // Get the current filter value for the 'industry' column
           value={(table.getColumn("industry")?.getFilterValue() as string) ?? ""}
-          // Set the filter value for the 'industry' column
           onChange={(e) =>
             table.getColumn("industry")?.setFilterValue(e.target.value)
           }
@@ -121,11 +119,16 @@ export default function ClientTable({ data, onDataChange }: ClientTableProps) {
           </TableBody>
         </Table>
       </div>
+
       <EditRecordModal
         isOpen={isEditModalOpen}
         setIsOpen={setIsEditModalOpen}
         record={selectedRecord}
-        onRecordUpdated={onDataChange}
+      />
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        record={selectedRecord}
       />
     </div>
   );

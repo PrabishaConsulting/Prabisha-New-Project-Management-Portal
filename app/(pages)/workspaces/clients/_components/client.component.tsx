@@ -1,36 +1,28 @@
+// _components/client.component.tsx
+
 "use client";
 
-import React from "react"
+import React from "react";
 import ClientTable from "./client.table";
-import { ClientData } from "./client.coloumn";
-import { AddInternalProductModal } from "@/components/modals/AddInternalProductModal";
+import { AddAccountModal } from "@/components/modals/AddAccountModal";
 import { cn } from "@/lib/utils";
 
 interface ClientsComponentProps {
-  data: any[]; // Use a more specific type here
-  onDataChange: () => void;
+  data: any[];
 }
 
-export default function ClientsComponent({ data, onDataChange }: ClientsComponentProps) {
-
-  // **IMPORTANT**: Replace this with your actual data fetch.
-  // This is where you would get your client list from your database.
- 
-  const refresh = () => {
-    window.location.reload();
-  }
-
+export default function ClientsComponent({ data }: ClientsComponentProps) {
   return (
-    <div className="container mx-auto ">
+    <div className="container mx-auto">
       <div className="mb-6 flex justify-between items-center">
-
-      <h1 className="text-2xl font-bold mb-6">Clients</h1>
-      <div className={ cn( " flex gap-4 py-4 justify-center items-center")} >
-
-      <AddInternalProductModal onProductAdded={refresh} name="Add Client" />
+        <h1 className="text-2xl font-bold">Accounts</h1>
+        <div className={cn("flex gap-4")}>
+          {/* You can now easily add buttons for both types */}
+          <AddAccountModal accountType="CLIENT" buttonText="Add Client" />
+          <AddAccountModal accountType="INTERNAL_PRODUCT" buttonText="Add Client without Mail" />
+        </div>
       </div>
-      </div>
-      <ClientTable data={data} onDataChange={onDataChange} />
+      <ClientTable data={data} />
     </div>
   );
 }

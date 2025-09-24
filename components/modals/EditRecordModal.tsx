@@ -3,22 +3,24 @@
 "use client";
 
 import { useState, FormEvent, useEffect } from "react";
+import { useRouter } from "next/navigation"; // Import the router
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import { ClientData } from "@/app/(pages)/workspaces/clients/_components/client.coloumn";
+import { ClientData } from "@/app/(pages)/workspaces/clients/_components/client.coloumn"; // Corrected path
+import { updateAccount } from "@/actions/update-client-action"; // Corrected path to your actions file
 
 interface EditRecordModalProps {
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   record: ClientData | null;
-  onRecordUpdated: () => void;
 }
 
-export function EditRecordModal({ isOpen, setIsOpen, record, onRecordUpdated }: EditRecordModalProps) {
+export function EditRecordModal({ isOpen, setIsOpen, record }: EditRecordModalProps) {
+  const router = useRouter(); // Initialize the router to refresh the page
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", industry: "", location: "" });
 
@@ -39,31 +41,26 @@ export function EditRecordModal({ isOpen, setIsOpen, record, onRecordUpdated }: 
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!record || !formData.name?.trim()) return toast.error("Name cannot be empty.");
+    if (!record || !formData.name?.trim()) {
+      toast.error("Name cannot be empty.");
+      return;
+    }
     setIsLoading(true);
 
-    const payload = { id: record.id, type: record.__type, ...formData };
+    // --- FIX: Use the Server Action directly instead of fetch ---
+    const result = await updateAccount(record.id, record.__type, formData);
 
-    toast.promise(
-      fetch("/api/accounts", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).then(async (response) => {
-        if (!response.ok) throw new Error((await response.json()).error || "Failed to update.");
-        return response.json();
-      }),
-      {
-        loading: "Updating record...",
-        success: (data) => {
-          onRecordUpdated();
-          setIsOpen(false);
-          return `Record "${data.name}" updated successfully!`;
-        },
-        error: (err) => err.message,
-        finally: () => setIsLoading(false),
-      }
-    );
+    if (result.success) {
+      toast.success(`Record "${formData.name}" updated successfully!`);
+      setIsOpen(false);
+      
+      // This is the correct way to refresh the data on the page
+      router.refresh(); 
+    } else {
+      toast.error(result.error);
+    }
+
+    setIsLoading(false);
   };
 
   return (

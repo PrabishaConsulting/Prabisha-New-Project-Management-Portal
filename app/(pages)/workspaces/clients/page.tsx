@@ -2,7 +2,8 @@
 
 import { db } from "@/lib/db";
 import ClientsComponent from "./_components/client.component";
-import { revalidatePath } from "next/cache";
+
+export const dynamic = 'force-dynamic'; // Ensures the page is always fresh
 
 export default async function ClientPage() {
   const [clients, internalProducts] = await Promise.all([
@@ -38,11 +39,7 @@ export default async function ClientPage() {
   const combinedData = [...clientsWithType, ...productsWithType];
   combinedData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-  // Server Action to refresh data
-  async function refreshData() {
-    'use server';
-    revalidatePath('/workspaces/clients');
-  }
+
 
   return (
     <main className="p-4 md:p-6">
@@ -52,7 +49,7 @@ export default async function ClientPage() {
           A combined list of all clients and internal products.
         </p>
       </div>
-      <ClientsComponent data={combinedData} onDataChange={refreshData} />
+      <ClientsComponent data={combinedData}  />
     </main>
   );
 }

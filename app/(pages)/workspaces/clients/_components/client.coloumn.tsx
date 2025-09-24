@@ -1,4 +1,4 @@
-// app/(pages)/workspaces/clients/client-columns.tsx
+// app/(pages)/workspaces/clients/_components/client-columns.tsx
 
 "use client";
 
@@ -31,12 +31,10 @@ const getInitials = (name: string | null) => {
 };
 
 export const clientColumns: ColumnDef<ClientData>[] = [
-  // --- NEW: Custom Serial Number Column ---
   {
     id: 'serialNumber',
     header: "ID",
     cell: ({ row }) => {
-      // Format the row index to be three digits with leading zeros (e.g., 1 -> 001)
       const formattedNumber = String(row.index + 1).padStart(3, '0');
       return <span>{`PC-${formattedNumber}`}</span>;
     },
@@ -57,7 +55,6 @@ export const clientColumns: ColumnDef<ClientData>[] = [
       );
     },
   },
-  // --- UPDATED: Sortable Industry Column ---
   {
     accessorKey: "industry",
     header: ({ column }) => (
@@ -67,7 +64,6 @@ export const clientColumns: ColumnDef<ClientData>[] = [
     ),
     cell: ({ row }) => <div className="pl-4">{row.original.industry ?? 'N/A'}</div>,
   },
-  // --- UPDATED: Sortable Location Column ---
   {
     accessorKey: "location",
     header: ({ column }) => (
@@ -77,7 +73,6 @@ export const clientColumns: ColumnDef<ClientData>[] = [
     ),
     cell: ({ row }) => <div className="pl-4">{row.original.location ?? 'N/A'}</div>,
   },
-  // --- UPDATED: Sortable Email Column ---
   {
     accessorKey: "email",
     header: ({ column }) => (
@@ -100,11 +95,15 @@ export const clientColumns: ColumnDef<ClientData>[] = [
     id: "actions",
     cell: ({ row, table }) => {
       const record = row.original;
-      const meta = table.options.meta as { openEditModal: (record: ClientData) => void };
+      const meta = table.options.meta as {
+        openEditModal: (record: ClientData) => void;
+        openDeleteModal: (record: ClientData) => void;
+      };
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -113,7 +112,12 @@ export const clientColumns: ColumnDef<ClientData>[] = [
             <DropdownMenuItem onClick={() => meta.openEditModal(record)}>
               Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+            <DropdownMenuItem
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+              onClick={() => meta.openDeleteModal(record)}
+            >
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
