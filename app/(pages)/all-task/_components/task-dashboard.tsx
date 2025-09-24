@@ -152,12 +152,6 @@ export default function MyWorkPage({ userId }: { userId: string }) {
   const filterDoneTasks = (tasks: DashboardTask[]) =>
     tasks.filter((task) => task.status !== "DONE");
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return "Good Morning";
-    if (hour < 18) return "Good Afternoon";
-    return "Good Evening";
-  };
   return (
 <div className="space-y-6">
   {/* Header with Title & Add Task Button */}

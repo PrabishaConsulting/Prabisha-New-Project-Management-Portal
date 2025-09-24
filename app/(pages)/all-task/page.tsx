@@ -8,7 +8,7 @@ import StatusCard from "./_components/task.stats";
 import { TaskData } from "./_components/task.coloumn";
 import { StatusCardSkeleton, TaskDashboardSkeleton, TaskTableSkeleton } from "./_components/skeletons";
 import { db } from "@/lib/db";
-
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AllTaskPage() {
   const user = await getCurrentUser();
@@ -45,18 +45,22 @@ export default async function AllTaskPage() {
     dueDate: task.dueDate ? task.dueDate.toISOString() : null,
   }));
 
-    const getGreeting = () => {
-      const hour = new Date().getHours();
-      if (hour < 12) return "Good Morning";
-      if (hour < 18) return "Good Afternoon";
-      return "Good Evening";
-    };
+  // Filter tasks for current user (My Tasks) and team tasks
+  const myTasks = safeTasks.filter(task => task.assigneeId === user.id);
+  const teamTasks = safeTasks.filter(task => task.assigneeId !== user.id);
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good Morning";
+    if (hour < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">
         {getGreeting()} {user.name}!{" "}
-        All your tasks for{" "}
+        Tasks for{" "}
         {today.toLocaleDateString("en-US", {
           weekday: "long",
           year: "numeric",
@@ -65,33 +69,40 @@ export default async function AllTaskPage() {
         })}
       </h1>
 
-      <div className="mb-6 space-y-4">
-        {/* Stats Card with Suspense */}
-       
+      {/* My Tasks Card */}
+      <Card>
+        <CardHeader>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Task Dashboard with Suspense */}
+          <Suspense fallback={<TaskDashboardSkeleton />}>
+            <TaskDashboard userId={user?.id} />
+          </Suspense>
+          
+          {/* My Tasks Table */}
+          <Suspense fallback={<TaskTableSkeleton />}>
+            <TaskTable data={myTasks} />
+          </Suspense>
+        </CardContent>
+      </Card>
 
-        {/* Task Dashboard with Suspense */}
-        <Suspense fallback={<TaskDashboardSkeleton />}>
-          <TaskDashboard userId={user?.id} />
-        </Suspense>
-      </div>
-
-      <h1 className="text-2xl font-bold mb-4">
-        All Team Tasks for{" "}
-        {today.toLocaleDateString("en-US", {
-          weekday: "long",
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })}
-      </h1>
-
-      {/* Task Table with Suspense */}
-       <Suspense fallback={<StatusCardSkeleton />}>
-          <StatusCard {...stats} />
-        </Suspense>
-      <Suspense fallback={<TaskTableSkeleton />}>
-        <TaskTable data={safeTasks} />
-      </Suspense>
+      {/* Team Tasks Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl">Team Tasks</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Team Stats Card with Suspense */}
+          <Suspense fallback={<StatusCardSkeleton />}>
+            <StatusCard {...stats} />
+          </Suspense>
+          
+          {/* Team Tasks Table */}
+          <Suspense fallback={<TaskTableSkeleton />}>
+            <TaskTable data={teamTasks} />
+          </Suspense>
+        </CardContent>
+      </Card>
     </div>
   );
 }
