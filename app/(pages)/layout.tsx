@@ -108,7 +108,7 @@ export default function DashboardLayout({
           icon: FolderOpen,
           children: [
             {
-              name: "All-Tasks",
+              name: "All Tasks",
               href: "/all-task",
               icon: TabletSmartphone,
             }
