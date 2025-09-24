@@ -1,10 +1,11 @@
 // /app/api/users/client/route.ts
 
-import { NextResponse } from "next/server";
+import { NextResponse , NextRequest} from "next/server";
 import bcrypt from "bcryptjs";
 
 import { db } from "@/lib/db"; // Your Prisma client instance
 import { CreateClientSchema } from "@/lib/zod";
+import { UserType } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
@@ -49,5 +50,64 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("[CLIENT_USER_POST_ERROR]", error);
     return new NextResponse("Internal Server Error", { status: 500 });
+  }
+}
+
+
+// app/api/accounts/route.ts
+
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const data = await req.json();
+    const { id, type, ...updateData } = data; // Destructure type and the rest of the data
+
+    if (!id || !type) {
+      return NextResponse.json(
+        { error: "Record ID and type are required" },
+        { status: 400 }
+      );
+    }
+
+    let updatedRecord;
+
+    // Logic to update a 'real' user
+    if (type === UserType.CLIENT) {
+      updatedRecord = await db.user.update({
+        where: { id },
+        data: {
+          name: updateData.name,
+          email: updateData.email,
+          industry: updateData.industry,
+          location: updateData.location,
+        },
+      });
+    } 
+    // Logic to update an 'internal' product
+    else if (type === 'INTERNAL_PRODUCT') { 
+      // Note: Comparing against a string if InternalProduct is not in your enum
+      updatedRecord = await db.internalProduct.update({
+        where: { id },
+        data: {
+          name: updateData.name,
+          email: updateData.email,
+          industry: updateData.industry,
+          location: updateData.location,
+        },
+      });
+    } 
+    // Handle invalid type
+    else {
+      return NextResponse.json({ error: "Invalid record type" }, { status: 400 });
+    }
+
+    return NextResponse.json(updatedRecord, { status: 200 });
+
+  } catch (error) {
+    console.error("PATCH /api/accounts error:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

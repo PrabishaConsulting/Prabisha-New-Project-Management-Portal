@@ -237,7 +237,7 @@ export function CreateProjectModal({
                       <SelectContent>{internalProducts.map((prod) => (<SelectItem key={prod.id} value={prod.id}>{prod.name}</SelectItem>))}</SelectContent>
                     </Select>
                     {/* --- NEW --- Button to open the "Add Product" modal */}
-                    <AddInternalProductModal onProductAdded={fetchData} />
+                    <AddInternalProductModal onProductAdded={fetchData}  name=""/>
                   </div>
                 </div>
               )}

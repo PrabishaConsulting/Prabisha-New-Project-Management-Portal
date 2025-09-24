@@ -6,13 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { Eye, EyeOff } from 'lucide-react'; // Make sure you have lucide-react installed
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-
 
 // 1. Define the validation schema with Zod
 const ResetPasswordSchema = z.object({
@@ -20,9 +19,10 @@ const ResetPasswordSchema = z.object({
   confirmPassword: z.string()
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match.",
-  path: ["confirmPassword"], // Show the error on the confirm password field
+  path: ["confirmPassword"], // Show the error on the confirmPassword field
 });
 
+// Infer the form data type from the schema
 type ResetPasswordFormData = z.infer<typeof ResetPasswordSchema>;
 
 export function ResetPasswordForm() {
@@ -32,9 +32,12 @@ export function ResetPasswordForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(ResetPasswordSchema),
+    mode: 'onChange', // Validate fields as the user types
     defaultValues: {
       password: '',
       confirmPassword: '',
@@ -48,7 +51,6 @@ export function ResetPasswordForm() {
 
     startTransition(async () => {
       try {
-        // Replace with your actual API endpoint for resetting the password
         const response = await fetch('/api/auth/reset-password', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -65,10 +67,12 @@ export function ResetPasswordForm() {
         }
         
         setSuccess('Your password has been reset successfully!');
-
         toast.success('Password updated! You can now log in.');
-        window.location.href = '/login';
         form.reset();
+        // Optionally redirect after a delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
 
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -78,21 +82,6 @@ export function ResetPasswordForm() {
     });
   };
 
-  // If the user has already successfully reset, don't show the form
-  if (success) {
-    return (
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Success</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-green-600">{success}</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // If there's no token in the URL, show an error message
   if (!token) {
     return (
       <Card className="w-full max-w-md">
@@ -100,7 +89,7 @@ export function ResetPasswordForm() {
           <CardTitle>Error</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-red-500">Invalid password reset link. The link may have expired or is incorrect.</p>
+          <p className="text-destructive">Invalid password reset link. The link may have expired or is incorrect.</p>
         </CardContent>
       </Card>
     );
@@ -120,9 +109,24 @@ export function ResetPasswordForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>New Password</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="password" placeholder="••••••••" disabled={isPending} />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type={showPassword ? "text" : "password"} 
+                        placeholder="••••••••" 
+                        disabled={isPending} 
+                      />
+                    </FormControl>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                      disabled={isPending}
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -133,14 +137,30 @@ export function ResetPasswordForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Confirm New Password</FormLabel>
-                  <FormControl>
-                    <Input {...field} type="password" placeholder="••••••••" disabled={isPending} />
-                  </FormControl>
+                  <div className="relative">
+                    <FormControl>
+                      <Input 
+                        {...field} 
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="••••••••" 
+                        disabled={isPending} 
+                      />
+                    </FormControl>
+                    <button 
+                      type="button" 
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                      disabled={isPending}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
+            {success && <p className="text-sm text-emerald-600">{success}</p>}
             <Button type="submit" className="w-full" disabled={isPending}>
               {isPending ? 'Resetting...' : 'Reset Password'}
             </Button>

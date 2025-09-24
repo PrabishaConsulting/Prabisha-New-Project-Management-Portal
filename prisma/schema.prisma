@@ -60,6 +60,8 @@ model User {
   resetTokenExpiry     DateTime?
   departmentId         String?
   userType             UserType              @default(INTERNAL)
+  industry             String?
+  location             String?
   accounts             Account[]
   activityLogs         ActivityLog[]
   projectMemberships   ProjectMember[]
@@ -251,6 +253,9 @@ model WorkspaceInvitation {
 model InternalProduct {
   id        String    @id @default(cuid())
   name      String    @unique
+  email     String?
+  industry  String?
+  location  String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   projects  Project[]

@@ -1,75 +1,86 @@
-// app/clients/client-columns.tsx
+// app/(pages)/workspaces/clients/client-columns.tsx
 
 "use client";
 
-import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ColumnDef, Row, Table } from "@tanstack/react-table";
+import { ArrowUpDown, MoreHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { User } from "@prisma/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-// This type defines the shape of our client data, ensuring it's safe for the client.
-// It uses fields from your `User` schema.
-export type ClientData = Pick<User, "id" | "name" | "email" | "avatar"> & {
-  createdAt: Date; // Dates are passed as strings
+export type ClientData = {
+  id: string;
+  name: string | null;
+  email: string | null;
+  avatar: string | null;
+  location: string | null;
+  industry: string | null;
+  createdAt: Date;
+  __type: 'CLIENT' | 'INTERNAL_PRODUCT';
 };
 
-// Helper to get initials from a name for the avatar fallback
-const getInitials = (name: string) => {
-  const names = name.split(" ");
-  const initials = names.map((n) => n[0]).join("");
-  return initials.toUpperCase();
+const getInitials = (name: string | null) => {
+  if (!name) return "??";
+  return name.split(" ").map((n) => n[0]).join("").toUpperCase();
 };
 
 export const clientColumns: ColumnDef<ClientData>[] = [
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Client Name
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    header: "Client Name",
     cell: ({ row }) => {
-      const client = row.original;
+      const { name, avatar } = row.original;
       return (
-        <div className="flex items-center space-x-3 pl-4">
+        <div className="flex items-center space-x-3">
           <Avatar>
-            <AvatarImage src={client.avatar ?? undefined} alt={client.name} />
-            <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
+            <AvatarImage src={avatar ?? undefined} alt={name ?? ''} />
+            <AvatarFallback>{getInitials(name)}</AvatarFallback>
           </Avatar>
-          <span className="font-medium">{client.name}</span>
+          <span className="font-medium">{name ?? 'N/A'}</span>
         </div>
       );
     },
   },
-  {
-    accessorKey: "email",
-    header: "Email",
-    cell: ({ row }) => <div>{row.getValue("email")}</div>,
-  },
+  { accessorKey: "email", header: "Email", cell: ({ row }) => row.original.email ?? 'N/A' },
+  { accessorKey: "location", header: "Location", cell: ({ row }) => row.original.location ?? 'N/A' },
+  { accessorKey: "industry", header: "Industry", cell: ({ row }) => row.original.industry ?? 'N/A' },
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Date Joined
-        <ArrowUpDown className="ml-2 h-4 w-4" />
+      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+        Date Joined <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <div className="pl-4">
-        {new Date(row.original.createdAt).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        })}
-      </div>
-    ),
+    cell: ({ row }) => new Date(row.original.createdAt).toLocaleDateString("en-GB"),
+  },
+  {
+    id: "actions",
+    cell: ({ row, table }) => {
+      const record = row.original;
+      const meta = table.options.meta as { openEditModal: (record: ClientData) => void };
+
+      return (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+            <DropdownMenuItem onClick={() => meta.openEditModal(record)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    },
   },
 ];
