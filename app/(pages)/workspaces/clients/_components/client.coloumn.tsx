@@ -47,9 +47,10 @@ export const clientColumns: ColumnDef<ClientData>[] = [
       );
     },
   },
-  { accessorKey: "email", header: "Email", cell: ({ row }) => row.original.email ?? 'N/A' },
-  { accessorKey: "location", header: "Location", cell: ({ row }) => row.original.location ?? 'N/A' },
   { accessorKey: "industry", header: "Industry", cell: ({ row }) => row.original.industry ?? 'N/A' },
+    { accessorKey: "location", header: "Location", cell: ({ row }) => row.original.location ?? 'N/A' },
+  { accessorKey: "email", header: "Email", cell: ({ row }) => row.original.email ?? 'N/A' },
+
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
