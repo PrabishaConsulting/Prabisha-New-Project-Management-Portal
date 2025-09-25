@@ -93,7 +93,7 @@ export async function GET(
 
     // 5. Calculate overall stats
     const stats = {
-      todo: tasksFromDb.filter((t) => t.status === 'TODO').length,
+      todo: tasksFromDb.filter((t) => t.status === 'TO_DO').length,
       inProgress: tasksFromDb.filter((t) => t.status === 'IN_PROGRESS').length,
       review: tasksFromDb.filter((t) => t.status === 'REVIEW').length,
       done: tasksFromDb.filter((t) => t.status === 'DONE').length,

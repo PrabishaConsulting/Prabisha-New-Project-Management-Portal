@@ -323,7 +323,7 @@ model Task {
   reporterId     String
   position       Int
   priority       Priority         @default(MEDIUM)
-  status         TaskStatus       @default(TODO)
+  status         TaskStatus       @default(TO_DO)
   estimatedHours Decimal?         @db.Decimal(5, 2)
   actualHours    Decimal          @default(0.00) @db.Decimal(5, 2)
   startDate      DateTime?
@@ -526,7 +526,8 @@ enum ProjectStatus {
 }
 
 enum TaskStatus {
-  TODO
+  
+  TO_DO
   IN_PROGRESS
   REVIEW
   DONE

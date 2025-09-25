@@ -130,7 +130,7 @@ CREATE TABLE `tasks` (
     `reporterId` VARCHAR(191) NOT NULL,
     `position` INTEGER NOT NULL,
     `priority` ENUM('LOW', 'MEDIUM', 'HIGH', 'URGENT') NOT NULL DEFAULT 'MEDIUM',
-    `status` ENUM('TODO', 'IN_PROGRESS', 'REVIEW', 'DONE') NOT NULL DEFAULT 'TODO',
+    `status` ENUM('TO_DO', 'IN_PROGRESS', 'REVIEW', 'DONE') NOT NULL DEFAULT 'TO_DO',
     `estimatedHours` DECIMAL(5, 2) NULL,
     `actualHours` DECIMAL(5, 2) NOT NULL DEFAULT 0,
     `startDate` DATETIME(3) NULL,

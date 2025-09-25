@@ -86,7 +86,7 @@ import Image from "next/image";
 export interface NavigationItem {
   name: string;
   href: string;
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string }> | null;
   badge?: string | number;
   children?: NavigationItem[];
   isActive?: boolean;
@@ -420,7 +420,9 @@ export function AppSidebar({
                                     )}
                                     className="justify-center"
                                   >
-                                    <item.icon className="h-4 w-4" />
+                                    {item.icon && (
+                                      <item.icon className="h-4 w-4" />
+                                    )}
                                     <span className="sr-only">{item.name}</span>
                                   </SidebarMenuButton>
                                 </SidebarMenuItem>
@@ -443,7 +445,10 @@ export function AppSidebar({
                                         pathname === child.href && "bg-accent"
                                       )}
                                     >
-                                      <child.icon className="h-4 w-4" />
+                                      {child.icon && (
+                                        <child.icon className="h-4 w-4" />
+                                      )}
+
                                       <span>{child.name}</span>
                                     </Link>
                                   ))}
@@ -463,7 +468,9 @@ export function AppSidebar({
                                     className="justify-center"
                                   >
                                     <Link href={item.href}>
-                                      <item.icon className="h-4 w-4" />
+                                      {item.icon && (
+                                        <item.icon className="h-4 w-4" />
+                                      )}
                                       <span className="sr-only">
                                         {item.name}
                                       </span>
@@ -500,7 +507,10 @@ export function AppSidebar({
                                     href={item.href}
                                     className="flex items-center gap-2 w-full"
                                   >
-                                    <item.icon className="h-4 w-4" />
+                                    {item.icon && (
+                                      <item.icon className="h-4 w-4" />
+                                    )}
+
                                     <span className="flex-1">{item.name}</span>
                                     {item.badge && (
                                       <Badge
@@ -543,7 +553,10 @@ export function AppSidebar({
                                           href={child.href}
                                           className="flex items-center gap-2 w-full"
                                         >
-                                          <child.icon className="h-3 w-3" />
+                                          {child.icon && (
+                                            <child.icon className="h-4 w-4" />
+                                          )}
+
                                           <span className="flex-1">
                                             {child.name}
                                           </span>
@@ -571,7 +584,8 @@ export function AppSidebar({
                                 href={item.href}
                                 className="flex items-center gap-2 w-full"
                               >
-                                <item.icon className="h-4 w-4" />
+                                {item.icon && <item.icon className="h-4 w-4" />}
+
                                 <span className="flex-1">{item.name}</span>
                                 {item.badge && (
                                   <Badge

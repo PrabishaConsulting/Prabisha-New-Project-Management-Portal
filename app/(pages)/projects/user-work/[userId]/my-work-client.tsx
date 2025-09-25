@@ -285,7 +285,7 @@ const TaskTable = ({
             Completed
           </Badge>
         );
-      case "TODO":
+      case "TO_DO":
         return (
           <Badge className="text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20">
             To Do

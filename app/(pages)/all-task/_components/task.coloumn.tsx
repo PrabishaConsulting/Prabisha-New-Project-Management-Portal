@@ -39,7 +39,7 @@ const formatStatus = (status: string) => {
   if (!status) return "-";
 
   const specialCases: Record<string, string> = {
-    TODO: "To Do",
+    TO_DO: "To Do",
     IN_PROGRESS: "In Progress",
     DONE: "Done",
   };
@@ -55,15 +55,15 @@ const formatStatus = (status: string) => {
 };
 
 export const taskColumns: ColumnDef<TaskData>[] = [
- {
-  id: "pti-id",
-  header: "Task ID",
-  cell: ({ row, table }) => {
-    const totalRows = table.getRowModel().rows.length;
-    const serialNumber = String(totalRows - row.index).padStart(4, "0");
-    return <div className="font-medium">PTI-{serialNumber}</div>;
+  {
+    id: "pti-id",
+    header: "Task ID",
+    cell: ({ row, table }) => {
+      const totalRows = table.getRowModel().rows.length;
+      const serialNumber = String(totalRows - row.index).padStart(4, "0");
+      return <div className="font-medium">PTI-{serialNumber}</div>;
+    },
   },
-},
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
@@ -85,23 +85,28 @@ export const taskColumns: ColumnDef<TaskData>[] = [
       </div>
     ),
   },
- {
-  accessorKey: "title",
-  header: ({ column }) => (
-    <Button
-      variant="ghost"
-      onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-    >
-      Task
-      <ArrowUpDown className="ml-2 h-4 w-4" />
-    </Button>
-  ),
-  cell: ({ row }) => (
-    <span className=" capitalize ">
-      {row.getValue("title")}
-    </span>
-  ),
-},
+  {
+    accessorKey: "title",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Task
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    cell: ({ row }) => (
+      <div className="truncate capitalize w-[20rem]">
+        {row.getValue("title")}
+      </div>
+    ),
+  },
+  {
+    accessorKey: "project.name", // Assumes your project model has a 'name' field
+    header: "Project",
+    cell: ({ row }) => row.original.project?.name ?? "-",
+  },
 
   {
     accessorKey: "status",
@@ -113,7 +118,7 @@ export const taskColumns: ColumnDef<TaskData>[] = [
 
       // Decide colors based on status
       let colorClass = "text-gray-500"; // default
-      if (status === "TODO") colorClass = "text-red-500"; // Red
+      if (status === "TO_DO") colorClass = "text-red-500"; // Red
       else if (status === "IN_PROGRESS")
         colorClass = "text-amber-500"; // Amber/Yellow
       else if (status === "DONE") colorClass = "text-green-600"; // Green
@@ -153,11 +158,6 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     cell: ({ row }) => row.original.reporter?.name ?? "N/A",
   },
   // ADDED: Project column is now included
-  {
-    accessorKey: "project.name", // Assumes your project model has a 'name' field
-    header: "Project",
-    cell: ({ row }) => row.original.project?.name ?? "-",
-  },
 
   {
     accessorKey: "dueDate",

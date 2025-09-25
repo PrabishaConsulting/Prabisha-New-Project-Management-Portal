@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 
 // ❗ Placeholder for your actual authentication logic
 async function checkAdminAuth() {
-  // TODO: Replace with your session validation
+  // TO_DO: Replace with your session validation
   console.log("Auth check passed (placeholder)");
 }
 

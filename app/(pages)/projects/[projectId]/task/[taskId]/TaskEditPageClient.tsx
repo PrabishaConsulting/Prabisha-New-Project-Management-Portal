@@ -163,7 +163,7 @@ export function TaskEditPageClient({
   };
 
   const statusOrder = [
-    TaskStatus.TODO,
+    TaskStatus.TO_DO,
     TaskStatus.IN_PROGRESS,
     TaskStatus.REVIEW,
     TaskStatus.DONE,

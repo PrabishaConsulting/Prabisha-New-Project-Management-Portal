@@ -1,5 +1,4 @@
 // lib/task-service.ts
-import { TASK_STATUS_OPTIONS } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { TaskStatus } from "@prisma/client";
 
@@ -77,7 +76,7 @@ export async function getTaskStatsForDay(date: Date) {
         gte: startOfDay,
         lte: endOfDay,
       },
-      status: TaskStatus.TODO,
+      status: TaskStatus.TO_DO,
     },
   });
   const inProgress = await db.task.count({

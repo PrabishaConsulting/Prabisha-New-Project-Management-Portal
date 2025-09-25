@@ -79,7 +79,7 @@ export interface Task {
   reporterId: string
   position: number
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-  status: 'TODO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
+  status: 'TO_DO' | 'IN_PROGRESS' | 'REVIEW' | 'DONE'
   estimatedHours?: number
   actualHours: number
   startDate?: Date
@@ -154,7 +154,7 @@ export enum Priority {
 }
 
 export enum TaskStatus {
-  TODO = 'TODO',
+  TO_DO = 'TO_DO',
   IN_PROGRESS = 'IN_PROGRESS',
   REVIEW = 'REVIEW',
   DONE = 'DONE',

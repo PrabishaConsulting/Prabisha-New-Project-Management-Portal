@@ -21,7 +21,7 @@ export async function GET(
           departmentId: departmentId, // Filter for the specific department
           isClientProject: false,      // Exclude client projects from these tabs
         },
-        status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
+        status: { in: [TaskStatus.TO_DO, TaskStatus.IN_PROGRESS] },
       },
       include: {
         project: { select: { id: true, name: true } },

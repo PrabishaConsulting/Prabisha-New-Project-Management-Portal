@@ -17,7 +17,7 @@ export const taskFormSchema = z.object({
   assigneeId: z.string().optional(),
   reporterId: z.string({ message: "A reporter must be selected." }).nonempty("A reporter must be selected."),
   priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
-  status: z.nativeEnum(TaskStatus).default(TaskStatus.TODO), 
+  status: z.nativeEnum(TaskStatus).default(TaskStatus.TO_DO), 
   estimatedHours: z.coerce
     .number({ message: "Must be a number." })
     .min(0, "Hours cannot be negative.")
@@ -78,7 +78,7 @@ export const UpdateProfileSchemaForProfile = z.object({
 
 // Define the allowed enum values for a task status
 const taskStatusEnum = z.enum([
-  'TODO',
+  'TO_DO',
   'IN_PROGRESS',
   'REVIEW',
   'DONE'

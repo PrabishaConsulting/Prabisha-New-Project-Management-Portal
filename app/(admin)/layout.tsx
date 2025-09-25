@@ -20,18 +20,18 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     {
       label: "Administration",
       items: [
-        { name: "Overview", href: "/admin", icon: Shield },
-        { name: "Users", href: "/admin", icon: Users },
-        { name: "Projects", href: "/admin", icon: FolderKanban },
+        { name: "Overview", href: "/admin", icon: null },
+        { name: "Users", href: "/admin", icon: null },
+        { name: "Projects", href: "/admin", icon: null },
       ],
     },
   ];
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen">
+      <div className="flex min-h-screen w-full bg-background">
         <AppSidebar navigationGroups={navigationGroups} showWorkspaceSwitcher={false} />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col ">
           {/* Header using client wrapper to read session */}
           <AdminHeaderClient />
           <main className="p-4 md:p-6 flex-1">{children}</main>

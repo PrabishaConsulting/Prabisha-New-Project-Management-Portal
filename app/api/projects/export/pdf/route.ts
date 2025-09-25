@@ -24,7 +24,7 @@ export async function GET() {
   const exportData = projects.map((project) => {
     const total = project.tasks.length;
     const pending = project.tasks.filter(
-      (t) => t.status === "TODO" || t.status === "IN_PROGRESS"
+      (t) => t.status === "TO_DO" || t.status === "IN_PROGRESS"
     ).length;
     const completed = project.tasks.filter(
       (t) => t.status === "REVIEW" || t.status === "DONE"

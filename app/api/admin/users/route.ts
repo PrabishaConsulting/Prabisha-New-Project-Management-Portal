@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 
 // ❗ Placeholder for your actual authentication logic
 async function checkAdminAuth() {
-  // TODO: Replace this with your session validation logic (e.g., from next-auth)
+  // TO_DO: Replace this with your session validation logic (e.g., from next-auth)
   // Example: const session = await getServerSession(authOptions);
   // if (!session?.user || session.user.role !== Role.ADMIN) {
   //   throw new Error("Not authorized");

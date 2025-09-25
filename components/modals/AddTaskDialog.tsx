@@ -97,7 +97,7 @@ export function TaskFormDialog({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       priority: Priority.MEDIUM,
-      status: TaskStatus.TODO,
+      status: TaskStatus.TO_DO,
       startDate: new Date(), // Set start date to today by default
     },
   });

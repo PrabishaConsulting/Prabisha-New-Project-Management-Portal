@@ -41,7 +41,7 @@ export async function GET(
     const allAssignedTasks = await db.task.findMany({
       where: {
         assigneeId: userId,
-        status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW , TaskStatus.DONE] },
+        status: { in: [TaskStatus.TO_DO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW , TaskStatus.DONE] },
       },
       include: {
         project: {

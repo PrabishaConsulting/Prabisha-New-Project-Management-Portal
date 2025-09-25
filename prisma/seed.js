@@ -106,7 +106,7 @@ async function main() {
         reporterId: user.id,
         position: 0,
         priority: 'HIGH',
-        status: 'TODO',
+        status: 'TO_DO',
         estimatedHours: 4,
         actualHours: 0,
       },

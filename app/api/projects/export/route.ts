@@ -14,7 +14,7 @@ export async function GET() {
       projectCode: true,
       tasks: {
         select: {
-          status: true, // "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE"
+          status: true, // "TO_DO" | "IN_PROGRESS" | "REVIEW" | "DONE"
         },
       },
     },
@@ -25,7 +25,7 @@ export async function GET() {
     const total = project.tasks.length;
 
     const pending = project.tasks.filter(
-      (t) => t.status === "TODO" || t.status === "IN_PROGRESS"
+      (t) => t.status === "TO_DO" || t.status === "IN_PROGRESS"
     ).length;
 
     const completed = project.tasks.filter(

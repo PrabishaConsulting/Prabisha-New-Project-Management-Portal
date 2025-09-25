@@ -4,7 +4,7 @@ import { Role } from '@prisma/client';
 
 // ❗ Placeholder for your actual authentication/authorization logic
 async function checkAdminAuth() {
-  // TODO: Replace with your session validation logic (e.g., from next-auth)
+  // TO_DO: Replace with your session validation logic (e.g., from next-auth)
   // Example:
   // const session = await getServerSession(authOptions);
   // if (!session?.user || session.user.role !== Role.ADMIN) {

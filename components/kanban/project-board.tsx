@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { ProjectContext } from "@/context/project-context";
 
 const BOARD_COLUMNS = [
-  { title: "To Do", status: TaskStatus.TODO },
+  { title: "To Do", status: TaskStatus.TO_DO },
   { title: "In Progress", status: TaskStatus.IN_PROGRESS },
   { title: "In Review", status: TaskStatus.REVIEW },
   { title: "Done", status: TaskStatus.DONE },
@@ -130,7 +130,7 @@ export default function ProjectBoard({
 
   const tasksByStatus = useMemo(() => {
     const initial: Record<TaskStatus, TaskWithAssignee[]> = {
-      TODO: [],
+      TO_DO: [],
       IN_PROGRESS: [],
       REVIEW: [],
       DONE: [],

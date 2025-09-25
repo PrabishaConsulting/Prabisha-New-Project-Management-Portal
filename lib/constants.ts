@@ -12,7 +12,7 @@ export const PROJECT_STATUS_OPTIONS = [
 ] as const
 
 export const TASK_STATUS_OPTIONS = [
-  { value: 'TODO', label: 'To Do', color: 'bg-gray-100 text-gray-800' },
+  { value: 'TO_DO', label: 'To Do', color: 'bg-gray-100 text-gray-800' },
   { value: 'IN_PROGRESS', label: 'In Progress', color: 'bg-blue-100 text-blue-800' },
   { value: 'REVIEW', label: 'Review', color: 'bg-yellow-100 text-yellow-800' },
   { value: 'DONE', label: 'Done', color: 'bg-green-100 text-green-800' },

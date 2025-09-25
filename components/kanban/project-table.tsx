@@ -18,7 +18,7 @@ interface ProjectTableProps {
     onTaskUpdate: (taskId: string, data: Partial<Task>) => void;
 }
 
-const statusOrder = [TaskStatus.TODO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW, TaskStatus.DONE];
+const statusOrder = [TaskStatus.TO_DO, TaskStatus.IN_PROGRESS, TaskStatus.REVIEW, TaskStatus.DONE];
 const priorityStyles: Record<Priority, string> = {
     URGENT: "bg-red-600", HIGH: "bg-orange-500", MEDIUM: "bg-yellow-500", LOW: "bg-sky-500",
 };

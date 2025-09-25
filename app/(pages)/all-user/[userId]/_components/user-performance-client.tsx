@@ -159,7 +159,7 @@ export const UserPerformanceClient = ({ user }: UserPerformanceClientProps) => {
   const stats = useMemo(() => {
     const totalTasks = user.assignedTasks.length;
     const pendingTasks = user.assignedTasks.filter(
-      (t) => t.status === "TODO" || t.status === "IN_PROGRESS"
+      (t) => t.status === "TO_DO" || t.status === "IN_PROGRESS"
     ).length;
     const completedTasks = user.assignedTasks.filter(
       (t) => t.status === "DONE" || t.status === "REVIEW"
@@ -204,7 +204,7 @@ export const UserPerformanceClient = ({ user }: UserPerformanceClientProps) => {
   const pendingTasks = useMemo(
     () =>
       user.assignedTasks.filter(
-        (t) => t.status === "TODO" || t.status === "IN_PROGRESS"
+        (t) => t.status === "TO_DO" || t.status === "IN_PROGRESS"
       ),
     [user.assignedTasks]
   );

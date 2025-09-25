@@ -44,7 +44,7 @@ describe('API Integration Test: POST /api/tasks/update-order', () => {
         data: { 
           title: 'Integration Task', 
           position: 0, 
-          status: TaskStatus.TODO, 
+          status: TaskStatus.TO_DO, 
           projectId: project.id, 
           reporterId: user.id 
         } 

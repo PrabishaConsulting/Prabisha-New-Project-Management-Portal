@@ -16,7 +16,7 @@ export async function GET(
           isClientProject: true, // Filter for client projects
         },
         // Filter for active tasks
-        status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
+        status: { in: [TaskStatus.TO_DO, TaskStatus.IN_PROGRESS] },
       },
       include: {
         project: { select: { id: true, name: true } },

@@ -23,7 +23,7 @@ import {
 // Your Prisma task type
 type PrismaTask = {
   id: string;
-  status: "TODO" | "IN_PROGRESS" | "REVIEW" | "DONE";
+  status: "TO_DO" | "IN_PROGRESS" | "REVIEW" | "DONE";
   // ... other task properties
 };
 
@@ -44,7 +44,7 @@ const getStatusDetails = (status: PrismaTask["status"]) => {
           "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20",
         icon: <ShieldCheck className="h-4 w-4 text-green-500" />,
       };
-    case "TODO":
+    case "TO_DO":
       return {
         text: "To Do",
         className:
@@ -75,7 +75,7 @@ type StatusSelectorProps = {
 const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const statuses: PrismaTask["status"][] = [
-    "TODO",
+    "TO_DO",
     "IN_PROGRESS",
     "REVIEW",
     "DONE",
