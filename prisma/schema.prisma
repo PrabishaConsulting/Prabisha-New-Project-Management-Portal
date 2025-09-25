@@ -38,14 +38,6 @@ model Session {
   @@map("sessions")
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
-  @@map("verification_tokens")
-}
 
 model User {
   id                   String                @id @default(cuid())
@@ -182,6 +174,8 @@ model Asset {
   notes           String?       @db.Text
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  @@map("assets")
 }
 
 model Department {
@@ -267,7 +261,6 @@ model Project {
   description       String?
   workspaceId       String
   projectCode String?  @unique   // 👈 new field, optional at first
-
   status            ProjectStatus    @default(ACTIVE)
   priority          Priority         @default(MEDIUM)
   projectType       ProjectType      @default(FIXED_TERM) // <-- New field
@@ -317,6 +310,7 @@ model ProjectMember {
 model Task {
   id             String           @id @default(cuid())
   title          String
+  taskCode String?  @unique   // 👈 new field, optional at first
   description    String?
   projectId      String
   assigneeId     String?

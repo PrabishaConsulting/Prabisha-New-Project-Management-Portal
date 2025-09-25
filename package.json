@@ -10,7 +10,7 @@
     "lint": "next lint",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
-    "db:seed": "ts-node prisma/seed2.js",
+    "db:seed": "ts-node prisma/seed.js",
     "db:studio": "prisma studio",
     "check-env": "tsx scripts/check-env.ts",
     "check-env:prod": "cross-env NODE_ENV=production tsx scripts/check-env.ts",

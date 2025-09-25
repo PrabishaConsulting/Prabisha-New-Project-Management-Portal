@@ -11,6 +11,7 @@ import {
   User,
   Department,
 } from "@prisma/client";
+import { generatePtiId } from "@/utils/task-utils";
 
 // This client-safe data type is correctly defined
 export type TaskData = Omit<
@@ -55,15 +56,15 @@ const formatStatus = (status: string) => {
 };
 
 export const taskColumns: ColumnDef<TaskData>[] = [
-  {
-    id: "pti-id",
-    header: "Task ID",
-    cell: ({ row, table }) => {
-      const totalRows = table.getRowModel().rows.length;
-      const serialNumber = String(totalRows - row.index).padStart(4, "0");
-      return <div className="font-medium">PTI-{serialNumber}</div>;
-    },
+ {
+  id: "pti-id",
+  header: "Task ID",
+  cell: ({ row }) => {
+    const taskId = row.original.id; // Assuming the task UUID is in row.original.id
+    const ptiId = generatePtiId(taskId);
+    return <div className="font-medium">{ptiId}</div>;
   },
+},
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
