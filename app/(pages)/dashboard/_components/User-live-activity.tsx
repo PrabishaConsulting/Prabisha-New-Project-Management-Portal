@@ -125,7 +125,7 @@ export const LiveActivity = ({ initialActivities }: { initialActivities: Activit
 
   if (error) {
     return (
-      <Card className="h-[450px] flex flex-col">
+      <Card className="h-[600px] flex flex-col">
         <CardHeader>
           <CardTitle>Live Activity</CardTitle>
         </CardHeader>
@@ -145,7 +145,7 @@ export const LiveActivity = ({ initialActivities }: { initialActivities: Activit
   }
 
   return (
-    <Card className="h-[450px] flex flex-col">
+    <Card className="h-[620px] flex flex-col">
       <CardHeader>
         <CardTitle>Live Activity</CardTitle>
         <div className="text-xs text-muted-foreground">
@@ -162,7 +162,7 @@ export const LiveActivity = ({ initialActivities }: { initialActivities: Activit
               const ActivityItem = (
                 <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
                   <Avatar>
-                    <AvatarImage src={activity.user.avatar} alt={activity.user.name} />
+                    <AvatarImage className=' object-cover' src={activity.user.avatar} alt={activity.user.name} />
                     <AvatarFallback>{getInitials(activity.user.name)}</AvatarFallback>
                   </Avatar>
                   <div className="text-sm">

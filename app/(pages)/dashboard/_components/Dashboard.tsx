@@ -1,14 +1,38 @@
+// app/dashboard/_components/Dashboard.tsx
+import { TaskPriorityChart } from "./task-priority-chart"
 import { DepartmentPendingTasksChart } from "./task-status-chart"
+import { TaskCompletionTrend } from "./TaskCompletionTrend"
 import { LiveActivity } from "./User-live-activity"
 
-export const Dashboard = ({TodaysActivity , pendingTasks} : {TodaysActivity : any , pendingTasks : any}) => {
+export const Dashboard = ({ 
+    TodaysActivity, 
+    pendingTasks, 
+    tasksByPriority,
+    taskCompletionTrend 
+}: { 
+    TodaysActivity: any, 
+    pendingTasks: any, 
+    tasksByPriority: any,
+    taskCompletionTrend: Array<{date: string, created: number, completed: number}>
+}) => {
     if (!TodaysActivity || !pendingTasks) {
         return <div>Loading...</div>
     }
+    
     return (
-        <div className=" grid grid-cols-2 gap-4">
-            <LiveActivity initialActivities={TodaysActivity || []}/>
-            <DepartmentPendingTasksChart pendingTasks={pendingTasks}/>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="lg:col-span-1">
+                <LiveActivity initialActivities={TodaysActivity || []}/>
+            </div>
+            <div className="lg:col-span-1">
+                <TaskPriorityChart tasksByPriority={tasksByPriority}/>
+            </div>
+            <div className="lg:col-span-2">
+                <TaskCompletionTrend initialData={taskCompletionTrend}/>
+            </div>
+            <div className="lg:col-span-2">
+                <DepartmentPendingTasksChart pendingTasks={pendingTasks}/>
+            </div>
         </div>
     )
 }
