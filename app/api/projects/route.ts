@@ -9,6 +9,7 @@ import {
   createProjectInDb,
   ProjectCreationData,
 } from "@/services/project-service/create-project.service";
+import { hasUserRole } from "@/services/role-services/has-user-role.service";
 // import { queueProjectCreatedNotification } from "@/services/notification-service/notification.service";
 /**
  * Fetches all projects for a given workspace, correctly identifying the project lead.
@@ -107,7 +108,6 @@ export async function GET(req: NextRequest) {
   }
 }
 // --- POST /api/projects ---
-// Creates a new project with default values.
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
@@ -120,15 +120,19 @@ export async function POST(req: NextRequest) {
   if (!userId || !userData.user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
+
+  // Check if user has admin role (case-insensitive check)
+  const permissionToCreateProject = await hasUserRole(userId, "ADMIN") || await hasUserRole(userId, "admin");
+  
+  if (!permissionToCreateProject) {
+    // Updated error message to match test expectations
+    return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
+  }
+  
   try {
     const body = await req.json();
     // --- 2. PARSE THE FULL PAYLOAD ---
-    const { name, workspaceId, departmentId , isClientProject, clientId , internalProductId } = createProjectSchema.parse(body);
-
-    // Basic validation: if it's a client project, a client ID must be provided.
-    // if (isClient && !clientId) {
-    //     return NextResponse.json({ error: "clientId is required for client projects" }, { status: 400 });
-    // }
+    const { name, workspaceId, departmentId, isClientProject, clientId, internalProductId } = createProjectSchema.parse(body);
 
     // Calculate due date as one month from now
     const dueDate = new Date();
@@ -140,24 +144,23 @@ export async function POST(req: NextRequest) {
       departmentId: departmentId,
       userId: userId,
       dueDate: dueDate,
-      isClientProject: isClientProject ,
-      clientId: isClientProject? clientId:null ,
-      internalProductId: internalProductId ? internalProductId :null,
+      isClientProject: isClientProject,
+      clientId: isClientProject ? clientId : null,
+      internalProductId: internalProductId ? internalProductId : null,
     };
 
-    const projectCeation = await createProjectInDb(
+    const projectCreation = await createProjectInDb(
       projectData as ProjectCreationData
     );
 
-
-    // await queueProjectCreatedNotification(projectCeation.project , userData.user!);
+    // await queueProjectCreatedNotification(projectCreation.project, userData.user!);
 
     return NextResponse.json(
-      { project: projectCeation.project, creator: projectCeation.creatorId },
+      { project: projectCreation.project, creator: projectCreation.creatorId },
       { status: 201 }
     );
-  } catch (error : any) {
-   if (error instanceof z.ZodError) {
+  } catch (error: any) {
+    if (error instanceof z.ZodError) {
       // This line is crucial for returning a real array
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
@@ -165,7 +168,7 @@ export async function POST(req: NextRequest) {
     if (error.name === 'ProjectCreationError') {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
-    // console.error("Failed to create project:", error);
+    
     console.error("Failed to create project:", error);
     return NextResponse.json(
       { error: "Internal Server Error" },

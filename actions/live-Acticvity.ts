@@ -20,7 +20,7 @@ const minimalActivity = Prisma.validator<Prisma.ActivityLogDefaultArgs>()({
 // The new type derived from our minimal selection
 export type MinimalActivity = Prisma.ActivityLogGetPayload<typeof minimalActivity>;
 
-export async function getTodaysActivity(): Promise<{
+export async function getTodaysActivity(skip: number = 0): Promise<{
   data: MinimalActivity[] | null;
   error: string | null;
 }> {
@@ -29,7 +29,12 @@ export async function getTodaysActivity(): Promise<{
     const startOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
     const endOfTodayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 23, 59, 59, 999));
 
-    const activities = await db.activityLog.findMany({
+    // Add a timeout to prevent long-running queries
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Query timeout')), 5000)
+    );
+
+    const queryPromise = db.activityLog.findMany({
       where: {
         createdAt: {
           gte: startOfTodayUTC,
@@ -39,13 +44,15 @@ export async function getTodaysActivity(): Promise<{
       orderBy: {
         createdAt: 'desc',
       },
-      take: 50,
-      // Apply the new minimal 'select' statement
+      skip: skip,
+      take: 20, // Match client page size
       ...minimalActivity,
     });
 
-    return { data: activities, error: null };
+    // Race the query against a timeout
+    const activities = await Promise.race([queryPromise, timeoutPromise]) as MinimalActivity[];
 
+    return { data: activities, error: null };
   } catch (error) {
     console.error("Failed to fetch minimal activity logs:", error);
     if (error instanceof Error) {

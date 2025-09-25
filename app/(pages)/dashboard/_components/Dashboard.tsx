@@ -7,7 +7,7 @@ export const Dashboard = ({TodaysActivity , pendingTasks} : {TodaysActivity : an
     }
     return (
         <div className=" grid grid-cols-2 gap-4">
-            <LiveActivity TodaysLiveActivity={TodaysActivity}/>
+            <LiveActivity initialActivities={TodaysActivity || []}/>
             <DepartmentPendingTasksChart pendingTasks={pendingTasks}/>
         </div>
     )

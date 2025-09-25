@@ -1,50 +1,163 @@
 "use client";
 
+import useSWRInfinite from 'swr/infinite';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { formatDistanceToNow } from 'date-fns';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-// 1. Define a TypeScript type for your activity data for better safety.
-// I've added an optional 'email' field for the Google Chat integration.
+// Types remain the same
 type ActivityUser = {
   name: string;
   avatar: string;
-  email?: string; // <-- Add the user's email to your data for this to work
+  email?: string;
 };
 
 type Activity = {
   id: string;
   action: string;
   description: string;
-  createdAt: string; // The date should be an ISO string
+  createdAt: string;
   user: ActivityUser;
 };
 
-// A helper function to get initials from a name for the avatar fallback
 const getInitials = (name: string) => {
   const names = name.split(' ');
   const initials = names.map(n => n[0]).join('');
   return initials.slice(0, 2).toUpperCase();
 };
 
-export const LiveActivity = ({ TodaysLiveActivity }: { TodaysLiveActivity: Activity[] }) => {
-  // IMPORTANT: Replace this with your actual Google Workspace ID structure if needed.
-  // The standard link format is usually just the email address.
+const PAGE_SIZE = 20;
+
+export const LiveActivity = ({ initialActivities }: { initialActivities: Activity[] }) => {
+  // State to track if we're loading more
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  // SWR fetcher function with proper typing
+  const fetcher = async (url: string): Promise<{ data: Activity[], pagination: any }> => {
+    console.log(`Fetching: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch activities');
+    }
+    return response.json();
+  };
+
+  // Function to generate SWR key based on page index
+  const getKey = (pageIndex: number, previousPageData: { data: Activity[], pagination: any } | null) => {
+    // For the first page, we use the initial data
+    if (pageIndex === 0) return `/api/activities?skip=0&take=${PAGE_SIZE}`;
+    
+    // If there's no previous page data or no more pages, return null
+    if (!previousPageData || !previousPageData.pagination.hasMore) {
+      return null;
+    }
+    
+    // Calculate skip for next page
+    const skip = pageIndex * PAGE_SIZE;
+    return `/api/activities?skip=${skip}&take=${PAGE_SIZE}`;
+  };
+
+  // Use SWR infinite hook with proper typing
+  const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<{ data: Activity[], pagination: any }>(
+    getKey,
+    fetcher,
+    {
+      initialSize: 1,
+      revalidateFirstPage: false,
+      onErrorRetry: (error, key, config, revalidate, { retryCount }) => {
+        if (retryCount >= 3) return;
+        setTimeout(() => revalidate({ retryCount }), 3000);
+      },
+    }
+  );
+
+  // Initialize with the provided initial activities
+  useEffect(() => {
+    if (data && data.length === 1 && data[0].data.length === 0) {
+      // If the first page is empty, replace it with initial data
+      mutate([{ 
+        data: initialActivities, 
+        pagination: { 
+          hasMore: initialActivities.length >= PAGE_SIZE 
+        } 
+      }], false);
+    }
+  }, [data, initialActivities, mutate]);
+
+  // Flatten all pages
+  const activities = data ? data.flatMap(page => page.data) : initialActivities;
+  
+  // Check if there's more data to load
+  const hasMore = data ? data[data.length - 1]?.pagination.hasMore : initialActivities.length >= PAGE_SIZE;
+
+  // Sentinel ref for intersection observer
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Setup intersection observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isValidating && !isLoadingMore) {
+          setIsLoadingMore(true);
+          setSize(size + 1).then(() => {
+            setIsLoadingMore(false);
+          });
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (sentinelRef.current) {
+      observer.observe(sentinelRef.current);
+    }
+
+    return () => {
+      if (sentinelRef.current) {
+        observer.unobserve(sentinelRef.current);
+      }
+    };
+  }, [hasMore, isValidating, size, setSize, isLoadingMore]);
+
   const createGoogleChatLink = (email: string) => `https://chat.google.com/dm/${email}`;
+
+  if (error) {
+    return (
+      <Card className="h-[450px] flex flex-col">
+        <CardHeader>
+          <CardTitle>Live Activity</CardTitle>
+        </CardHeader>
+        <CardContent className="flex-grow flex items-center justify-center">
+          <div className="text-center text-red-500">
+            Error loading activities: {error.message}
+            <button 
+              onClick={() => setSize(1)} 
+              className="mt-2 px-4 py-2 bg-primary text-white rounded-md"
+            >
+              Retry
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-[450px] flex flex-col">
       <CardHeader>
         <CardTitle>Live Activity</CardTitle>
+        <div className="text-xs text-muted-foreground">
+          Showing {activities.length} activities {hasMore && "(more available)"}
+        </div>
       </CardHeader>
       <CardContent className="flex-grow overflow-hidden">
-        {/* 2. ScrollArea makes only the content below scrollable */}
         <ScrollArea className="h-full pr-4">
           <div className="space-y-4">
-            {TodaysLiveActivity.map((activity) => {
+            {activities.map((activity, index) => {
               const link = activity.user.email ? createGoogleChatLink(activity.user.email) : undefined;
+              const isPageBoundary = index > 0 && index % PAGE_SIZE === 0;
               
               const ActivityItem = (
                 <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
@@ -53,12 +166,10 @@ export const LiveActivity = ({ TodaysLiveActivity }: { TodaysLiveActivity: Activ
                     <AvatarFallback>{getInitials(activity.user.name)}</AvatarFallback>
                   </Avatar>
                   <div className="text-sm">
-                    {/* 3. This renders the description with bold text */}
                     <p className="text-foreground">
                       <span className="font-semibold">{activity.user.name}</span>{' '}
                       {activity.description.replace(`${activity.user.name} `, '')}
                     </p>
-                    {/* 4. User-friendly relative timestamp with a detailed tooltip */}
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                         <TooltipTrigger>
@@ -75,22 +186,42 @@ export const LiveActivity = ({ TodaysLiveActivity }: { TodaysLiveActivity: Activ
                 </div>
               );
 
-              // 5. If an email is available, wrap the item in a link to Google Chat.
-              if (link) {
-                return (
-                  <a key={activity.id} href={link} target="_blank" rel="noopener noreferrer" className="block">
-                    {ActivityItem}
-                  </a>
-                );
-              }
-
-              // Otherwise, render it as a simple div.
               return (
                 <div key={activity.id}>
-                  {ActivityItem}
+                  {isPageBoundary && (
+                    <div className="text-center text-xs text-muted-foreground my-2">
+                      Page {Math.floor(index / PAGE_SIZE) + 1}
+                    </div>
+                  )}
+                  {link ? (
+                    <a href={link} target="_blank" rel="noopener noreferrer" className="block">
+                      {ActivityItem}
+                    </a>
+                  ) : (
+                    <div>
+                      {ActivityItem}
+                    </div>
+                  )}
                 </div>
               );
             })}
+            
+            {/* Sentinel element for infinite scroll - always show if there might be more */}
+            <div ref={sentinelRef} className="h-1" />
+            
+            {/* Loading indicator */}
+            {(isValidating || isLoadingMore) && (
+              <div className="flex justify-center py-2">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            )}
+            
+            {/* End of list message */}
+            {!hasMore && activities.length > 0 && (
+              <div className="text-center text-sm text-muted-foreground py-2">
+                No more activities for today
+              </div>
+            )}
           </div>
         </ScrollArea>
       </CardContent>

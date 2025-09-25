@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useRouter } from "next/navigation";
 import {
@@ -18,15 +18,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MoreHorizontal, Pencil, Briefcase, Delete , User2Icon as UserIcon } from "lucide-react";
+import {
+  MoreHorizontal,
+  Pencil,
+  Briefcase,
+  Delete,
+  User2Icon as UserIcon,
+} from "lucide-react";
 import {
   AvatarGroup,
   AvatarGroupTooltip,
-} from '@/components/ui/shadcn-io/avatar-group';
-  type ProjectMember = {
+} from "@/components/ui/shadcn-io/avatar-group";
+type ProjectMember = {
   user: UserInfo;
 };
- interface Project {
+interface Project {
   id: string;
   name: string;
   dueDate: string | number | Date;
@@ -37,11 +43,11 @@ import {
   internalProduct?: { id: string; name: string };
   members: ProjectMember[];
   _count: {
-    tasks : number
-  }
-
-}interface UserInfo {
-  id : string
+    tasks: number;
+  };
+}
+interface UserInfo {
+  id: string;
 
   name: string | null;
   avatar: string | null;
@@ -57,13 +63,13 @@ export const ProjectCard = ({
   session: any;
   onDeleteClick: (project: Project) => void;
 }) => {
-   const router = useRouter();
+  const router = useRouter();
   const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   return (
     <Card className="hover:shadow-lg transition-shadow flex flex-col">
       <div
@@ -130,20 +136,26 @@ export const ProjectCard = ({
             <span className="text-xs text-muted-foreground">
               Due: {new Date(project.dueDate).toLocaleDateString()}
             </span>
-            <span><AvatarGroup>
-              {project.members.map((member , index) => (
-            <Avatar className="w-8 h-8 cursor-pointer" key={index}>
-            <AvatarImage className="object-cover" src= {member.user.avatar || ""} alt={`${member.user.name}'s avatar`}/>
-            <AvatarFallback>
-              {getInitials(member.user?.name || "")}
-            </AvatarFallback>
-            <AvatarGroupTooltip>
-              <p>{member.user.name}</p>
-            </AvatarGroupTooltip>
-             </Avatar>
-              ))}
+            <span>
+              <AvatarGroup>
+                  {project.members.slice(0, 6).map((member, index) => (
+                    <Avatar className="w-8 h-8 cursor-pointer" key={index}>
+                      <AvatarImage
+                        className="object-cover"
+                        src={member.user.avatar || ""}
+                        alt={`${member.user.name}'s avatar`}
+                      />
+                      <AvatarFallback>
+                        {getInitials(member.user?.name || "")}
+                      </AvatarFallback>
+                      <AvatarGroupTooltip>
+                        <p>{member.user.name}</p>
+                      </AvatarGroupTooltip>
+                    </Avatar>
+                  ))}
+               
               </AvatarGroup>
-              </span>
+            </span>
           </div>
         </CardContent>
       </div>
@@ -160,7 +172,11 @@ const UserAvatar = ({ user }: { user: UserInfo | null }) => {
       .toUpperCase() || "";
   return (
     <Avatar className="h-6 w-6">
-      <AvatarImage className='object-cover' src={user?.avatar || undefined} alt={user?.name || ""} />
+      <AvatarImage
+        className="object-cover"
+        src={user?.avatar || undefined}
+        alt={user?.name || ""}
+      />
       <AvatarFallback>
         {initials || <UserIcon className="h-4 w-4" />}
       </AvatarFallback>

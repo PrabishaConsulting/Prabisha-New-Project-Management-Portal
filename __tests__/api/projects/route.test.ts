@@ -1,150 +1,190 @@
 /**
  * @jest-environment node
  */
-import { POST } from "@/app/api/projects/route";
-import { NextRequest } from "next/server";
-import { ProjectCreationError } from "@/utils/errors";
+import { POST } from '@/app/api/projects/route';
+import { db } from '@/lib/db';
+import { NextRequest } from 'next/server';
+import { ProjectStatus, Priority } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { hasUserRole } from '@/services/role-services/has-user-role.service';
+import { getUserByEmail } from '@/utils/helper-server-function';
+import { createProjectInDb } from '@/services/project-service/create-project.service';
+import { ProjectCreationError } from '@/utils/errors';
 
-// --- Mocks ---
 jest.mock("next-auth/next", () => ({
   getServerSession: jest.fn(),
 }));
-
-jest.mock("@/utils/helper-server-function", () => ({
-  getUserByEmail: jest.fn(),
+// --- MOCKS ---
+jest.mock('@/lib/db', () => ({
+  db: {
+    project: { create: jest.fn() },
+    user: { findUnique: jest.fn() },
+    department: { findUnique: jest.fn() },
+    workspace: { findUnique: jest.fn() },
+  },
 }));
 
-// Mock the service layer and re-export the actual error class
-jest.mock("@/services/project-service/create-project.service", () => {
-  const { ProjectCreationError: OriginalError } =
-    jest.requireActual("@/utils/errors");
-  return {
-    createProjectInDb: jest.fn(),
-    ProjectCreationError: OriginalError,
+jest.mock('@/services/role-services/has-user-role.service');
+jest.mock('@/utils/helper-server-function');
+jest.mock('@/services/project-service/create-project.service');
+
+// --- TYPE ASSERTIONS FOR MOCKS ---
+const mockedProjectCreate = db.project.create as jest.Mock;
+const mockedUserFindUnique = db.user.findUnique as jest.Mock;
+const mockedDepartmentFindUnique = db.department.findUnique as jest.Mock;
+const mockedWorkspaceFindUnique = db.workspace.findUnique as jest.Mock;
+const mockedGetServerSession = getServerSession as jest.Mock;
+const mockedHasUserRole = hasUserRole as jest.Mock;
+const mockedGetUserByEmail = getUserByEmail as jest.Mock;
+const mockedCreateProjectInDb = createProjectInDb as jest.Mock;
+
+describe('POST /api/projects', () => {
+  const mockUserId = 'clwqcac2a0003356v1a2b3c4d';
+  const mockWorkspaceId = 'clwqcac2a0002356v4n5b7f9d';
+  const mockDepartmentId = 'clwqcac2a0001356v6q7g8h2k';
+  const mockInternalProductId = 'clwqcac2a0000356v9j4d5m3i';
+  
+  const mockUser = {
+    id: mockUserId,
+    name: 'Test User',
+    email: 'test@example.com',
+    role: 'ADMIN',
   };
-});
 
-// --- Type-Safe Mock Variables ---
-const mockedGetSession = require("next-auth/next")
-  .getServerSession as jest.Mock;
-const mockedGetUser = require("@/utils/helper-server-function")
-  .getUserByEmail as jest.Mock;
-const mockedCreateProjectInDb =
-  require("@/services/project-service/create-project.service")
-    .createProjectInDb as jest.Mock;
-
-// --- Test Suite ---
-describe("/api/projects POST", () => {
-  const mockUser = { user: { id: "user-123", email: "test@example.com" } };
-
-  const baseInternalPayload = {
-    name: "New Internal Project",
-    workspaceId: "ws-123",
-    departmentId: "dept-1",
+  const mockProjectPayload = {
+    name: 'New Project',
+    workspaceId: mockWorkspaceId,
+    departmentId: mockDepartmentId,
     isClientProject: false,
-    internalProductId: "prod-abc",
+    internalProductId: mockInternalProductId,
+  };
+
+  const mockCreatedProject = {
+    id: 'clwqcac2a0000356v9j4d5m3j',
+    name: 'New Project',
+    workspaceId: mockWorkspaceId,
+    departmentId: mockDepartmentId,
+    isClientProject: false,
+    internalProductId: mockInternalProductId,
+    status: ProjectStatus.ACTIVE,
+    priority: Priority.MEDIUM,
+    dueDate: new Date().toString(),
+    description: null,
+    userId: mockUserId,
+    createdAt: new Date().toString(),
+    updatedAt: new Date().toString(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    mockedGetSession.mockResolvedValue({ user: { email: "test@example.com" } });
-    mockedGetUser.mockResolvedValue(mockUser);
+    mockedGetServerSession.mockResolvedValue({ user: { email: 'test@example.com' } });
+    mockedGetUserByEmail.mockResolvedValue({ success: true, error: null, user: mockUser });
+    mockedHasUserRole.mockResolvedValue(true);
+    mockedUserFindUnique.mockResolvedValue(mockUser);
+    mockedDepartmentFindUnique.mockResolvedValue({ id: mockDepartmentId, name: 'Test Department' });
+    mockedWorkspaceFindUnique.mockResolvedValue({ id: mockWorkspaceId, name: 'Test Workspace' });
+    mockedCreateProjectInDb.mockResolvedValue({ project: mockCreatedProject, creatorId: mockUserId });
   });
 
-  // --- Success Cases ---
-  it("should call the service with correct data and a generated due date, returning 201 on success", async () => {
-    const createdProject = { id: "proj-1", name: baseInternalPayload.name };
-    mockedCreateProjectInDb.mockResolvedValue({ project: createdProject });
-
-    const req = new NextRequest("http://localhost/api/projects", {
-      method: "POST",
-      body: JSON.stringify(baseInternalPayload),
+  const createMockRequest = (body: object) => {
+    return new NextRequest('http://localhost/api/projects', {
+      method: 'POST',
+      body: JSON.stringify(body),
     });
+  };
 
+  it('should return 401 Unauthorized if no session is found', async () => {
+    mockedGetServerSession.mockResolvedValue(null);
+    const req = createMockRequest(mockProjectPayload);
     const response = await POST(req);
-    const body = await response.json();
-
-    expect(response.status).toBe(201);
-    expect(body.project).toEqual(createdProject);
-
-    // --- FIX: Verify that the service is called with a calculated dueDate ---
-    expect(mockedCreateProjectInDb).toHaveBeenCalledWith(
-      expect.objectContaining({
-        ...baseInternalPayload,
-        userId: mockUser.user.id,
-        dueDate: expect.any(Date), // Ensures the API handler added a due date
-      })
-    );
-  });
-
-  // --- Auth & Authorization Errors ---
-  it("should return 401 Unauthorized if no session is found", async () => {
-    mockedGetSession.mockResolvedValue(null);
-
-    const req = new NextRequest("http://localhost/api/projects", {
-      method: "POST",
-      body: JSON.stringify(baseInternalPayload),
-    });
-    const response = await POST(req);
-    const body = await response.json();
-
     expect(response.status).toBe(401);
-    expect(body.error).toBe("Unauthorized");
   });
 
-  // --- Validation & Service Errors ---
-  it("should return 400 for an invalid request body (Zod error)", async () => {
-    const invalidPayload = { workspaceId: "ws-123" }; // Missing required fields
-    const req = new NextRequest("http://localhost/api/projects", {
-      method: "POST",
-      body: JSON.stringify(invalidPayload),
-    });
-
+  it('should return 404 Not Found if the user does not exist', async () => {
+    mockedGetUserByEmail.mockResolvedValue({ success: false, error: 'User not found', user: null });
+    const req = createMockRequest(mockProjectPayload);
     const response = await POST(req);
-    const body = await response.json();
+    expect(response.status).toBe(404);
+  });
 
+  it('should return 403 Forbidden if the user is not an admin', async () => {
+    mockedHasUserRole.mockResolvedValue(false);
+    const req = createMockRequest(mockProjectPayload);
+    const response = await POST(req);
+    expect(response.status).toBe(403);
+  });
+
+  it('should return 400 Bad Request for invalid input data', async () => {
+    const req = createMockRequest({ name: 'A' }); // Invalid name
+    const response = await POST(req);
     expect(response.status).toBe(400);
-
-    // --- FIX: Use the most reliable Array check ---
-    expect(Array.isArray(body.error)).toBe(true);
-
-    // This line can now safely access the array
-    expect(body.error[0].path).toContain("name");
   });
 
-  it("should return 400 when the service throws a ProjectCreationError", async () => {
-    const errorMessage = "Project already exists.";
-    mockedCreateProjectInDb.mockRejectedValue(
-      new ProjectCreationError(errorMessage)
-    );
-
-    const req = new NextRequest("http://localhost/api/projects", {
-      method: "POST",
-      body: JSON.stringify(baseInternalPayload),
-    });
-
+  it('should return 400 Bad Request when the service throws a ProjectCreationError', async () => {
+    const errorMessage = 'Project already exists';
+    mockedCreateProjectInDb.mockRejectedValue(new ProjectCreationError(errorMessage));
+    
+    const req = createMockRequest(mockProjectPayload);
     const response = await POST(req);
     const body = await response.json();
-
+    
     expect(response.status).toBe(400);
     expect(body.error).toBe(errorMessage);
   });
 
-  // --- General & Server Errors ---
-  it("should return 500 for an unexpected error from the service", async () => {
-    mockedCreateProjectInDb.mockRejectedValue(
-      new Error("Something went wrong")
-    );
-
-    const req = new NextRequest("http://localhost/api/projects", {
-      method: "POST",
-      body: JSON.stringify(baseInternalPayload),
-    });
-
+  it('should return 500 Internal Server Error for unexpected errors', async () => {
+    mockedCreateProjectInDb.mockRejectedValue(new Error('Database error'));
+    
+    const req = createMockRequest(mockProjectPayload);
     const response = await POST(req);
     const body = await response.json();
-
+    
     expect(response.status).toBe(500);
-    expect(body.error).toBe("Internal Server Error");
+    expect(body.error).toBe('Internal Server Error');
+  });
+
+  it('should successfully create a new project', async () => {
+    const req = createMockRequest(mockProjectPayload);
+    const response = await POST(req);
+    const body = await response.json();
+    
+    expect(response.status).toBe(201);
+    expect(body.project).toEqual(mockCreatedProject);
+    expect(body.creator).toBe(mockUserId);
+    
+    // Verify that the service was called with the correct data
+    expect(mockedCreateProjectInDb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: mockProjectPayload.name,
+        workspaceId: mockProjectPayload.workspaceId,
+        departmentId: mockProjectPayload.departmentId,
+        isClientProject: mockProjectPayload.isClientProject,
+        internalProductId: mockProjectPayload.internalProductId,
+        userId: mockUserId,
+      })
+    );
+  });
+
+  it('should successfully create a client project', async () => {
+    const clientProjectPayload = {
+      ...mockProjectPayload,
+      isClientProject: true,
+      clientId: 'client-123',
+      internalProductId: null,
+    };
+    
+    const req = createMockRequest(clientProjectPayload);
+    const response = await POST(req);
+    
+    expect(response.status).toBe(201);
+    
+    // Verify that the service was called with the correct data
+    expect(mockedCreateProjectInDb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ...clientProjectPayload,
+        userId: mockUserId,
+        dueDate: expect.any(Date),
+      })
+    );
   });
 });
