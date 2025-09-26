@@ -27,12 +27,14 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, Trash2 } from "lucide-react";
+import { CalendarIcon, Trash2, X, Copy } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { TimeTracking } from "./time-tracking";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 
 // A type for project members that includes the nested user object
 type MemberWithUser = ProjectMember & {
@@ -94,6 +96,9 @@ export function TaskEditPageClient({
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
   const handleTaskUpdate = async (updates: Partial<ClientTask>) => {
     const previousTask = { ...task };
@@ -175,21 +180,57 @@ export function TaskEditPageClient({
     Priority.LOW,
   ];
 
-  const handleDeleteTask = async (taskId: string) => {
-    setIsDeletingTask(true);
-    try {
-      const response = await fetch(`/api/tasks/${taskId}/delete-task`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete task.");
-      toast.success("Task deleted successfully.");
-      router.push(`/projects`);
-      setIsDeletingTask(false);
-    } catch (error) {
-      toast.error("Deletion Failed", { description: (error as Error).message });
-      setIsDeletingTask(false);
+const handleDeleteTask = async (taskId: string) => {
+  setIsDeletingTask(true);
+  try {
+    const response = await fetch(`/api/tasks/${taskId}/delete-task`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      // Try to parse error response
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        // If parsing fails, use status text
+        throw new Error(response.statusText || "Failed to delete task.");
+      }
+
+      // Handle specific 403 error - FIXED: Check for errorData.error instead of message
+      if (response.status === 403) {
+        if (errorData.error === "Forbidden: You are not a member") {
+          throw new Error("You don't have permission to delete this task. Only team members can delete tasks.");
+        }
+        throw new Error("Permission denied. You cannot delete this task.");
+      }
+
+      // Handle other error cases - FIXED: Check for error property first
+      throw new Error(errorData.error || errorData.message || "Failed to delete task.");
     }
-  };
+
+    // Success case
+    toast.success("Task deleted successfully.");
+    router.push(`/all-task`);
+  } catch (error) {
+    const errorMessage = (error as Error).message;
+    
+    // Show specific toast for permission errors
+    if (errorMessage.includes("permission") || errorMessage.includes("Permission")) {
+      toast.error("Permission Denied", {
+        description: errorMessage, // Use the actual error message
+        action: {
+          label: "Contact Admin",
+          onClick: () => router.push("/support"),
+        }
+      });
+    } else {
+      toast.error("Deletion Failed", { description: errorMessage });
+    }
+  } finally {
+    setIsDeletingTask(false);
+  }
+};
 
   const formatStatus = (status: string) => {
     if (!status) return "";
@@ -203,6 +244,14 @@ export function TaskEditPageClient({
         ) => word.charAt(0).toUpperCase() + word.slice(1)
       )
       .join(" "); // 4. -> "To Do"
+  };
+
+  const handleTaskClick = (task: any) => {
+    // Add your logic here - e.g., open task details, navigate, etc.
+    navigator.clipboard.writeText(task.title);
+    toast.success("Task name copied to clipboard");
+    console.log("Task clicked:", task);
+    // Example: router.push(`/tasks/${task.id}`);
   };
 
   return (
@@ -374,12 +423,81 @@ export function TaskEditPageClient({
             variant="destructive"
             className="w-full"
             disabled={isDeletingTask}
-            onClick={() => handleDeleteTask(task.id)}
+            onClick={() => setIsDeleteDialogOpen(true)}
           >
             <Trash2 className="mr-2 h-4 w-4" /> Delete Task
           </Button>
         </div>
       </div>
+      {isDeleteDialogOpen && (
+        <div className="fixed inset-0 bg-gray-700/20 flex items-center justify-center z-50 p-4">
+          <div className="bg-background border border-border rounded-lg shadow-lg max-w-md w-full p-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold">Delete Task</h2>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  setDeleteConfirmationInput("");
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <p className="text-muted-foreground">
+              This action cannot be undone. This will permanently delete the
+              task and all associated data.
+            </p>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium block">
+                To confirm, type{"  "}
+                <button
+                  type="button"
+                  onClick={() => handleTaskClick(task)} // Add your click handler
+                  className="inline-flex items-center p-0 m-0 bg-transparent border-none cursor-pointer"
+                >
+                  <Badge variant="outline" className="font-mono font-bold">
+                    {task.title}
+                  </Badge>
+                </button>
+                {"  "} below:
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  value={deleteConfirmationInput}
+                  onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                  placeholder="Type task name here"
+                  className="flex-1"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsDeleteDialogOpen(false);
+                  setDeleteConfirmationInput("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={
+                  deleteConfirmationInput !== task.title || isDeletingTask
+                }
+                onClick={() => handleDeleteTask(task.id)}
+              >
+                {isDeletingTask ? "Deleting..." : "Delete Task"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

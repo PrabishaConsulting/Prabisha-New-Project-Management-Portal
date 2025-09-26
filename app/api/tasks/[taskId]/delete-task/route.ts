@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
-import { db } from "@/lib/db"; // your prisma client instance
+import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth"; // Assuming auth options path
-import { logActivity } from "@/services/activity-user/activity-user.service"; // Assuming service path
+import { authOptions } from "@/lib/auth";
+import { logActivity } from "@/services/activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
+import { id } from "date-fns/locale";
 
 export async function DELETE(
   request: Request,
@@ -15,22 +16,20 @@ export async function DELETE(
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    // Try deleting the task
-    const { taskId } = await params;
+    
+    const id = await params;
 
     const taskToDelete = await db.task.findUnique({
-      where: { id: taskId },
+      where: { id: id.taskId },
     });
 
-    // If the task doesn't exist, return a 404 error
     if (!taskToDelete) {
       return NextResponse.json(
-        { message: `Delete failed: Task with ID ${taskId} not found.` },
+        { error: `Task with ID ${id.taskId} not found` }, // FIXED: Use error property
         { status: 404 }
       );
     }
 
-    // (Optional but Recommended) Authorization check
     const membership = await db.projectMember.findUnique({
       where: {
         projectId_userId: {
@@ -39,22 +38,20 @@ export async function DELETE(
         },
       },
     });
+    
     if (!membership) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      return NextResponse.json({ error: "Forbidden: You are not a member" }, { status: 403 });
     }
 
-    // 3. --- Perform Deletion ---
     await db.task.delete({
-      where: { id: taskId },
+      where: { id: id.taskId },
     });
 
-    // 4. --- Log the activity ---
     const userName = session.user.name || "A user";
     await logActivity(db, {
       userId: session.user.id,
       projectId: taskToDelete.projectId,
-
-      action: ACTIVITY_ACTIONS.DELETE_TASK, // Assumes this action type exists
+      action: ACTIVITY_ACTIONS.DELETE_TASK,
       description: `${userName} deleted the task "${taskToDelete.title}".`,
     });
 
@@ -65,20 +62,18 @@ export async function DELETE(
   } catch (error) {
     console.error("DELETE Task Failed:", error);
 
-    // Handle "Record not found" error
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2025"
     ) {
       return NextResponse.json(
-        { message: `Delete failed: Task with  not found.` },
+        { error: `Task with ID not found` }, // FIXED: Include taskId
         { status: 404 }
       );
     }
 
-    // Generic error
     return NextResponse.json(
-      { message: "Failed to delete task" },
+      { error: "Failed to delete task" }, // FIXED: Use error property
       { status: 500 }
     );
   }

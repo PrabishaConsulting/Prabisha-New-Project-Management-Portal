@@ -12,8 +12,8 @@ import {
   Department,
 } from "@prisma/client";
 import { generatePtiId } from "@/utils/task-utils";
-
-// This client-safe data type is correctly defined
+import { useProject } from "@/context/project-context";
+import Link from "next/link";
 export type TaskData = Omit<
   PrismaTask,
   | "estimatedHours"
@@ -56,15 +56,26 @@ const formatStatus = (status: string) => {
 };
 
 export const taskColumns: ColumnDef<TaskData>[] = [
- {
-  id: "pti-id",
-  header: "Task ID",
-  cell: ({ row }) => {
-    const taskId = row.original.id; // Assuming the task UUID is in row.original.id
-    const ptiId = generatePtiId(taskId);
-    return <div className="font-medium">{ptiId}</div>;
+{
+    id: "pti-id",
+    header: "Task ID",
+    cell: ({ row }) => {
+      const taskId = row.original.id;
+      const ptiId = generatePtiId(taskId);
+      const { projectId } = row.original; // Get required IDs
+      // Construct the URL
+      const url = `/projects/${projectId}/task/${taskId}?workspaceId=cme1bv47a0002js04h223pd0s`;
+      
+      return (
+        <Link 
+          href={url} 
+          className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+        >
+          {ptiId}
+        </Link>
+      );
+    },
   },
-},
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
