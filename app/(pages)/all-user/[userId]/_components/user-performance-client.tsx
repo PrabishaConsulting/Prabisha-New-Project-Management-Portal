@@ -23,6 +23,8 @@ import { PerformanceBarChart } from "./performance-bar-chart";
 import { PerformanceRadarChart } from "./performance-radar-chart";
 import { SafeTask } from "../page";
 import Link from "next/link";
+import { TaskCompletionTrend } from "./TaskCompletionTrend";
+
 
 type FullUser = Omit<User, "assignedTasks"> & {
   assignedTasks: SafeTask[];
@@ -478,6 +480,17 @@ export const UserPerformanceClient = ({ user }: UserPerformanceClientProps) => {
               }
             />
           </motion.div>
+        </motion.div>
+      </div>
+
+      <div className="  ">
+        <motion.div
+          variants={{
+            hidden: { y: 20, opacity: 0 },
+            visible: { y: 0, opacity: 1 },
+          }}
+        >
+          <TaskCompletionTrend userId={user.id} />
         </motion.div>
       </div>
     </div>

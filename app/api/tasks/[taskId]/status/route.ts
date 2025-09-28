@@ -33,6 +33,18 @@ export async function PUT(
       );
     }
 
+    const task = await db.task.findUnique({
+      where: { id: taskId },
+      select: {
+        title: true,
+      },
+    });
+
+    if (!task) {
+      return NextResponse.json({ message: "Task not found" }, { status: 404 });
+    }
+
+
     // 3. Validation: Parse and validate the request body
     const body = await request.json();
     const validation = updateTaskStatusSchema.safeParse(body);
@@ -64,13 +76,12 @@ export async function PUT(
       },
     });
 
-
     await logActivity(db, {
       userId: user.id,
       projectId: project?.id || "",
       taskId: taskId,
       action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
-      description: `${user.name} has updated the task status to ${status}.`,
+      description: `${user.name} has updated the ${task.title} status to ${status}.`,
     });
 
     if (result.error) {

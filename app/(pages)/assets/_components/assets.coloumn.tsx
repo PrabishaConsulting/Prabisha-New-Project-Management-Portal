@@ -113,7 +113,7 @@ export const columns: ColumnDef<AssetData>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    cell: ({ row }) => <StatusBadge status={row.original.liveStatus} />,
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {

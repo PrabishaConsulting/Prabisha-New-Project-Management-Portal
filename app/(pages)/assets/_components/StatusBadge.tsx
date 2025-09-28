@@ -2,6 +2,15 @@
 
 import { Badge } from "@/components/ui/badge";
 
+// Define the LiveStatus enum for reference
+export enum LiveStatus {
+  ONLINE = "ONLINE",
+  OFFLINE = "OFFLINE",
+  UNKNOWN = "UNKNOWN",
+  SSL_ERROR = "SSL_ERROR",
+  INVALID_DOMAIN = "INVALID_DOMAIN"
+}
+
 interface StatusBadgeProps {
   status: string | null | undefined;
 }
@@ -17,7 +26,8 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
   switch (status.toUpperCase()) {
     case "ACTIVE":
     case "UP":
-      // A custom green badge for positive statuses
+    case "ONLINE":
+      // Green badge for positive statuses
       return (
         <Badge className="border-transparent bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400">
           {formattedStatus}
@@ -26,12 +36,17 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
 
     case "EXPIRED":
     case "DOWN":
-      // The built-in destructive (red) badge
+    case "OFFLINE":
+      // Red badge for negative statuses
       return <Badge variant="destructive">{formattedStatus}</Badge>;
 
     case "PENDING":
     case "WARNING":
-      // A custom yellow badge for warning statuses
+    case "SSL_ERROR":
+    case "INVALID_DOMAIN":
+    case  "UNKNOWN":
+    
+      // Yellow badge for warning/error statuses
       return (
         <Badge className="border-transparent bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-400">
           {formattedStatus}
@@ -39,7 +54,7 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
       );
 
     default:
-      // The default secondary badge for any other status
+      // Default secondary badge for any other status
       return <Badge variant="secondary">{formattedStatus}</Badge>;
   }
 };

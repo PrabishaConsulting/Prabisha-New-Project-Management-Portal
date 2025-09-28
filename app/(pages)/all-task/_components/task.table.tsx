@@ -12,7 +12,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useState, useMemo, useRef } from "react";
 import { TaskData, taskColumns } from "./task.coloumn";
 import {
   Table,
@@ -31,23 +31,110 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { TaskStatus, Priority } from "@prisma/client";
-import { Download, FileDown } from "lucide-react";
+import { Download, FileDown, Calendar as CalendarIcon, Filter } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { format, subDays, startOfDay, startOfWeek, startOfMonth, isWithinInterval, endOfDay, endOfWeek, endOfMonth } from "date-fns";
+import { cn } from "@/lib/utils";
+import { type DateRange } from "react-day-picker";
+
+// Date Range Picker Component
+const DateRangePicker = ({ 
+  onApply, 
+  onCancel 
+}: { 
+  onApply: (range: DateRange) => void;
+  onCancel: () => void;
+}) => {
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: new Date(),
+    to: new Date(),
+  });
+
+  const handleApply = () => {
+    if (dateRange?.from) {
+      onApply(dateRange);
+    }
+  };
+
+  return (
+    <div className="w-auto p-0">
+      <Calendar
+        mode="range"
+        defaultMonth={dateRange?.from}
+        selected={dateRange}
+        onSelect={setDateRange}
+        numberOfMonths={2}
+        className="rounded-lg border shadow-sm"
+      />
+      <div className="flex justify-end space-x-2 p-3 border-t">
+        <Button 
+          variant="outline" 
+          onClick={onCancel}
+          className="px-3 py-1 h-8 text-sm"
+        >
+          Cancel
+        </Button>
+        <Button 
+          onClick={handleApply}
+          disabled={!dateRange?.from}
+          className="px-3 py-1 h-8 text-sm"
+        >
+          Apply
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 interface TaskTableProps {
   data: TaskData[];
+  showDateFilter?: boolean;
 }
 
-export default function TaskTable({ data }: TaskTableProps) {
+export default function TaskTable({ data, showDateFilter = false }: TaskTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState<string>("all");
+  const [customDateRange, setCustomDateRange] = useState<{ start: Date | null; end: Date | null }>({
+    start: new  Date(),
+    end: null
+  });
+  const [showCustomDateRange, setShowCustomDateRange] = useState(false);
+  const popoverRef = useRef<HTMLButtonElement>(null);
+
+  // Filter data based on date selection
+  const filteredData = useMemo(() => {
+    if (dateFilter === "all") return data;
+
+    const now = new Date();
+    let startDate: Date;
+    let endDate: Date;
+
+    switch (dateFilter) {
+
+      case "custom":
+        if (!customDateRange.start || !customDateRange.end) return data;
+        startDate = customDateRange.start;
+        endDate = customDateRange.end;
+        break;
+      default:
+        return data;
+    }
+
+    return data.filter(task => {
+      const taskDate = new Date(task.createdAt);
+      return isWithinInterval(taskDate, { start: startDate, end: endDate });
+    });
+  }, [data, dateFilter, customDateRange]);
 
   const table = useReactTable({
-    data,
+    data: filteredData,
     columns: taskColumns as ColumnDef<TaskData, any>[],
     state: {
       sorting,
@@ -100,7 +187,6 @@ export default function TaskTable({ data }: TaskTableProps) {
           : "N/A",
       ]);
 
-    // FIX #2: Call autoTable as an imported function, passing the doc instance
     autoTable(doc, {
       head: [
         [
@@ -120,20 +206,84 @@ export default function TaskTable({ data }: TaskTableProps) {
     doc.save("Tasks.pdf");
   };
 
+  const handleCustomDateApply = (range: DateRange) => {
+    setCustomDateRange({ 
+      start: range.from || null, 
+      end: range.to || null 
+    });
+    setDateFilter("custom");
+    setShowCustomDateRange(false);
+  };
+
+  const handleCustomDateCancel = () => {
+    setShowCustomDateRange(false);
+  };
+
+  const handleCustomRangeSelect = () => {
+    setDateFilter("custom");
+    setShowCustomDateRange(true);
+    // Focus the popover trigger to ensure it stays open
+    setTimeout(() => {
+      if (popoverRef.current) {
+        popoverRef.current.focus();
+      }
+    }, 0);
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters and Actions */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <Input
-          placeholder="Search all columns..."
-          value={globalFilter}
-          onChange={(e) => setGlobalFilter(e.target.value)}
-          className="max-w-xs"
-        />
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+          <Input
+            placeholder="Search all columns..."
+            value={globalFilter}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            className="max-w-xs"
+          />
+          
+          {/* Conditionally render date filter based on prop */}
+          {showDateFilter && (
+           
+              
+
+              <Popover open={showCustomDateRange} onOpenChange={setShowCustomDateRange}>
+                <PopoverTrigger asChild>
+                  <Button 
+                    
+                    variant="outline" 
+                    className={cn(
+                      "w-[260px] justify-start text-left font-normal",
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {customDateRange.start ? (
+                      customDateRange.end ? (
+                        <>
+                          {format(customDateRange.start, "LLL dd, y")} -{" "}
+                          {format(customDateRange.end, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(customDateRange.start, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>Pick a date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <DateRangePicker 
+                    onApply={handleCustomDateApply}
+                    onCancel={handleCustomDateCancel}
+                  />
+                </PopoverContent>
+              </Popover>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 w-full md:w-auto">
           <Select
             onValueChange={(value) => {
-              // FIX: Check for the special 'all' value to clear the filter
               const isClearValue = value === "all";
               table
                 .getColumn("status")
@@ -143,18 +293,13 @@ export default function TaskTable({ data }: TaskTableProps) {
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
-            <SelectContent className=" capitalize">
-              {/* FIX: Use a non-empty string like "all" */}
+            <SelectContent className="capitalize">
               <SelectItem value="all">All Statuses</SelectItem>
               {Object.values(TaskStatus).map((status) => {
-                // First, convert "TO_DO" to "to do"
                 const formattedText = status.replace(/_/g, " ").toLowerCase();
-
                 return (
                   <SelectItem key={status} value={status}>
-                    {/* Then, capitalize the first letter: "To do" */}
-                    {formattedText.charAt(0).toUpperCase() +
-                      formattedText.slice(1)}
+                    {formattedText.charAt(0).toUpperCase() + formattedText.slice(1)}
                   </SelectItem>
                 );
               })}
@@ -163,7 +308,6 @@ export default function TaskTable({ data }: TaskTableProps) {
 
           <Select
             onValueChange={(value) => {
-              // FIX: Apply the same logic here for the priority filter
               const isClearValue = value === "all";
               table
                 .getColumn("priority")
@@ -174,7 +318,6 @@ export default function TaskTable({ data }: TaskTableProps) {
               <SelectValue placeholder="Filter by Priority" />
             </SelectTrigger>
             <SelectContent>
-              {/* FIX: Use "all" here as well to avoid the error */}
               <SelectItem value="all">All Priorities</SelectItem>
               {Object.values(Priority).map((priority) => (
                 <SelectItem key={priority} value={priority}>
@@ -183,18 +326,54 @@ export default function TaskTable({ data }: TaskTableProps) {
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={handleExportToExcel} variant="outline">
-            <FileDown className="mr-2 h-4 w-4" /> Export Excel
-          </Button>
-          <Button onClick={handleExportToPDF} variant="outline">
-            <Download className="mr-2 h-4 w-4" /> Export PDF
-          </Button>
+
+          <div className="flex gap-2">
+            <Button onClick={handleExportToExcel} variant="outline">
+              <FileDown className="mr-2 h-4 w-4" /> Excel
+            </Button>
+            <Button onClick={handleExportToPDF} variant="outline">
+              <Download className="mr-2 h-4 w-4" /> PDF
+            </Button>
+          </div>
         </div>
       </div>
 
+      {/* Active Filters Display - only show if date filter is enabled */}
+      {showDateFilter && (
+        <div className="flex flex-wrap gap-2">
+          {dateFilter !== "all" && (
+            <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
+              <Filter className="h-3 w-3 mr-1" />
+              {dateFilter === "custom" && customDateRange.start && customDateRange.end ? (
+                <span>
+                  {format(customDateRange.start, "MMM d")} - {" "}
+                  {format(customDateRange.end, "MMM d, yyyy")}
+                </span>
+              ) : (
+                <span>
+                  {dateFilter === "today" && "Today"}
+                  {dateFilter === "yesterday" && "Yesterday"}
+                  {dateFilter === "currentWeek" && "Current Week"}
+                  {dateFilter === "currentMonth" && "Current Month"}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setDateFilter("all");
+                  setCustomDateRange({ start: null, end: null });
+                }}
+                className="ml-2 text-blue-900 hover:text-blue-700"
+              >
+                ×
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Table */}
       <div className="rounded-md border">
-        <Table className=" w-full">
+        <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

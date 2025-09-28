@@ -108,7 +108,7 @@ export default async function UserPerformancePage({ params }: { params: Promise<
       <UserPerformanceClient user={safeUser} />
       <div>
         <h2 className="text-2xl font-bold mb-4">Assigned Tasks</h2>
-        <TaskTable data={tasksForTable} />
+        <TaskTable showDateFilter={true} data={tasksForTable} />
       </div>
     </div>
   );

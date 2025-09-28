@@ -127,7 +127,7 @@ export function AssetTable({ data, columns }: AssetTableProps) {
 
       {/* --- TABLE --- */}
       <div className="rounded-md border">
-        <Table>
+        <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
