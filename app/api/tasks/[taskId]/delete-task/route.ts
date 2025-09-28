@@ -16,8 +16,14 @@ export async function DELETE(
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
+
     const id = await params;
+    if (!id.taskId) {
+      return NextResponse.json(
+        { error: "Task ID is required" },
+        { status: 400 }
+      );
+    }
 
     const taskToDelete = await db.task.findUnique({
       where: { id: id.taskId },
@@ -38,9 +44,12 @@ export async function DELETE(
         },
       },
     });
-    
+
     if (!membership) {
-      return NextResponse.json({ error: "Forbidden: You are not a member" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Forbidden: You are not a member" },
+        { status: 403 }
+      );
     }
 
     await db.task.delete({

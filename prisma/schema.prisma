@@ -38,9 +38,9 @@ model Session {
   @@map("sessions")
 }
 
-
 model User {
   id                   String                @id @default(cuid())
+  userCode             String?               @unique // 👈 new field, optional at first
   email                String                @unique
   name                 String
   password             String?
@@ -183,29 +183,28 @@ model Department {
   name    String    @unique
   project Project[]
   users   User[]
-  task     Task[]
-
+  task    Task[]
 
   @@map("departments")
 }
 
 model Workspace {
-  id                String                @id @default(cuid())
-  name              String
-  ownerId           String
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
-  projects          Project[]
-  invitations       WorkspaceInvitation[]
-  members           WorkspaceMember[]
-  owner             User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id])
-  WorkspaceCalendar WorkspaceCalendar?
+  id                  String                @id @default(cuid())
+  name                String
+  ownerId             String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  projects            Project[]
+  invitations         WorkspaceInvitation[]
+  members             WorkspaceMember[]
+  owner               User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  WorkspaceCalendar   WorkspaceCalendar?
   // Calendar settings for workspace
-  calendarEnabled     Boolean           @default(true)
-  defaultCalendarView String            @default("week")
-  businessHoursStart  String?           @default("09:00")
-  businessHoursEnd    String?           @default("18:00")
-  workingDays         String            @default("1,2,3,4,5") // Monday to Friday
+  calendarEnabled     Boolean               @default(true)
+  defaultCalendarView String                @default("week")
+  businessHoursStart  String?               @default("09:00")
+  businessHoursEnd    String?               @default("18:00")
+  workingDays         String                @default("1,2,3,4,5") // Monday to Friday
 
   @@index([ownerId], map: "workspaces_ownerId_fkey")
   @@map("workspaces")
@@ -245,14 +244,15 @@ model WorkspaceInvitation {
 }
 
 model InternalProduct {
-  id        String    @id @default(cuid())
-  name      String    @unique
-  email     String?
-  industry  String?
-  location  String?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  projects  Project[]
+  id           String    @id @default(cuid())
+  name         String    @unique
+  email        String?
+  internalCode String?
+  industry     String?
+  location     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  projects     Project[]
 }
 
 model Project {
@@ -260,7 +260,7 @@ model Project {
   name              String           @unique
   description       String?
   workspaceId       String
-  projectCode String?  @unique   // 👈 new field, optional at first
+  projectCode       String?          @unique // 👈 new field, optional at first
   status            ProjectStatus    @default(ACTIVE)
   priority          Priority         @default(MEDIUM)
   projectType       ProjectType      @default(FIXED_TERM) // <-- New field
@@ -273,7 +273,7 @@ model Project {
   departmentId      String?
   clientId          String?
   isClientProject   Boolean          @default(false) // Renamed from 'isClient' for clarity
-  notes           Json?    // <-- CHANGE THIS from String? @db.Text to Json?
+  notes             Json? // <-- CHANGE THIS from String? @db.Text to Json?
   activityLogs      ActivityLog[]
   members           ProjectMember[]
   clientUser        User?            @relation("clientProjects", fields: [clientId], references: [id])
@@ -310,7 +310,7 @@ model ProjectMember {
 model Task {
   id             String           @id @default(cuid())
   title          String
-  taskCode String?  @unique   // 👈 new field, optional at first
+  taskCode       String?          @unique // 👈 new field, optional at first
   description    String?
   projectId      String
   assigneeId     String?
@@ -333,7 +333,7 @@ model Task {
   timeEntries    TimeEntry[]
   calendarItems  CalendarItem[]
   departmentId   String?
-  department        Department?      @relation(fields: [departmentId], references: [id])
+  department     Department?      @relation(fields: [departmentId], references: [id])
 
   @@index([assigneeId], map: "tasks_assigneeId_fkey")
   @@index([projectId], map: "tasks_projectId_fkey")
@@ -438,7 +438,6 @@ model NotificationRecipient {
   @@map("notification_recipients")
 }
 
-
 model products {
   id        String        @id @default(cuid())
   title     String        @db.VarChar(255)
@@ -486,7 +485,7 @@ enum LiveStatus {
   ONLINE
   OFFLINE
   UNKNOWN
-  SSL_ERROR 
+  SSL_ERROR
   INVALID_DOMAIN // <-- Add this new status
 }
 
@@ -520,7 +519,6 @@ enum ProjectStatus {
 }
 
 enum TaskStatus {
-  
   TO_DO
   IN_PROGRESS
   REVIEW

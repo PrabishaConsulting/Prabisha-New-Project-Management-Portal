@@ -13,6 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { generatePcId } from "@/utils/task-utils";
 
 export type ClientData = {
   id: string;
@@ -25,31 +26,25 @@ export type ClientData = {
   __type: 'CLIENT' | 'INTERNAL_PRODUCT';
 };
 
-const getInitials = (name: string | null) => {
-  if (!name) return "??";
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase();
-};
 
 export const clientColumns: ColumnDef<ClientData>[] = [
   {
     id: 'serialNumber',
     header: "ID",
     cell: ({ row }) => {
-      const formattedNumber = String(row.index + 1).padStart(3, '0');
-      return <span>{`PC-${formattedNumber}`}</span>;
+          const clientId = row.original.id; // Assuming the task UUID is in row.original.id
+    const ptiId = generatePcId(clientId);
+      return <span>{ptiId}</span>;
     },
   },
   {
     accessorKey: "name",
     header: "Client Name",
     cell: ({ row }) => {
-      const { name, avatar } = row.original;
+      const { name } = row.original;
       return (
         <div className="flex items-center space-x-3">
-          <Avatar>
-            <AvatarImage src={avatar ?? undefined} alt={name ?? ''} />
-            <AvatarFallback>{getInitials(name)}</AvatarFallback>
-          </Avatar>
+        
           <span className="font-medium">{name ?? 'N/A'}</span>
         </div>
       );

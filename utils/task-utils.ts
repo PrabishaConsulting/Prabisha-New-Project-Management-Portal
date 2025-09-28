@@ -33,3 +33,7 @@ export function generatePtiId(uuid: string): string {
   const customId = generateCustomId(uuid);
   return `PTI-${customId}`;
 }
+export function generatePcId(uuid: string): string {
+  const customId = generateCustomId(uuid);
+  return `PC-${customId}`;
+}
