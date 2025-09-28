@@ -139,7 +139,7 @@ export async function getTaskCompletionTrendData(
         startDate.setDate(today.getDate() - 90);
         break;
       default:
-        startDate.setDate(today.getDate() - 90);
+        startDate.setDate(today.getDate() - 7);
     }
 
     // Build the where clause based on options
