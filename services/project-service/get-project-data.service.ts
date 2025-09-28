@@ -1,7 +1,5 @@
 import { db } from "@/lib/db";
-import { se } from "date-fns/locale";
-import { User } from "lucide-react";
-import { email, includes } from "zod";
+
 // Type definitions for Project operations
 interface ProjectFilters {
   id?: string;
