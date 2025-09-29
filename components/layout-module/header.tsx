@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { useState, useEffect } from "react"; // <-- Import useEffect
+import { useState, useEffect } from "react";
 import {
   Sun,
   Moon,
@@ -14,7 +14,7 @@ import {
   Settings,
   LogOut,
   Search,
-  Calendar, // <-- Import Search icon
+  Calendar,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -44,6 +44,9 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+
+// Import SidebarTrigger component
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 type UserMenuItem =
   | {
@@ -88,7 +91,7 @@ const userMenuItems: UserMenuItem[] = [
   },
 ];
 
-export function Header({ session , className }: { session: any , className: string}) {
+export function Header({ session, className }: { session: any; className: string }) {
   const router = useRouter();
 
   const user = session?.user;
@@ -121,12 +124,12 @@ export function Header({ session , className }: { session: any , className: stri
 
   return (
     <>
-  <header className={`sticky top-0 flex items-center justify-between h-[4.5rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm ${className}`}>
+      <header className={`sticky top-0 left-0 right-0 flex items-center justify-between h-[4.5rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}>
         {/* Left Section: Logo and App Name */}
         <div className="flex items-center gap-4 overflow-hidden">
           <Button
             variant="outline"
-            className="w-md  h-9 justify-between text-muted-foreground hover:text-foreground text-sm font-normal"
+            className="w-md h-9 justify-between text-muted-foreground hover:text-foreground text-sm font-normal"
             onClick={() => setOpen(true)}
           >
             <div className="flex items-center gap-2">

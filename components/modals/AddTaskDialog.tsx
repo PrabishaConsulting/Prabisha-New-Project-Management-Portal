@@ -467,12 +467,6 @@ export function TaskFormDialog({
                                   Feature
                                 </div>
                               </SelectItem>
-                              <SelectItem value={TaskType.IMPROVEMENT}>
-                                <div className="flex items-center gap-2">
-                                  <Wrench className="h-4 w-4" />
-                                  Improvement
-                                </div>
-                              </SelectItem>
                               <SelectItem value={TaskType.EPIC}>
                                 <div className="flex items-center gap-2">
                                   <Target className="h-4 w-4" />

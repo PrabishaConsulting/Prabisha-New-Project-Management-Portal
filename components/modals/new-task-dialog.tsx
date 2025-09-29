@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -12,7 +12,13 @@ import {
   X,
   UploadCloud,
   User2,
-} from "lucide-react"; // Added new iconsimport { format } from "date-fns";
+  FolderOpen,
+  Bug,
+  Lightbulb,
+  Wrench,
+  Target,
+} from "lucide-react";
+import { format } from "date-fns";
 import { type ProjectMember, type User, type TaskStatus, type Department } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -44,12 +50,18 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"; // For Priority
-import { Badge } from "@/components/ui/badge"; // For Attachment
-import { format } from "date-fns";
-
+import { Badge } from "@/components/ui/badge";
 
 type MemberWithUser = ProjectMember & { user: User };
+
+// Add TaskType enum
+enum TaskType {
+  TASK = "TASK",
+  BUG = "BUG",
+  FEATURE = "FEATURE",
+  IMPROVEMENT = "IMPROVEMENT",
+  EPIC = "EPIC",
+}
 
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
@@ -58,6 +70,7 @@ const formSchema = z.object({
   dueDate: z.date().optional(),
   assigneeId: z.string().optional(),
   departmentId: z.string().optional(),
+  taskType: z.nativeEnum(TaskType).optional(),
 });
 
 const attachmentSchema = z.object({
@@ -73,15 +86,24 @@ interface NewTaskDialogProps {
   reporterId: string;
   members: MemberWithUser[];
   departments: Department[];
+  userDepartment?: Department | null; // Add user department prop
   onTaskCreated: (newTask: any) => void;
   children: React.ReactNode;
 }
 
 const priorityOptions = [
-  { value: "LOW", label: "Low", icon: <Flag className="h-4 w-4 border-green-500/50 bg-green-500/10 text-green-700" />, color: "" },
-  { value: "MEDIUM", label: "Medium", icon: <Flag className="h-4 w-4" />, color: "border-yellow-500/50 bg-yellow-500/10 text-yellow-700" },
-  { value: "HIGH", label: "High", icon: <Flag className="h-4 w-4" />, color: "border-orange-500/50 bg-orange-500/10 text-orange-700" },
-  { value: "URGENT", label: "Urgent", icon: <Flag className="h-4 w-4" />, color: "border-red-500/50 bg-red-500/10 text-red-700" },
+  { value: "LOW", label: "Low", icon: <Flag className="h-4 w-4 border-green-500/50 bg-green-500/10 text-green-700" /> },
+  { value: "MEDIUM", label: "Medium", icon: <Flag className="h-4 w-4" /> },
+  { value: "HIGH", label: "High", icon: <Flag className="h-4 w-4" /> },
+  { value: "URGENT", label: "Urgent", icon: <Flag className="h-4 w-4" /> },
+];
+
+const taskTypeOptions = [
+  { value: TaskType.TASK, label: "Task", icon: <FolderOpen className="h-4 w-4" /> },
+  { value: TaskType.BUG, label: "Bug", icon: <Bug className="h-4 w-4" /> },
+  { value: TaskType.FEATURE, label: "Feature", icon: <Lightbulb className="h-4 w-4" /> },
+  { value: TaskType.IMPROVEMENT, label: "Improvement", icon: <Wrench className="h-4 w-4" /> },
+  { value: TaskType.EPIC, label: "Epic", icon: <Target className="h-4 w-4" /> },
 ];
 
 export function NewTaskDialog({
@@ -90,12 +112,14 @@ export function NewTaskDialog({
   reporterId,
   members,
   departments,
+  userDepartment,
   onTaskCreated,
   children,
 }: NewTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [showTaskType, setShowTaskType] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -104,9 +128,34 @@ export function NewTaskDialog({
       description: "",
       priority: "MEDIUM",
       assigneeId: "",
-      departmentId: "",
+      departmentId: userDepartment?.id || "",
+      taskType: TaskType.TASK,
     },
   });
+
+  // Watch department changes to show/hide task type
+  const watchedDepartmentId = form.watch("departmentId");
+
+  // Set default department and check if it's IT when dialog opens
+  useEffect(() => {
+    if (open && userDepartment) {
+      form.setValue("departmentId", userDepartment.id);
+      setShowTaskType(userDepartment.name === "IT");
+    }
+  }, [open, userDepartment, form]);
+
+  // Update showTaskType when department changes
+  useEffect(() => {
+    if (watchedDepartmentId) {
+      const selectedDepartment = departments.find(
+        (dept) => dept.id === watchedDepartmentId
+      );
+      setShowTaskType(selectedDepartment?.name === "IT");
+    } else {
+      setShowTaskType(false);
+    }
+  }, [watchedDepartmentId, departments]);
+
   const handleRemoveFile = (fileName: string) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.name !== fileName));
   };
@@ -189,10 +238,10 @@ export function NewTaskDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={setOpen} >
       <DialogTrigger asChild>{children}</DialogTrigger>
       {/* Increased width for a better layout */}
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-2xl z-50 ">
         <DialogHeader>
           <DialogTitle>Add a new Task</DialogTitle>
           <DialogDescription>
@@ -202,7 +251,7 @@ export function NewTaskDialog({
         
         <Form {...form}>
           {/* Added a scrollable area for smaller screens */}
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-2 max-h-[70vh] overflow-y-auto">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-2 max-h-[70vh] overflow-y-auto z-[999]">
             <FormField
               control={form.control}
               name="title"
@@ -217,20 +266,6 @@ export function NewTaskDialog({
               )}
             />
             
-            {/* <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Description (optional)</FormLabel>
-                  <FormControl>
-                    <Textarea placeholder="Add more details about the task..." rows={3} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
-
             {/* Grouped Assignee and Department */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -279,39 +314,63 @@ export function NewTaskDialog({
               />
             </div>
             
+            {/* Task Type Dropdown (conditionally shown) */}
+            {showTaskType && (
+              <FormField
+                control={form.control}
+                name="taskType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Task Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select task type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {taskTypeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              {option.icon}
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+            
             {/* Grouped Priority and Due Date */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* New Priority Control */}
+              {/* Priority Dropdown */}
               <FormField
                 control={form.control}
                 name="priority"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Priority</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="grid grid-cols-2 lg:grid-cols-4 gap-2"
-                      >
-                        {priorityOptions.map((option ) => (
-                          <FormItem key={option.value}>
-                            <FormControl>
-                              <RadioGroupItem value={option.value} className="sr-only" />
-                            </FormControl>
-                            <FormLabel
-                              className={cn(
-                                "flex flex-col w-14 items-center justify-center rounded-md border-2 border-muted bg-popover p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer",
-                                field.value === option.value && "border-primary"
-                              )}
-                            >
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {priorityOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
                               {option.icon}
                               {option.label}
-                            </FormLabel>
-                          </FormItem>
+                            </div>
+                          </SelectItem>
                         ))}
-                      </RadioGroup>
-                    </FormControl>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}

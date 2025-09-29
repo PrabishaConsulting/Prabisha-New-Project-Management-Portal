@@ -92,41 +92,7 @@ export default function ProjectBoard({
     if (projectId) fetchBoardData();
   }, [projectId]);
 
-  // ✨ 2. ADD DUE DATE STATUS FUNCTION
-  const getDueDateStatus = () => {
-    if (!boardData?.dueDate) {
-      return null;
-    }
-    const dueDate = new Date(boardData.dueDate);
-    const today = new Date();
-    const daysLeft = differenceInDays(dueDate, today);
 
-    if (isToday(dueDate)) {
-      return (
-        <span className="flex items-center gap-2 text-sm font-bold text-amber-500">
-          <CalendarDays className="h-4 w-4" />
-          Due Today
-        </span>
-      );
-    }
-
-    if (isPast(dueDate)) {
-      return (
-        <span className="flex items-center gap-2 text-sm font-bold text-red-500">
-          <CalendarDays className="h-4 w-4" />
-          {Math.abs(daysLeft)} {Math.abs(daysLeft) === 1 ? "day" : "days"}{" "}
-          overdue
-        </span>
-      );
-    }
-
-    return (
-      <span className="flex items-center gap-2 text-sm font-bold text-green-600">
-        <CalendarDays className="h-4 w-4" />
-        {daysLeft + 1} {daysLeft + 1 === 1 ? "day" : "days"} left
-      </span>
-    );
-  };
 
   const tasksByStatus = useMemo(() => {
     const initial: Record<TaskStatus, TaskWithAssignee[]> = {

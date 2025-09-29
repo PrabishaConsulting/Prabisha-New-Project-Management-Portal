@@ -202,7 +202,7 @@ export default function DashboardLayout({
           children: [
             {
               name: "My Projects",
-              href: `/account/${session?.user?.id}/`,
+              href: `/account/${session?.user?.id}`,
               icon: Settings,
             },
             {
@@ -226,57 +226,57 @@ export default function DashboardLayout({
   }
 
   return (
-<ProjectContext.Provider
-  value={{
-    workspaceId: params.workspaceId as string,
-    projectId: params.projectId as string,
-  }}
->
-  <SidebarProvider>
-    <div className="flex min-h-screen w-full bg-background">
-      {/* Sidebar with improved laptop sizing */}
-      <AppSidebar
-        navigationGroups={navigationGroups}
-        workspaces={workspaces}
-        currentWorkspace={currentWorkspace}
-        onWorkspaceSwitch={handleSwitchWorkspace}
-        onWorkspaceAdd={handleAddWorkspace}
-        showWorkspaceSwitcher={true}
-        variant="sidebar"
-        collapsible="icon"
-        className="border-r border-border/40 backdrop-blur-sm z-50"
-      />
-      
-      {/* ENHANCED FIX: Main content container with proper flex and overflow handling */}
-      <SidebarInset className="flex-1 flex flex-col min-w-0 max-w-full">
-        <MobileHeader  />
-        
-        {/* Header with laptop-optimized spacing */}
-        <div className="relative">
-          <Header 
-            session={session} 
-            className="sticky top-0 z-40 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    <ProjectContext.Provider
+      value={{
+        workspaceId: params.workspaceId as string,
+        projectId: params.projectId as string,
+      }}
+    >
+      <SidebarProvider>
+        <div className="flex min-h-screen w-full bg-background">
+          {/* Sidebar with improved laptop sizing */}
+          <AppSidebar
+            navigationGroups={navigationGroups}
+            workspaces={workspaces}
+            currentWorkspace={currentWorkspace}
+            onWorkspaceSwitch={handleSwitchWorkspace}
+            onWorkspaceAdd={handleAddWorkspace}
+            showWorkspaceSwitcher={true}
+            variant="sidebar"
+            collapsible="icon"
+            className="border-r border-border/40 backdrop-blur-sm "
           />
-          
-          {/* Improved SidebarTrigger positioning for laptops */}
-          <SidebarTrigger className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-9 left-[-0.85rem] and z-50" />
-        </div>
-
-        {/* ENHANCED FIX: Main content with optimized laptop layout */}
-        <main className="flex-1 relative">
-          {/* Content wrapper with proper padding and max-width for laptops */}
-          <div className="h-full w-full">
-            <div className="container mx-auto h-full px-4 py-6 lg:px-8 lg:py-8 max-w-7xl">
-              {/* Scrollable content area */}
-              <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
-                {children}
-              </div>
+          {/* ENHANCED FIX: Main content container with proper flex and overflow handling */}
+          <SidebarInset className="flex-1 flex flex-col min-w-0 max-w-full">
+            {/* Mobile Header */}
+            <MobileHeader />
+            
+            {/* Header with laptop-optimized spacing */}
+            <div className="sticky top-0 z-[999]">
+              <Header 
+                session={session}
+                className="" 
+              />
+              
+              {/* Improved SidebarTrigger positioning for laptops */}
+              <SidebarTrigger className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-9 left-[-0.85rem] z-50" />
             </div>
-          </div>
-        </main>
-      </SidebarInset>
-    </div>
-  </SidebarProvider>
-</ProjectContext.Provider>
+
+            {/* ENHANCED FIX: Main content with optimized laptop layout */}
+            <main className="flex-1 relative">
+              {/* Content wrapper with proper padding and max-width for laptops */}
+              <div className="h-full w-full">
+                <div className="container mx-auto h-full px-4 py-6 lg:px-8 lg:py-8 max-w-7xl">
+                  {/* Scrollable content area */}
+                  <div className="h-full overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                    {children}
+                  </div>
+                </div>
+              </div>
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
+    </ProjectContext.Provider>
   );
 }
