@@ -307,15 +307,24 @@ model ProjectMember {
   @@map("project_members")
 }
 
+enum TaskType {
+  TASK
+  BUG
+  FEATURE
+  IMPROVEMENT
+  EPIC
+}
+
 model Task {
-  id             String           @id @default(cuid())
-  title          String
-  taskCode       String?          @unique // 👈 new field, optional at first
-  description    String?
-  projectId      String
-  assigneeId     String?
-  reporterId     String
-  position       Int
+  id          String    @id @default(cuid())
+  title       String
+  taskCode    String?   @unique // 👈 new field, optional at first
+  description String?
+  projectId   String
+  assigneeId  String?
+  reporterId  String
+  position    Int
+  taskType    TaskType? @default(TASK) // New field for task type
   priority       Priority         @default(MEDIUM)
   status         TaskStatus       @default(TO_DO)
   estimatedHours Decimal?         @db.Decimal(5, 2)

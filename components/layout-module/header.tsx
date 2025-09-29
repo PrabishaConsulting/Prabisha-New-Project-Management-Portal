@@ -4,7 +4,6 @@
 import { useRouter } from "next/navigation";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react"; // <-- Import useEffect
 import {
@@ -14,7 +13,6 @@ import {
   User,
   Settings,
   LogOut,
-  Rocket,
   Search,
   Calendar, // <-- Import Search icon
 } from "lucide-react";

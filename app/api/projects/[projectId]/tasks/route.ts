@@ -6,6 +6,7 @@ import { createTask } from '@/services/task-service/task.service';
 import { getCurrentUser } from '@/utils/getcurrentUser';
 import { AuthorizationError } from '@/services/task-service/auth.service';
 import { Priority, TaskStatus } from '@/types'; // Adjust this import if needed
+import { TaskType } from '@prisma/client';
 
 // 1. Define a schema for the attachment object
 const attachmentSchema = z.object({
@@ -20,8 +21,10 @@ const createTaskSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   status: z.nativeEnum(TaskStatus),
   description: z.string().optional(),
+      taskType: z.nativeEnum(TaskType).default(TaskType.TASK),
+  
   priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
-  dueDate: z.string().datetime().optional(),
+    dueDate: z.coerce.date(),
   assigneeId: z.string().optional(),
   departmentId: z.string().optional(), // Added departmentId
   attachments: z.array(attachmentSchema).optional(), // Added attachments array
@@ -51,12 +54,14 @@ export async function POST(
     // 3. The validated data now includes attachments and other new fields
     const { dueDate, ...taskData } = validation.data;
 
+
+
     const newTask = await createTask(
       {
         ...taskData, // This now correctly passes attachments to your service
         projectId,
         reporterId: user.id,
-        dueDate: dueDate ? new Date(dueDate) : undefined,
+        dueDate: dueDate ,
       },
       user.id
     );

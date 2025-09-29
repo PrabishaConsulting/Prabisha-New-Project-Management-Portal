@@ -5,7 +5,7 @@ import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2 } from "lucide-react";
+import { CalendarIcon, Loader2, Bug, Lightbulb, Wrench, Target, FolderOpen, Building } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Your types and schemas
@@ -57,6 +57,8 @@ import {
 } from "@/components/ui/shadcn-io/dropzone";
 import { toast } from "sonner";
 import z from "zod";
+import { TaskType } from "@prisma/client";
+
 // --- Props Interface ---
 interface TaskFormDialogProps {
   isOpen: boolean;
@@ -66,8 +68,10 @@ interface TaskFormDialogProps {
 
 // --- Type for the API response needed by the form ---
 interface FormContextData {
-  projects: Project[];
+  projects: (Project & { department?: { id: string; name: string } | null })[];
   currentUser: User;
+  departments: { id: string; name: string }[];
+  userDepartment: { id: string; name: string } | null;
 }
 
 // --- SWR Fetcher Function ---
@@ -81,6 +85,8 @@ export function TaskFormDialog({
 }: TaskFormDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [showTaskType, setShowTaskType] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Fetches data only when the dialog is open
   const {
@@ -93,19 +99,56 @@ export function TaskFormDialog({
     { revalidateOnFocus: false }
   );
 
+  // Initialize form with default values including current date
   const form = useForm<TaskFormInput>({
     resolver: zodResolver(taskFormSchema),
     defaultValues: {
       priority: Priority.MEDIUM,
       status: TaskStatus.TO_DO,
-      startDate: new Date(), // Set start date to today by default
+      startDate: new Date(), // Set to current date by default
+      taskType: TaskType.TASK,
+      departmentId: formContextData?.userDepartment?.id || "",
     },
   });
 
   const projects = formContextData?.projects || [];
+  const departments = formContextData?.departments || [];
+  const userDepartment = formContextData?.userDepartment || null;
   const currentUser = formContextData?.currentUser;
   const watchedProjectId = form.watch("projectId");
+  const watchedDepartmentId = form.watch("departmentId");
 
+  // Initialize form with user's department when data loads
+  useEffect(() => {
+    if (formContextData && userDepartment && !isInitialized) {
+      form.setValue("departmentId", userDepartment.id, { shouldDirty: false });
+      setIsInitialized(true);
+      
+      // Show task type if user's department is IT
+      setShowTaskType(userDepartment.name === "IT");
+    }
+  }, [formContextData, userDepartment, form, isInitialized]);
+
+  // Reset initialization state when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsInitialized(false);
+    }
+  }, [isOpen]);
+
+  // Show task type only if department is IT
+  useEffect(() => {
+    if (watchedDepartmentId) {
+      const selectedDepartment = departments.find(
+        (dept) => dept.id === watchedDepartmentId
+      );
+      setShowTaskType(selectedDepartment?.name === "IT");
+    } else {
+      setShowTaskType(false);
+    }
+  }, [watchedDepartmentId, departments]);
+
+  // Update form when project is selected
   useEffect(() => {
     if (!formContextData) return;
 
@@ -117,8 +160,6 @@ export function TaskFormDialog({
         (m) => m.role === "LEAD"
       )?.user;
 
-      // Set default column to the first in the list
-
       // Set default reporter and assignee
       form.setValue("reporterId", projectLead?.id || "");
       const isCurrentUserMember = projectUsers.some(
@@ -128,12 +169,36 @@ export function TaskFormDialog({
         "assigneeId",
         isCurrentUserMember ? currentUser.id : undefined
       );
+
+      // Set department to project's department if it exists, otherwise keep current
+      if (selectedProject.department) {
+        form.setValue("departmentId", selectedProject.department.id, { shouldDirty: false });
+      }
     } else {
       // Reset dependent fields if no project is selected
       form.resetField("reporterId");
       form.resetField("assigneeId");
+      // Reset to user's department if no project is selected
+      if (userDepartment) {
+        form.setValue("departmentId", userDepartment.id, { shouldDirty: false });
+      }
     }
-  }, [watchedProjectId, projects, currentUser, form, formContextData]);
+  }, [watchedProjectId, projects, currentUser, form, formContextData, userDepartment]);
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset({
+        priority: Priority.MEDIUM,
+        status: TaskStatus.TO_DO,
+        startDate: new Date(), // Reset to current date
+        taskType: TaskType.TASK,
+        departmentId: userDepartment?.id || "",
+      });
+      setFiles([]);
+      setIsInitialized(false);
+    }
+  }, [isOpen, form, userDepartment?.id]);
 
   const handleFormSubmit = async (data: TaskFormInput) => {
     setIsSubmitting(true);
@@ -152,8 +217,6 @@ export function TaskFormDialog({
           const response = await fetch("/api/upload", {
             method: "POST",
             body: formData,
-            // Note: Do NOT set the 'Content-Type' header yourself.
-            // The browser will automatically set it correctly for FormData.
           });
 
           if (!response.ok) {
@@ -190,6 +253,7 @@ export function TaskFormDialog({
 
       form.reset();
       setFiles([]);
+      setIsInitialized(false);
       onOpenChange(false);
     } catch (error) {
       console.error("Submission failed:", error);
@@ -203,7 +267,7 @@ export function TaskFormDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl ">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Add New Task</DialogTitle>
         </DialogHeader>
@@ -220,6 +284,7 @@ export function TaskFormDialog({
               className="space-y-4"
             >
               <div className="space-y-4">
+                {/* Essential Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     name="title"
@@ -229,7 +294,7 @@ export function TaskFormDialog({
                         <FormLabel>Task Name *</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="e.g., Finalize Q4 budget report"
+                            placeholder="What needs to be done?"
                             {...field}
                           />
                         </FormControl>
@@ -242,7 +307,7 @@ export function TaskFormDialog({
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Select a Project *</FormLabel>
+                        <FormLabel>Project *</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value || ""}
@@ -265,13 +330,15 @@ export function TaskFormDialog({
                     )}
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Assignment Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     name="assigneeId"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Assign To?</FormLabel>
+                        <FormLabel>Assign To</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value || ""}
@@ -303,47 +370,11 @@ export function TaskFormDialog({
                     )}
                   />
                   <FormField
-                    name="reporterId"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Reviewer*</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                          disabled={!watchedProjectId}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a reporter" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {((selectedProject) =>
-                              selectedProject
-                                ? selectedProject.members.map((m) => (
-                                    <SelectItem
-                                      key={m.user.id}
-                                      value={m.user.id}
-                                    >
-                                      {m.user.name}
-                                    </SelectItem>
-                                  ))
-                                : null)(
-                              projects.find((p) => p.id === watchedProjectId)
-                            )}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
                     name="priority"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Priority of the task</FormLabel>
+                        <FormLabel>Priority</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           defaultValue={field.value}
@@ -365,13 +396,106 @@ export function TaskFormDialog({
                     )}
                   />
                 </div>
+                
+                {/* Department and Task Type */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    name="departmentId"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Department</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          value={field.value || ""}
+                          defaultValue={userDepartment?.id || ""}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select department" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {departments.map((dept) => (
+                              <SelectItem key={dept.id} value={dept.id}>
+                                <div className="flex items-center gap-2">
+                                  <Building className="h-4 w-4" />
+                                  {dept.name}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Task Type Field - Conditionally shown for IT department */}
+                  {showTaskType && (
+                    <FormField
+                      name="taskType"
+                      control={form.control}
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Task Type</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={TaskType.TASK}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select task type" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value={TaskType.TASK}>
+                                <div className="flex items-center gap-2">
+                                  <FolderOpen className="h-4 w-4" />
+                                  Task
+                                </div>
+                              </SelectItem>
+                              <SelectItem value={TaskType.BUG}>
+                                <div className="flex items-center gap-2">
+                                  <Bug className="h-4 w-4" />
+                                  Bug
+                                </div>
+                              </SelectItem>
+                              <SelectItem value={TaskType.FEATURE}>
+                                <div className="flex items-center gap-2">
+                                  <Lightbulb className="h-4 w-4" />
+                                  Feature
+                                </div>
+                              </SelectItem>
+                              <SelectItem value={TaskType.IMPROVEMENT}>
+                                <div className="flex items-center gap-2">
+                                  <Wrench className="h-4 w-4" />
+                                  Improvement
+                                </div>
+                              </SelectItem>
+                              <SelectItem value={TaskType.EPIC}>
+                                <div className="flex items-center gap-2">
+                                  <Target className="h-4 w-4" />
+                                  Epic
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
+                
+                {/* Time Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     name="estimatedHours"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Time Estimate (in hours)*</FormLabel>
+                        <FormLabel>Est. Hours</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -407,18 +531,16 @@ export function TaskFormDialog({
                                   !field.value && "text-muted-foreground"
                                 )}
                               >
-                                {/* FIX: Cast field.value to Date for the format function */}
                                 {field.value ? (
-                                  format(field.value as Date, "PPP")
+                                  format(field.value as Date, "MMM d")
                                 ) : (
-                                  <span>Pick a date</span>
+                                  <span>Today</span>
                                 )}
                                 <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
                             </FormControl>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            {/* FIX: Cast field.value for the selected prop */}
                             <Calendar
                               mode="single"
                               selected={field.value as Date | undefined}
@@ -431,77 +553,75 @@ export function TaskFormDialog({
                       </FormItem>
                     )}
                   />
-<FormField
-  name="dueDate"
-  control={form.control}
-  render={({ field }) => {
-    // Get startDate from form and assert type
-    const startDate = form.getValues("startDate") as Date | null | undefined;
+                  <FormField
+                    name="dueDate"
+                    control={form.control}
+                    render={({ field }) => {
+                      // Get startDate from form and assert type
+                      const startDate = form.getValues("startDate") as Date | null | undefined;
 
-    // Compute minDueDate = startDate + 3 hours
-    const minDueDate = startDate
-      ? new Date(startDate.getTime() + 3 * 60 * 60 * 1000)
-      : undefined;
+                      // Compute minDueDate = startDate + 3 hours
+                      const minDueDate = startDate
+                        ? new Date(startDate.getTime() + 3 * 60 * 60 * 1000)
+                        : undefined;
 
-    return (
-      <FormItem className="flex flex-col">
-        <FormLabel>Due Date</FormLabel>
-        <Popover>
-          <PopoverTrigger asChild>
-            <FormControl>
-              <Button
-                variant="outline"
-                className={cn(
-                  "pl-3 text-left font-normal",
-                  !field.value && "text-muted-foreground"
-                )}
-              >
-                {field.value
-                  ? format(field.value as Date, "PPP p")
-                  : <span>Pick a date</span>}
-                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-              </Button>
-            </FormControl>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={field.value as Date | undefined}
-              onSelect={(date) => {
-                if (!date) return;
-                // enforce minimum 3-hour difference
-                if (minDueDate && date < minDueDate) {
-                  field.onChange(minDueDate);
-                } else {
-                  field.onChange(date);
-                }
-              }}
-              // Disable all dates before minDueDate
-              disabled={(date) => minDueDate ? date < minDueDate : false}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
-        <FormMessage />
-      </FormItem>
-    );
-  }}
-/>
-
+                      return (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Due Date</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className={cn(
+                                    "pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {field.value
+                                    ? format(field.value as Date, "MMM d")
+                                    : <span>Set date</span>}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={field.value as Date | undefined}
+                                onSelect={(date) => {
+                                  if (!date) return;
+                                  // enforce minimum 3-hour difference
+                                  if (minDueDate && date < minDueDate) {
+                                    field.onChange(minDueDate);
+                                  } else {
+                                    field.onChange(date);
+                                  }
+                                }}
+                                // Disable all dates before minDueDate
+                                disabled={(date) => minDueDate ? date < minDueDate : false}
+                                initialFocus
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
                 </div>
+                
+                {/* Description */}
                 <FormField
                   name="description"
                   control={form.control}
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        Description (if not added no one will question you about
-                        it, it's good for you to add this)
-                      </FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="Add extra details..."
-                          rows={3}
+                          placeholder="Add details..."
+                          rows={2}
                           {...field}
                         />
                       </FormControl>
@@ -509,18 +629,20 @@ export function TaskFormDialog({
                     </FormItem>
                   )}
                 />
+                
+                {/* Attachments */}
                 <Dropzone
                   src={files}
                   onDrop={(acceptedFiles) => setFiles(acceptedFiles)}
-                  maxFiles={5} // Example: Allow up to 5 files
-                  maxSize={5 * 1024 * 1024} // Example: 5MB per file
+                  maxFiles={5}
+                  maxSize={5 * 1024 * 1024}
                   onError={(err) => toast.error(err.message)}
                 >
                   <DropzoneContent />
                   <DropzoneEmptyState />
                 </Dropzone>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
               </div>
+              
               <DialogFooter className="pt-4">
                 <Button
                   type="button"
@@ -543,14 +665,35 @@ export function TaskFormDialog({
     </Dialog>
   );
 }
-// --- Skeleton Loader Component ---
+
+// --- Simplified Skeleton Loader Component ---
 const FormSkeleton = () => (
   <div className="space-y-4 p-4">
-    <div className="space-y-2">
-      <Skeleton className="h-4 w-1/4" />
-      <Skeleton className="h-10 w-full" />
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-1/4" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-10 w-full" />
+      </div>
     </div>
     <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    </div>
+    <div className="grid grid-cols-3 gap-4">
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-1/3" />
+        <Skeleton className="h-10 w-full" />
+      </div>
       <div className="space-y-2">
         <Skeleton className="h-4 w-1/3" />
         <Skeleton className="h-10 w-full" />

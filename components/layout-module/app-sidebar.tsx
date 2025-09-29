@@ -7,25 +7,15 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   LogOut,
-  Plus,
   ChevronsUpDown,
-  Check,
   ChevronRight,
   ChevronDown,
-  X,
-  Menu,
+  
 } from "lucide-react";
 
 // Shadcn UI Components
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -48,20 +38,12 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
-  SidebarProvider,
   SidebarRail,
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
+
 import {
   Popover,
   PopoverContent,
@@ -132,11 +114,7 @@ const getInitials = (name = "") =>
 
 export function AppSidebar({
   navigationGroups,
-  workspaces = [],
-  currentWorkspace = null,
-  onWorkspaceSwitch,
-  onWorkspaceAdd,
-  showWorkspaceSwitcher = true,
+
   className,
   variant = "sidebar",
   side = "left",

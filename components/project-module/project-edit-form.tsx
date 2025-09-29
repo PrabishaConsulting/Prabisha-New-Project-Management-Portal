@@ -49,6 +49,7 @@ import {
 } from "@/components/ui/command";
 import { Calendar } from "@/components/ui/calendar";
 import { Checkbox } from "../ui/checkbox";
+
 // --- TYPE DEFINITIONS ---
 type internalProducts = Pick<InternalProduct, "id" | "name">;
 type DropdownDepartment = Pick<Department, "id" | "name">;
@@ -85,8 +86,8 @@ export const projectFormSchema = z
     ),
 
     // --- New Fields ---
-    projectType: z.literal([  ProjectType.FIXED_TERM , ProjectType.ONGOING], {
-      error: "Project type is required",
+    projectType: z.nativeEnum(ProjectType, {
+      error: () => ({ message: "Project type is required" }),
     }),
     isClientProject: z.boolean().default(false),
     clientId: z.string().cuid("Invalid client ID").nullable().optional(),
@@ -95,7 +96,15 @@ export const projectFormSchema = z
       .cuid("Invalid product ID")
       .nullable()
       .optional(),
-    zohoFolderLink: z.nullable(z.url("Must be a valid URL")).optional(),
+    zohoFolderLink: z
+      .union([
+        z.string().url("Must be a valid URL"),
+        z.literal(""),
+        z.null(),
+      ])
+      .transform((val) => (val === "" ? null : val))
+      .nullable()
+      .optional(),
   })
   .superRefine((data, ctx) => {
     // --- Due Date Logic ---
@@ -119,7 +128,7 @@ export const projectFormSchema = z
 
     // --- Conditional Logic for New Fields ---
     // 3. If the project type is 'FIXED_TERM', a due date is required.
-    if (data.projectType === "FIXED_TERM" && !data.dueDate) {
+    if (data.projectType === ProjectType.FIXED_TERM && !data.dueDate) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "A due date is required for Fixed Term projects.",
@@ -243,13 +252,14 @@ export function ProjectEditForm({
 
   const onSubmit = (data: ProjectFormData) => {
     startTransition(async () => {
+      // Ensure zohoFolderLink is null if empty
       const payload = {
         ...data,
+        zohoFolderLink: data.zohoFolderLink || null,
         members: data.members.map(({ userId, role }) => ({ userId, role })),
       };
 
       const response = await fetch(`/api/data/projects/${initialProject.id}`, {
-        // Ensure this API endpoint is correct
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -370,6 +380,11 @@ export function ProjectEditForm({
                   ))}
                 </SelectContent>
               </Select>
+              {errors.projectType && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.projectType.message}
+                </p>
+              )}
             </div>
           )}
         />
@@ -425,6 +440,11 @@ export function ProjectEditForm({
                     ))}
                   </SelectContent>
                 </Select>
+                {errors.clientId && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.clientId.message}
+                  </p>
+                )}
               </div>
             )}
           />
@@ -525,6 +545,11 @@ export function ProjectEditForm({
                   />
                 </PopoverContent>
               </Popover>
+              {errors.startDate && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.startDate.message}
+                </p>
+              )}
             </div>
           )}
         />
@@ -587,16 +612,25 @@ export function ProjectEditForm({
       {/* --- EXTERNAL LINKS --- */}
       <div>
         <Label htmlFor="zohoFolderLink">Zoho Folder Link</Label>
-        <Input
-          id="zohoFolderLink"
-          placeholder="https://workdrive.zoho.in/..."
-          {...register("zohoFolderLink")}
+        <Controller
+          name="zohoFolderLink"
+          control={control}
+          render={({ field }) => (
+            <>
+              <Input
+                id="zohoFolderLink"
+                placeholder="https://workdrive.zoho.in/..."
+                value={field.value || ""}
+                onChange={(e) => field.onChange(e.target.value || null)}
+              />
+              {errors.zohoFolderLink && (
+                <p className="text-red-500 text-sm mt-1">
+                  {errors.zohoFolderLink.message}
+                </p>
+              )}
+            </>
+          )}
         />
-        {errors.zohoFolderLink && (
-          <p className="text-red-500 text-sm mt-1">
-            {errors.zohoFolderLink.message}
-          </p>
-        )}
       </div>
 
       {/* --- MEMBERS MANAGEMENT --- */}
