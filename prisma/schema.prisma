@@ -37,6 +37,16 @@ model Session {
   @@index([userId], map: "sessions_userId_fkey")
   @@map("sessions")
 }
+// model Role2{
+//   id                 String               @id @unique @default(cuid())
+//   name               String               @unique
+//   createdAt          DateTime             @default(now())
+//   updatedAt          DateTime             @updatedAt
+//   SidebarGroupAccess SidebarGroupAccess[]
+//   SidebarItemAccess  SidebarItemAccess[]
+// }
+
+
 
 model User {
   id                   String                @id @default(cuid())
@@ -456,6 +466,58 @@ model products {
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 }
+
+// model SidebarGroup {
+//   id        String   @id @default(cuid())
+//   title     String   @unique
+//   position  Int
+//   isActive  Boolean  @default(true)
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   items      SidebarItem[]
+//   roleAccess SidebarGroupAccess[]
+// }
+
+// model SidebarItem {
+//   id        String   @id @default(cuid())
+//   label     String
+//   href      String   @unique
+//   icon      String?
+//   position  Int
+//   isActive  Boolean  @default(true)
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   sidebarGroupId String
+//   sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)
+
+//   roleAccess SidebarItemAccess[]
+// }
+
+// model SidebarGroupAccess {
+//   roleId         String
+//   sidebarGroupId String
+//   hasAccess      Boolean      @default(true)
+//   sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)
+//   role           Role2         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+//   @@id([roleId, sidebarGroupId])
+//   @@index([sidebarGroupId])
+//   @@index([roleId])
+// }
+
+// model SidebarItemAccess {
+//   roleId        String
+//   sidebarItemId String
+//   hasAccess     Boolean     @default(true)
+//   sidebarItem   SidebarItem @relation(fields: [sidebarItemId], references: [id], onDelete: Cascade)
+//   role          Role2       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+//   @@id([roleId, sidebarItemId])
+//   @@index([sidebarItemId])
+//   @@index([roleId])
+// }
 
 enum ProductStatus {
   PENDING
