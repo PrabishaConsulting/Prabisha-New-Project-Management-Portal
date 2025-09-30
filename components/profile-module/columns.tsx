@@ -40,6 +40,7 @@ interface Project {
   startDate: string | number | Date;
   dueDate: string | number | Date;
   status: string;
+  projectCode: string;
   lead: UserInfo;
   department?: { id: string; name: string };
   client?: { id: string; name: string };
@@ -84,7 +85,7 @@ export const columns = (
    cell: ({ row, table }) => {
     const totalRows = table.getRowModel().rows.length;
     const serialNumber = String(totalRows - row.index).padStart(4, "0");
-    return <div className="font-medium">PCP-{serialNumber}</div>;
+    return <div className="font-medium">{row.original.projectCode }</div>;
   },
   },
   {

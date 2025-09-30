@@ -168,7 +168,7 @@ export function Header({ session, className }: { session: any; className: string
             </Button>
           </FeedbackDialog>
           {/* User Avatar with Dropdown */}
-          <DropdownMenu>
+          <DropdownMenu >
             <DropdownMenuTrigger asChild>
               <Avatar className="h-9 w-9 cursor-pointer capitalize">
                 <AvatarImage
@@ -178,7 +178,7 @@ export function Header({ session, className }: { session: any; className: string
                 <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
               </Avatar>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 z-999">
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <span className="font-medium truncate">{user?.name}</span>

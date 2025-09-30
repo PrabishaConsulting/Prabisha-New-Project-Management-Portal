@@ -8,7 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,18 +76,30 @@ export const ProjectCard = ({
       .join("")
       .toUpperCase();
   return (
-    <Card className="hover:shadow-lg transition-shadow flex flex-col">
+    <Card className="hover:shadow-lg transition-shadow flex flex-col ">
       <div
         className="cursor-pointer flex-grow"
         onClick={() =>
           router.push(`/projects/${project.id}?workspaceId=${workspaceId}`)
         }
       >
-        <CardHeader className="pb-4">
-          <div className="flex items-start justify-between gap-2">
-            <CardTitle className="flex items-center gap-3">
-              <Briefcase className="h-6 w-6 text-primary" />
-              <span className="font-semibold">{project.name}</span>
+          <div className="flex items-start justify-between ">
+            <CardTitle className="flex items-center px-2  ">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="flex">  
+                      <Briefcase className="h-4 w-4 mr-2" />
+                    <span className="font-semibold capitalize truncate w-64">
+                      {project.name}
+                    </span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{project.name}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </CardTitle>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -115,17 +132,11 @@ export const ProjectCard = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          <CardDescription>
-            {project.department
-              ? `Dept: ${project.department.name}`
-              : "No department"}
-          </CardDescription>
-        </CardHeader>
         <CardContent className="flex-grow flex flex-col justify-end gap-4">
           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
             <span className="font-semibold">Lead:</span>
             <UserAvatar user={project.lead} />
-            <span>{project.lead?.name || "N/A"}</span>
+            <span className=" capitalize truncate">{project.lead?.name || "N/A"}</span>
           </div>
           <div className="flex items-center justify-between">
             <Badge
@@ -133,29 +144,28 @@ export const ProjectCard = ({
             >
               {project.status}
             </Badge>
-            <span className="text-xs text-muted-foreground">
-              Due: {new Date(project.dueDate).toLocaleDateString()}
-            </span>
-            <span>
-              <AvatarGroup>
-                  {project.members.slice(0, 6).map((member, index) => (
-                    <Avatar className="w-8 h-8 cursor-pointer" key={index}>
-                      <AvatarImage
-                        className="object-cover"
-                        src={member.user.avatar || ""}
-                        alt={`${member.user.name}'s avatar`}
-                      />
-                      <AvatarFallback>
-                        {getInitials(member.user?.name || "")}
-                      </AvatarFallback>
-                      <AvatarGroupTooltip>
-                        <p>{member.user.name}</p>
-                      </AvatarGroupTooltip>
-                    </Avatar>
-                  ))}
-               
-              </AvatarGroup>
-            </span>
+          </div>
+
+          <div className=" flex flex-col gap-2">
+            <p className="font-semibold ">Project Members
+            </p>
+            <AvatarGroup>
+              {project.members.slice(0, 9).map((member, index) => (
+                <Avatar className="w-10 h-10 cursor-pointer" key={index}>
+                  <AvatarImage
+                    className="object-cover"
+                    src={member.user.avatar || ""}
+                    alt={`${member.user.name}'s avatar`}
+                  />
+                  <AvatarFallback>
+                    {getInitials(member.user?.name || "")}
+                  </AvatarFallback>
+                  <AvatarGroupTooltip>
+                    <p>{member.user.name}</p>
+                  </AvatarGroupTooltip>
+                </Avatar>
+              ))}
+            </AvatarGroup>
           </div>
         </CardContent>
       </div>

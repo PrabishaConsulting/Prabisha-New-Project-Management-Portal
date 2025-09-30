@@ -13,8 +13,11 @@ export interface ProjectCreationData {
   departmentId: string;
   isClientProject: boolean;
   clientId?: string;
+  projectCode?: string;
   internalProductId?: string;
 }
+
+
 
 export const createProjectInDb = async (projectData: ProjectCreationData) => {
   // --- VALIDATION ---

@@ -22,6 +22,7 @@ interface Project {
   startDate: string | number | Date;
   dueDate: string | number | Date;
   status: string;
+  projectCode: string;
   lead: UserInfo;
   department?: { id: string; name: string };
   client?: { id: string; name: string };

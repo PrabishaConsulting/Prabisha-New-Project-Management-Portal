@@ -10,6 +10,7 @@ import {
   ProjectCreationData,
 } from "@/services/project-service/create-project.service";
 import { hasUserRole } from "@/services/role-services/has-user-role.service";
+import { generateNextProjectCode } from "@/utils/project-code";
 // import { queueProjectCreatedNotification } from "@/services/notification-service/notification.service";
 /**
  * Fetches all projects for a given workspace, correctly identifying the project lead.
@@ -132,7 +133,9 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     // --- 2. PARSE THE FULL PAYLOAD ---
+
     const { name, workspaceId, departmentId, isClientProject, clientId, internalProductId } = createProjectSchema.parse(body);
+    const projectCode = await generateNextProjectCode();
 
     // Calculate due date as one month from now
     const dueDate = new Date();
@@ -144,6 +147,7 @@ export async function POST(req: NextRequest) {
       departmentId: departmentId,
       userId: userId,
       dueDate: dueDate,
+      projectCode : projectCode,
       isClientProject: isClientProject,
       clientId: isClientProject ? clientId : null,
       internalProductId: internalProductId ? internalProductId : null,
