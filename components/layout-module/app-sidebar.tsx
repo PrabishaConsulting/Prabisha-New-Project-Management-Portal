@@ -339,13 +339,13 @@ export function AppSidebar({
               <div className="px-3 py-3 flex flex-col items-center text-center">
                 <div className="flex flex-col items-center">
                   <Image
-                    src="/logo.png"
+                    src="/prabisha-assets/logo.png"
                     alt="Logo"
-                    width={30}
-                    height={30}
+                    width={200}
+                    height={50}
                     unoptimized
                     // We add the class here too for consistency
-                    className="rounded-md flex-shrink-0"
+                    className="rounded-md flex-shrink-0 bg-white"
                   />
                   <h1 className="text-lg font-semibold truncate mt-2">
                     {process.env.NEXT_PUBLIC_APP_NAME || "My Project"}
