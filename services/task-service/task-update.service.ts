@@ -16,6 +16,8 @@ type UpdateTaskPayload = {
   priority?: Priority;
   dueDate?: string | null;
   assigneeId?: string | null;
+  estimatedMinutes?: number | null; // Added estimated time in minutes
+  actualMinutes?: number | null;    // Added actual time in minutes
 };
 
 export const updateTaskService = async (
@@ -53,6 +55,23 @@ export const updateTaskService = async (
   const { status, ...otherData } = updateData;
   let updatedTask: Task;
 
+  // Check if status is changing to DONE
+  const isMarkingAsDone = status === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
+  
+  // Check if status is changing from DONE to something else
+  const isReopeningFromDone = originalTask.status === TaskStatus.DONE && status !== TaskStatus.DONE;
+  
+  // Prepare additional data for the update
+  const additionalData: any = {};
+  
+  if (isMarkingAsDone) {
+    // Set completedAt timestamp when marking as done
+    additionalData.completedAt = new Date();
+  } else if (isReopeningFromDone) {
+    // Clear completedAt timestamp when reopening from done
+    additionalData.completedAt = null;
+  }
+
   if (status && status !== originalTask.status) {
     // Transaction for when the status (and therefore position) changes
     updatedTask = await db.$transaction(async (tx) => {
@@ -61,14 +80,22 @@ export const updateTaskService = async (
       });
       return tx.task.update({
         where: { id: taskId },
-        data: { ...otherData, status, position: newPosition },
+        data: { 
+          ...otherData, 
+          status, 
+          position: newPosition,
+          ...additionalData
+        },
       });
     });
   } else {
     // Standard update for all other fields
     updatedTask = await db.task.update({
       where: { id: taskId },
-      data: otherData,
+      data: { 
+        ...otherData,
+        ...additionalData
+      },
     });
   }
 
@@ -142,12 +169,16 @@ async function _logTaskChanges(
   updateData: UpdateTaskPayload,
   actorId: string
 ) {
-  // Determine if a loggable change occurred (status, priority, or assignee).
+  // Determine if a loggable change occurred (status, priority, assignee, or time estimates).
   const hasLoggableChanges =
     (updateData.status && updateData.status !== originalTask.status) ||
     (updateData.priority && updateData.priority !== originalTask.priority) ||
     (updateData.assigneeId !== undefined &&
-      updateData.assigneeId !== originalTask.assigneeId);
+      updateData.assigneeId !== originalTask.assigneeId) ||
+    (updateData.estimatedMinutes !== undefined &&
+      updateData.estimatedMinutes !== originalTask.estimatedMinutes) ||
+    (updateData.actualMinutes !== undefined &&
+      updateData.actualMinutes !== originalTask.actualMinutes);
 
   // Only log if one of the specified fields has changed.
   if (hasLoggableChanges) {
@@ -181,20 +212,45 @@ export const updateTaskStatus = async (
   newStatus: TaskStatus
 ): Promise<{ task: Task | null; error: string | null }> => {
   try {
-    // 1. Find the task and update its status in a single database operation
+    // 1. Find the original task to check current status
+    const originalTask = await db.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!originalTask) {
+      return { task: null, error: `Task with ID '${taskId}' not found.` };
+    }
+
+    // 2. Check if status is changing to DONE
+    const isMarkingAsDone = newStatus === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
+    
+    // 3. Check if status is changing from DONE to something else
+    const isReopeningFromDone = originalTask.status === TaskStatus.DONE && newStatus !== TaskStatus.DONE;
+    
+    // 4. Prepare additional data for the update
+    const additionalData: any = {};
+    
+    if (isMarkingAsDone) {
+      // Set completedAt timestamp when marking as done
+      additionalData.completedAt = new Date();
+    } else if (isReopeningFromDone) {
+      // Clear completedAt timestamp when reopening from done
+      additionalData.completedAt = null;
+    }
+
+    // 5. Update the task with the new status and any additional data
     const updatedTask = await db.task.update({
-      where: {
-        id: taskId,
-      },
+      where: { id: taskId },
       data: {
         status: newStatus,
+        ...additionalData
       },
     });
 
-    // 2. If successful, return the updated task and a null error
+    // 6. If successful, return the updated task and a null error
     return { task: updatedTask, error: null };
   } catch (error: any) {
-    // 3. Handle potential errors
+    // 7. Handle potential errors
     console.error(`Failed to update status for task ${taskId}:`, error);
 
     // Prisma throws a specific error code 'P2025' if the record to update is not found
@@ -206,6 +262,51 @@ export const updateTaskStatus = async (
     return {
       task: null,
       error: "An unexpected error occurred while updating the task.",
+    };
+  }
+};
+
+/**
+ * Updates the time estimates for a specific task.
+ * @param {string} taskId - The ID of the task to update.
+ * @param {number} estimatedMinutes - The estimated time in minutes.
+ * @param {number} actualMinutes - The actual time spent in minutes.
+ * @returns {Promise<{ task: Task | null; error: string | null }>} - An object containing the updated task on success, or an error message on failure.
+ */
+export const updateTaskTime = async (
+  taskId: string,
+  estimatedMinutes?: number | null,
+  actualMinutes?: number | null
+): Promise<{ task: Task | null; error: string | null }> => {
+  try {
+    // Prepare update data
+    const updateData: any = {};
+    if (estimatedMinutes !== undefined) updateData.estimatedMinutes = estimatedMinutes;
+    if (actualMinutes !== undefined) updateData.actualMinutes = actualMinutes;
+    
+    // Update the task with the new time estimates
+    const updatedTask = await db.task.update({
+      where: {
+        id: taskId,
+      },
+      data: updateData,
+    });
+
+    // If successful, return the updated task and a null error
+    return { task: updatedTask, error: null };
+  } catch (error: any) {
+    // Handle potential errors
+    console.error(`Failed to update time for task ${taskId}:`, error);
+
+    // Prisma throws a specific error code 'P2025' if the record to update is not found
+    if (error.code === "P2025") {
+      return { task: null, error: `Task with ID '${taskId}' not found.` };
+    }
+
+    // For all other errors, return a generic error message
+    return {
+      task: null,
+      error: "An unexpected error occurred while updating the task time.",
     };
   }
 };

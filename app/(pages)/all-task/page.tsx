@@ -37,8 +37,8 @@ export default async function AllTaskPage() {
 
   const safeTasks: TaskData[] = rawTasks.map((task) => ({
     ...task,
-    estimatedHours: task.estimatedHours ? task.estimatedHours.toNumber() : null,
-    actualHours: task.actualHours.toNumber(),
+    estimatedMinutes: task.estimatedMinutes ? task.estimatedMinutes : null,
+    actualHours: task.estimatedMinutes,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
     startDate: task.startDate ? task.startDate.toISOString() : null,

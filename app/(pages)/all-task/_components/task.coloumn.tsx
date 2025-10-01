@@ -16,15 +16,15 @@ import { useProject } from "@/context/project-context";
 import Link from "next/link";
 export type TaskData = Omit<
   PrismaTask,
-  | "estimatedHours"
-  | "actualHours"
+  | "estimatedMinutes"
+  | "actualMinutes"
   | "createdAt"
   | "updatedAt"
   | "dueDate"
   | "startDate"
 > & {
-  estimatedHours: number | null;
-  actualHours: number;
+  estimatedMinutes: number | null;
+  actualMinutes: number;
   createdAt: string;
   updatedAt: string;
   dueDate: string | null;

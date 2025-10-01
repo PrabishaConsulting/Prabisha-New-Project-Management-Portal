@@ -19,13 +19,26 @@ import {
   Target,
 } from "lucide-react";
 import { format } from "date-fns";
-import { type ProjectMember, type User, type TaskStatus, type Department } from "@prisma/client";
+import {
+  type ProjectMember,
+  type User,
+  type TaskStatus,
+  type Department,
+} from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 // Import all required components from shadcn/ui
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 import {
   Form,
@@ -63,6 +76,7 @@ enum TaskType {
   EPIC = "EPIC",
 }
 
+// FIXED: Added estimatedMinutes to the form schema
 const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   description: z.string().optional(),
@@ -71,6 +85,7 @@ const formSchema = z.object({
   assigneeId: z.string().optional(),
   departmentId: z.string().optional(),
   taskType: z.nativeEnum(TaskType).optional(),
+  estimatedMinutes: z.number().min(1).optional(), // Added this field
 });
 
 const attachmentSchema = z.object({
@@ -92,17 +107,35 @@ interface NewTaskDialogProps {
 }
 
 const priorityOptions = [
-  { value: "LOW", label: "Low", icon: <Flag className="h-4 w-4 border-green-500/50 bg-green-500/10 text-green-700" /> },
+  {
+    value: "LOW",
+    label: "Low",
+    icon: (
+      <Flag className="h-4 w-4 border-green-500/50 bg-green-500/10 text-green-700" />
+    ),
+  },
   { value: "MEDIUM", label: "Medium", icon: <Flag className="h-4 w-4" /> },
   { value: "HIGH", label: "High", icon: <Flag className="h-4 w-4" /> },
   { value: "URGENT", label: "Urgent", icon: <Flag className="h-4 w-4" /> },
 ];
 
 const taskTypeOptions = [
-  { value: TaskType.TASK, label: "Task", icon: <FolderOpen className="h-4 w-4" /> },
+  {
+    value: TaskType.TASK,
+    label: "Task",
+    icon: <FolderOpen className="h-4 w-4" />,
+  },
   { value: TaskType.BUG, label: "Bug", icon: <Bug className="h-4 w-4" /> },
-  { value: TaskType.FEATURE, label: "Feature", icon: <Lightbulb className="h-4 w-4" /> },
-  { value: TaskType.IMPROVEMENT, label: "Improvement", icon: <Wrench className="h-4 w-4" /> },
+  {
+    value: TaskType.FEATURE,
+    label: "Feature",
+    icon: <Lightbulb className="h-4 w-4" />,
+  },
+  {
+    value: TaskType.IMPROVEMENT,
+    label: "Improvement",
+    icon: <Wrench className="h-4 w-4" />,
+  },
   { value: TaskType.EPIC, label: "Epic", icon: <Target className="h-4 w-4" /> },
 ];
 
@@ -130,6 +163,7 @@ export function NewTaskDialog({
       assigneeId: "",
       departmentId: userDepartment?.id || "",
       taskType: TaskType.TASK,
+      estimatedMinutes: undefined, // Added this field
     },
   });
 
@@ -159,7 +193,7 @@ export function NewTaskDialog({
   const handleRemoveFile = (fileName: string) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file.name !== fileName));
   };
-  
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
@@ -186,7 +220,9 @@ export function NewTaskDialog({
 
           const result = await response.json();
           if (!result.url) {
-            throw new Error(`Upload server did not return a URL for ${file.name}`);
+            throw new Error(
+              `Upload server did not return a URL for ${file.name}`
+            );
           }
 
           return {
@@ -230,7 +266,9 @@ export function NewTaskDialog({
     } catch (error) {
       console.error(error);
       const errorMessage =
-        error instanceof Error ? error.message : "An unexpected error occurred.";
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.";
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
@@ -238,20 +276,24 @@ export function NewTaskDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen} >
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       {/* Increased width for a better layout */}
       <DialogContent className="sm:max-w-2xl z-50 ">
         <DialogHeader>
           <DialogTitle>Add a new Task</DialogTitle>
           <DialogDescription>
-            Fill in the details below to create a new task in the "{status.replace("_", " ")}" column.
+            Fill in the details below to create a new task in the "
+            {status.replace("_", " ")}" column.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Form {...form}>
           {/* Added a scrollable area for smaller screens */}
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pr-2 max-h-[70vh] overflow-y-auto z-[999]">
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 pr-2 max-h-[65vh] overflow-y-auto z-auto"
+          >
             <FormField
               control={form.control}
               name="title"
@@ -259,13 +301,16 @@ export function NewTaskDialog({
                 <FormItem>
                   <FormLabel>Task Title</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Finalize Q3 budget report" {...field} />
+                    <Input
+                      placeholder="e.g., Finalize Q3 budget report"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
+
             {/* Grouped Assignee and Department */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FormField
@@ -273,8 +318,13 @@ export function NewTaskDialog({
                 name="assigneeId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2"><User2 className="h-4 w-4" /> Assign to</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel className="flex items-center gap-2">
+                      <User2 className="h-4 w-4" /> Assign to
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a team member" />
@@ -282,7 +332,9 @@ export function NewTaskDialog({
                       </FormControl>
                       <SelectContent>
                         {members.map((mem) => (
-                          <SelectItem key={mem.userId} value={mem.userId}>{mem.user.name}</SelectItem>
+                          <SelectItem key={mem.userId} value={mem.userId}>
+                            {mem.user.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -295,8 +347,13 @@ export function NewTaskDialog({
                 name="departmentId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-2"><Building className="h-4 w-4" /> Department</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormLabel className="flex items-center gap-2">
+                      <Building className="h-4 w-4" /> Department
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a department" />
@@ -304,7 +361,9 @@ export function NewTaskDialog({
                       </FormControl>
                       <SelectContent>
                         {departments.map((dept) => (
-                          <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -313,7 +372,101 @@ export function NewTaskDialog({
                 )}
               />
             </div>
-            
+
+            {/* Grouped Estimated Minutes and Priority */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+              <FormField
+                control={form.control}
+                name="estimatedMinutes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Est. Time (minutes)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 60"
+                        {...field}
+                        value={field.value || ""}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          field.onChange(value ? parseInt(value) : undefined);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="priority"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Priority</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select priority" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {priorityOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <div className="flex items-center gap-2">
+                              {option.icon}
+                              {option.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+                <FormField
+              control={form.control}
+              name="dueDate"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Due Date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            </div>
+
             {/* Task Type Dropdown (conditionally shown) */}
             {showTaskType && (
               <FormField
@@ -322,7 +475,10 @@ export function NewTaskDialog({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Task Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select task type" />
@@ -344,62 +500,10 @@ export function NewTaskDialog({
                 )}
               />
             )}
-            
-            {/* Grouped Priority and Due Date */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Priority Dropdown */}
-              <FormField
-                control={form.control}
-                name="priority"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Priority</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select priority" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {priorityOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            <div className="flex items-center gap-2">
-                              {option.icon}
-                              {option.label}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="dueDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Due Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button variant="outline" className={cn("font-normal", !field.value && "text-muted-foreground")}>
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
+
+            {/* Due Date */}
+          
+
             {/* New Attachment Dropzone */}
             <FormItem>
               <FormLabel>Attachments</FormLabel>
@@ -408,31 +512,49 @@ export function NewTaskDialog({
                   <div className="flex flex-col items-center justify-center pt-5 pb-6">
                     <UploadCloud className="w-8 h-8 mb-4 text-muted-foreground" />
                     <p className="mb-2 text-sm text-muted-foreground">
-                      <span className="font-semibold">Click to upload</span> or drag and drop
+                      <span className="font-semibold">Click to upload</span> or
+                      drag and drop
                     </p>
-                    <p className="text-xs text-muted-foreground">PNG, JPG, PDF, etc.</p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG, PDF, etc.
+                    </p>
                   </div>
-                  <Input 
-                    id="attachments" 
-                    type="file" 
-                    multiple 
+                  <Input
+                    id="attachments"
+                    type="file"
+                    multiple
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={(e) => setFiles(e.target.files ? Array.from(e.target.files) : [])}
+                    onChange={(e) =>
+                      setFiles(e.target.files ? Array.from(e.target.files) : [])
+                    }
                   />
                 </label>
               </FormControl>
               <FormMessage />
               {files.length > 0 && (
                 <div className="pt-2 space-y-2">
-                  <FormLabel className="text-sm font-medium">Selected Files:</FormLabel>
+                  <FormLabel className="text-sm font-medium">
+                    Selected Files:
+                  </FormLabel>
                   {files.map((file) => (
-                    <div key={file.name} className="flex items-center justify-between p-2 text-sm rounded-md bg-muted">
+                    <div
+                      key={file.name}
+                      className="flex items-center justify-between p-2 text-sm rounded-md bg-muted"
+                    >
                       <div className="flex items-center gap-2 truncate">
                         <Paperclip className="h-4 w-4 flex-shrink-0" />
                         <span className="truncate">{file.name}</span>
-                        <Badge variant="outline" className="text-xs">{(file.size / 1024).toFixed(1)} KB</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {(file.size / 1024).toFixed(1)} KB
+                        </Badge>
                       </div>
-                      <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleRemoveFile(file.name)}>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={() => handleRemoveFile(file.name)}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
@@ -440,9 +562,15 @@ export function NewTaskDialog({
                 </div>
               )}
             </FormItem>
-            
+
             <DialogFooter className="pt-4">
-              <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Creating..." : "Create Task"}
               </Button>

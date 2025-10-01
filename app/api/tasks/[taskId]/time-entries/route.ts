@@ -5,7 +5,7 @@ import { authOptions } from '@/lib/auth';
 import { z } from 'zod';
 
 const createTimeEntrySchema = z.object({
-    hours: z.number().positive(),
+    minutes: z.number().positive(),
     date: z.string().datetime(),
 });
 
@@ -23,15 +23,15 @@ export async function POST(request: NextRequest,  { params }: { params: Promise<
             return new NextResponse(JSON.stringify(validation.error.flatten()), { status: 400 });
         }
 
-        const { hours, date } = validation.data;
+        const { minutes, date } = validation.data;
 
-        // Transaction to create time entry and update task's total hours
+        // Transaction to create time entry and update task's total minutes
         const newTimeEntry = await db.$transaction(async (tx) => {
             const entry = await tx.timeEntry.create({
                 data: {
                     taskId,
                     userId: session!.user.id,
-                    hours: hours, // No need for new Decimal()
+                    minutes: minutes, // Changed from hours to minutes
                     date: new Date(date),
                 },
                 include: {
@@ -42,8 +42,8 @@ export async function POST(request: NextRequest,  { params }: { params: Promise<
             await tx.task.update({
                 where: { id: taskId },
                 data: {
-                    actualHours: {
-                        increment: hours // No need for new Decimal()
+                    actualMinutes: {
+                        increment: minutes // Changed from actualHours to actualMinutes
                     }
                 }
             });
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest,  { params }: { params: Promise<
         // The updated task object must be serialized before sending to the client
         const updatedTask = await db.task.findUnique({where: {id: taskId}})
 
-        return NextResponse.json({newTimeEntry, actualHours: updatedTask?.actualHours}, { status: 201 });
+        return NextResponse.json({newTimeEntry, actualMinutes: updatedTask?.actualMinutes}, { status: 201 });
     } catch (error) {
         console.error('[TIME_ENTRIES_POST]', error);
         return new NextResponse('Internal Server Error', { status: 500 });

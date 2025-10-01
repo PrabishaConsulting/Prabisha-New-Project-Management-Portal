@@ -55,8 +55,8 @@ export default async function TaskPage({ params }: TaskPageProps) {
   // FIX 2: Fully serialize all Date objects in nested arrays.
   const serializableTask = {
     ...task,
-    actualHours: task.actualHours.toNumber(),
-    estimatedHours: task.estimatedHours ? task.estimatedHours.toNumber() : null,
+    actualMinutes: task.actualMinutes,
+    estimatedMinutes: task.estimatedMinutes,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
     dueDate: task.dueDate ? task.dueDate.toISOString() : null,

@@ -14,6 +14,8 @@ const updateTaskSchema = z.object({
   status: z.nativeEnum(TaskStatus).optional(),
   priority: z.nativeEnum(Priority).optional(),
   dueDate: z.string().datetime({ offset: true }).optional().nullable(),
+  estimatedMinutes: z.number().optional().nullable(),
+  actualMinutes: z.number().optional().nullable(),
   assigneeId: z.string().optional().nullable(),
 });
 

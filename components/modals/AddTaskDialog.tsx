@@ -281,7 +281,7 @@ export function TaskFormDialog({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleFormSubmit)}
-              className="space-y-4"
+              className="space-y-4 pr-2 max-h-[65vh] overflow-y-auto z-auto"
             >
               <div className="space-y-4">
                 {/* Essential Fields */}
@@ -485,11 +485,11 @@ export function TaskFormDialog({
                 {/* Time Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
-                    name="estimatedHours"
+                    name="estimatedMinutes"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Est. Hours</FormLabel>
+                        <FormLabel>Est. Minutes</FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -502,7 +502,7 @@ export function TaskFormDialog({
                             ref={field.ref}
                             min={0}
                             step="0.1"
-                            inputMode="decimal"
+                            inputMode="numeric"
                           />
                         </FormControl>
                         <FormMessage />

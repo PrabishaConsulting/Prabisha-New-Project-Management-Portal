@@ -28,9 +28,10 @@ export const taskFormSchema = z
 
     priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
     status: z.nativeEnum(TaskStatus).default(TaskStatus.TO_DO),
-    estimatedHours: z.coerce
+actualMinutes: z.coerce.number().nullable().optional(),
+    estimatedMinutes: z.coerce
       .number({ message: "Must be a number." })
-      .min(0, "Hours cannot be negative.")
+      .min(0, "Minute cannot be negative.")
       .optional(),
     // --- FIX: Use z.coerce.date() to handle string inputs ---
     startDate: z.coerce.date().optional().nullable(),

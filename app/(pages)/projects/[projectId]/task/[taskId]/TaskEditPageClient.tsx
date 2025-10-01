@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   type Task,
   type TaskComment,
@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { CalendarIcon, Trash2, X, Copy } from "lucide-react";
+import { CalendarIcon, Trash2, X, Copy, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
@@ -35,6 +35,8 @@ import { toast } from "sonner";
 import { TimeTracking } from "./time-tracking";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { useDebounce } from "use-debounce";
+
 
 // A type for project members that includes the nested user object
 type MemberWithUser = ProjectMember & {
@@ -60,15 +62,15 @@ type ClientComment = Omit<TaskComment, "createdAt" | "updatedAt"> & {
 // All `Decimal` fields are `number` and all `DateTime` fields are `string`.
 type ClientTask = Omit<
   Task,
-  | "actualHours"
-  | "estimatedHours"
+  | "actualMinutes"
+  | "estimatedMinutes"
   | "createdAt"
   | "updatedAt"
   | "dueDate"
   | "startDate"
 > & {
-  actualHours: number;
-  estimatedHours: number | null;
+  actualMinutes: number;
+  estimatedMinutes: number | null;
   createdAt: string;
   updatedAt: string;
   dueDate: string | null;
@@ -85,6 +87,19 @@ interface TaskEditPageClientProps {
   currentUserId: string;
 }
 
+// Helper function to format minutes to hours and minutes
+const formatMinutes = (minutes: number | null) => {
+  if (!minutes) return "0m";
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  
+  if (hours > 0) {
+    return `${hours}h ${mins}m`;
+  }
+  return `${mins}m`;
+};
+
 export function TaskEditPageClient({
   initialTask,
   projectMembers, // This now uses the correct type
@@ -96,14 +111,30 @@ export function TaskEditPageClient({
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
-
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+// Track which fields have pending changes
+  const [pendingUpdates, setPendingUpdates] = useState<Partial<ClientTask>>({});
+  const [debouncedUpdates] = useDebounce(pendingUpdates, 500);
 
-  const handleTaskUpdate = async (updates: Partial<ClientTask>) => {
-    const previousTask = { ...task };
+  // Effect to handle debounced API calls
+  useEffect(() => {
+    if (Object.keys(debouncedUpdates).length > 0) {
+      saveTaskUpdates(debouncedUpdates);
+      setPendingUpdates({});
+    }
+  }, [debouncedUpdates]);
+
+  // Function to queue updates (doesn't make API call immediately)
+  const handleTaskUpdate = (updates: Partial<ClientTask>) => {
+    // Update local state immediately for responsive UI
     setTask((prev) => ({ ...prev, ...updates }));
+    // Queue the updates for debounced API call
+    setPendingUpdates((prev) => ({ ...prev, ...updates }));
+  };
 
+  // Function that actually makes the API call
+  const saveTaskUpdates = async (updates: Partial<ClientTask>) => {
     try {
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
@@ -117,9 +148,9 @@ export function TaskEditPageClient({
       setTask((prev) => ({
         ...prev,
         ...updatedTaskFromServer,
-        actualHours: Number(updatedTaskFromServer.actualHours),
-        estimatedHours: updatedTaskFromServer.estimatedHours
-          ? Number(updatedTaskFromServer.estimatedHours)
+        actualMinutes: Number(updatedTaskFromServer.actualMinutes),
+        estimatedMinutes: updatedTaskFromServer.estimatedMinutes
+          ? Number(updatedTaskFromServer.estimatedMinutes)
           : null,
         dueDate: updatedTaskFromServer.dueDate
           ? new Date(updatedTaskFromServer.dueDate).toISOString()
@@ -128,9 +159,12 @@ export function TaskEditPageClient({
       toast.success("Task updated successfully.");
     } catch (error) {
       toast.error("Update Failed", { description: (error as Error).message });
-      setTask(previousTask);
+      // Revert to initial task state on error
+      setTask(initialTask);
+      setPendingUpdates({});
     }
   };
+
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,11 +192,11 @@ export function TaskEditPageClient({
 
   const handleTimeLogged = (
     newEntry: ClientTimeEntry,
-    newTotalHours: number
+    newTotalMinutes: number
   ) => {
     setTask((prev) => ({
       ...prev,
-      actualHours: newTotalHours,
+      actualMinutes: newTotalMinutes,
       timeEntries: [newEntry, ...prev.timeEntries],
     }));
   };
@@ -271,7 +305,7 @@ const handleDeleteTask = async (taskId: string) => {
         />
         <TimeTracking
           taskId={task.id}
-          initialTotalHours={task.actualHours}
+          initialTotalMinutes={task.actualMinutes}
           timeEntries={task.timeEntries}
           onTimeLog={handleTimeLogged}
         />
@@ -384,6 +418,35 @@ const handleDeleteTask = async (taskId: string) => {
             </SelectContent>
           </Select>
         </div>
+        
+        {/* NEW: Estimated Minutes Field */}
+        <div>
+          <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            Estimated Time
+          </label>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              value={task.estimatedMinutes || ""}
+              onChange={(e) => {
+                const value = e.target.value;
+                handleTaskUpdate({
+                  estimatedMinutes: value ? parseInt(value) : null,
+                });
+              }}
+              placeholder="e.g., 60"
+              className="w-full"
+            />
+            <span className="text-xs text-muted-foreground">minutes</span>
+          </div>
+          {task.estimatedMinutes && (
+            <p className="text-xs text-muted-foreground mt-1">
+              = {formatMinutes(task.estimatedMinutes)}
+            </p>
+          )}
+        </div>
+        
         <div>
           <label className="text-xs font-medium text-muted-foreground">
             Due Date

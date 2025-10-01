@@ -289,7 +289,7 @@ export function ProjectEditForm({
           )}
         </div>
         <div>
-          <Label htmlFor="createdBy">Project Lead / Creator</Label>
+          <Label htmlFor="createdBy">Project Creator</Label>
           <Controller
             name="createdBy"
             control={control}

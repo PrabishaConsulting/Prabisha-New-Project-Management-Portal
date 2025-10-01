@@ -124,7 +124,7 @@ export function Header({ session, className }: { session: any; className: string
 
   return (
     <>
-      <header className={`sticky top-0 left-0 right-0 flex items-center justify-between h-[4.5rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}>
+      <header className={`sticky top-0 left-0 right-0 flex items-center justify-between h-[4rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}>
         {/* Left Section: Logo and App Name */}
         <div className="flex items-center gap-4 overflow-hidden">
           <Button

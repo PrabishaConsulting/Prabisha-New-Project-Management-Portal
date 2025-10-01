@@ -28,7 +28,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     const { tasks: tasksToUpdate, projectId } = updateTasksOrderSchema.parse(body);
-
     // 2. DELEGATE TO THE MAIN SERVICE
     // All complex logic is now handled by this single service call.
     await processAndValidateTaskUpdates(currentUserId, projectId, tasksToUpdate);

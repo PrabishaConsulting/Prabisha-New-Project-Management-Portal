@@ -14,8 +14,8 @@ type TaskUpdateData = {
   id: string;
   position: number;
   status: TaskStatus;
+  completedAt?: Date | null;
 };
-
 /**
  * Processes task updates, validates permissions, and logs status changes only.
  */
@@ -45,6 +45,14 @@ export async function processAndValidateTaskUpdates(
     const statusHasChanged = existingTask.status !== task.status;
     const positionHasChanged = existingTask.position !== task.position;
 
+    // Check if status changed to DONE
+    const isMarkedAsDone = statusHasChanged && task.status === "DONE";
+    // Check if status changed from DONE
+    const isMovedFromDone =
+      statusHasChanged &&
+      existingTask.status === "DONE" &&
+      task.status !== "DONE";
+
     // ✅ Only log status changes
     if (statusHasChanged) {
       if (!isProjectLead && existingTask.assigneeId !== userId) {
@@ -65,7 +73,16 @@ export async function processAndValidateTaskUpdates(
 
     // ✅ Update DB if either status OR position changed
     if (statusHasChanged || positionHasChanged) {
-      tasksThatChanged.push(task);
+      // Add completedAt information if needed
+      const taskWithCompletedAt = {
+        ...task,
+        completedAt: isMarkedAsDone
+          ? new Date()
+          : isMovedFromDone
+          ? null
+          : undefined,
+      };
+      tasksThatChanged.push(taskWithCompletedAt);
     }
   }
 
@@ -89,32 +106,35 @@ export async function processAndValidateTaskUpdates(
 }
 
 /**
- * Bulk updates the order/status of multiple tasks using CASE WHEN for performance.
+ * Bulk updates the order/status of multiple tasks using Prisma for better type safety.
  */
 export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
   if (tasks.length === 0) return;
 
-  // Build CASE WHEN statements for position and status
-  const positionCases = tasks
-    .map((t) => `WHEN id = '${t.id}' THEN ${t.position}`)
-    .join(" ");
+  // Process updates in batches for better performance
+  const batchSize = 100;
+  for (let i = 0; i < tasks.length; i += batchSize) {
+    const batch = tasks.slice(i, i + batchSize);
 
-  const statusCases = tasks
-    .map((t) => `WHEN id = '${t.id}' THEN '${t.status}'`)
-    .join(" ");
+    // Create update operations for each task in the batch
+    const updatePromises = batch.map((task) =>
+      db.task.update({
+        where: { id: task.id },
+        data: {
+          position: task.position,
+          status: task.status,
+          // Only include completedAt if it's defined
+          ...(task.completedAt !== undefined && {
+            completedAt: task.completedAt,
+          }),
+        },
+      })
+    );
 
-  const taskIds = tasks.map((t) => `'${t.id}'`).join(",");
-
-  // ✅ Single query to update all tasks
-  await db.$executeRawUnsafe(`
-    UPDATE tasks
-    SET 
-      position = CASE ${positionCases} ELSE position END,
-      status   = CASE ${statusCases} ELSE status END
-    WHERE id IN (${taskIds});
-  `);
+    // Execute all updates in the batch concurrently
+    await Promise.all(updatePromises);
+  }
 }
-
 /**
  * Handles sending notifications after a new task has been created.
  * This function now fetches the user and project details it needs.
@@ -213,6 +233,12 @@ export async function createTask(data: TaskFormData, userId: string) {
         ...taskData,
         position: taskCount,
         // Set defaults if not provided
+        reporterId: taskData.reporterId || userId,
+        assigneeId: taskData.assigneeId || undefined,
+        status: taskData.status || "TO_DO",
+        estimatedMinutes: taskData.estimatedMinutes,
+        actualMinutes: taskData.actualMinutes || 0,
+        departmentId: taskData.departmentId || undefined,
         priority: taskData.priority || "MEDIUM",
         dueDate: taskData.dueDate ? new Date(taskData.dueDate) : undefined,
       },

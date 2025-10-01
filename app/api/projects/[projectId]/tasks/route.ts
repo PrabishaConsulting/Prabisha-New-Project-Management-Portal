@@ -1,12 +1,12 @@
 // app/api/projects/[projectId]/tasks/route.ts
 
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
-import { createTask } from '@/services/task-service/task.service';
-import { getCurrentUser } from '@/utils/getcurrentUser';
-import { AuthorizationError } from '@/services/task-service/auth.service';
-import { Priority, TaskStatus } from '@/types'; // Adjust this import if needed
-import { TaskType } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { createTask } from "@/services/task-service/task.service";
+import { getCurrentUser } from "@/utils/getcurrentUser";
+import { AuthorizationError } from "@/services/task-service/auth.service";
+import { Priority, TaskStatus } from "@/types"; // Adjust this import if needed
+import { TaskType } from "@prisma/client";
 
 // 1. Define a schema for the attachment object
 const attachmentSchema = z.object({
@@ -18,13 +18,14 @@ const attachmentSchema = z.object({
 
 // 2. Update the main task schema to include attachments and departmentId
 const createTaskSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
+  title: z.string().min(1, "Title is required"),
   status: z.nativeEnum(TaskStatus),
   description: z.string().optional(),
-      taskType: z.nativeEnum(TaskType).default(TaskType.TASK),
-  
+  taskType: z.nativeEnum(TaskType).default(TaskType.TASK),
+  estimatedMinutes: z.number().optional(),
+  actualMinutes: z.number().optional(),
   priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
-    dueDate: z.coerce.date(),
+  dueDate: z.coerce.date(),
   assigneeId: z.string().optional(),
   departmentId: z.string().optional(), // Added departmentId
   attachments: z.array(attachmentSchema).optional(), // Added attachments array
@@ -37,7 +38,7 @@ export async function POST(
   try {
     const user = await getCurrentUser();
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
     const { projectId } = await params;
@@ -47,28 +48,26 @@ export async function POST(
     if (!validation.success) {
       return new NextResponse(JSON.stringify(validation.error.format()), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
     }
-    
+
     // 3. The validated data now includes attachments and other new fields
     const { dueDate, ...taskData } = validation.data;
-
-
 
     const newTask = await createTask(
       {
         ...taskData, // This now correctly passes attachments to your service
         projectId,
         reporterId: user.id,
-        dueDate: dueDate ,
+        dueDate: dueDate,
       },
       user.id
     );
 
     return NextResponse.json(newTask, { status: 201 });
   } catch (error) {
-    console.error('[TASKS_POST]', error);
+    console.error("[TASKS_POST]", error);
     if (error instanceof AuthorizationError) {
       return new NextResponse(error.message, { status: 403 });
     }
@@ -79,6 +78,6 @@ export async function POST(
       // Avoid sending detailed internal error messages to the client in production
       return new NextResponse("An internal error occurred.", { status: 500 });
     }
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

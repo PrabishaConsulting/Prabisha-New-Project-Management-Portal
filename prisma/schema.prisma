@@ -37,7 +37,8 @@ model Session {
   @@index([userId], map: "sessions_userId_fkey")
   @@map("sessions")
 }
-model Role2{
+
+model Role2 {
   id                 String               @id @unique @default(cuid())
   name               String               @unique
   createdAt          DateTime             @default(now())
@@ -45,8 +46,6 @@ model Role2{
   SidebarGroupAccess SidebarGroupAccess[]
   SidebarItemAccess  SidebarItemAccess[]
 }
-
-
 
 model User {
   id                   String                @id @default(cuid())
@@ -326,33 +325,34 @@ enum TaskType {
 }
 
 model Task {
-  id          String    @id @default(cuid())
-  title       String
-  taskCode    String?   @unique // 👈 new field, optional at first
-  description String?
-  projectId   String
-  assigneeId  String?
-  reporterId  String
-  position    Int
-  taskType    TaskType? @default(TASK) // New field for task type
-  priority       Priority         @default(MEDIUM)
-  status         TaskStatus       @default(TO_DO)
-  estimatedHours Decimal?         @db.Decimal(5, 2)
-  actualHours    Decimal          @default(0.00) @db.Decimal(5, 2)
-  startDate      DateTime?
-  dueDate        DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  activityLogs   ActivityLog[]
-  attachments    TaskAttachment[]
-  comments       TaskComment[]
-  assignee       User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  project        Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  reporter       User             @relation("TaskReporter", fields: [reporterId], references: [id])
-  timeEntries    TimeEntry[]
-  calendarItems  CalendarItem[]
-  departmentId   String?
-  department     Department?      @relation(fields: [departmentId], references: [id])
+  id               String           @id @default(cuid())
+  title            String
+  taskCode         String?          @unique
+  description      String?
+  projectId        String
+  assigneeId       String?
+  reporterId       String
+  position         Int
+  taskType         TaskType?        @default(TASK)
+  priority         Priority         @default(MEDIUM)
+  status           TaskStatus       @default(TO_DO)
+  estimatedMinutes Int? // Changed from estimatedHours
+  actualMinutes    Int              @default(0) // Changed from actualHours
+  startDate        DateTime?
+  dueDate          DateTime?
+  completedAt      DateTime? // New field to track when task was marked as done
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  activityLogs     ActivityLog[]
+  attachments      TaskAttachment[]
+  comments         TaskComment[]
+  assignee         User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporter         User             @relation("TaskReporter", fields: [reporterId], references: [id])
+  timeEntries      TimeEntry[]
+  calendarItems    CalendarItem[]
+  departmentId     String?
+  department       Department?      @relation(fields: [departmentId], references: [id])
 
   @@index([assigneeId], map: "tasks_assigneeId_fkey")
   @@index([projectId], map: "tasks_projectId_fkey")
@@ -380,7 +380,7 @@ model TimeEntry {
   taskId      String
   userId      String
   description String?
-  hours       Float
+  minutes     Int     // Changed from hours to minutes
   date        DateTime
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -462,7 +462,7 @@ model products {
   title     String        @db.VarChar(255)
   status    ProductStatus @default(PENDING)
   url       String        @db.VarChar(255)
-  image     String?        @db.VarChar(255)
+  image     String?       @db.VarChar(255)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @updatedAt
 }
@@ -500,7 +500,7 @@ model SidebarGroupAccess {
   sidebarGroupId String
   hasAccess      Boolean      @default(true)
   sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)
-  role           Role2         @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  role           Role2        @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@id([roleId, sidebarGroupId])
   @@index([sidebarGroupId])
