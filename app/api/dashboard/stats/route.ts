@@ -61,7 +61,7 @@ export async function GET() {
       }
     })
 
-    const totalHours = timeEntries.reduce((sum, entry) => sum + Number(entry.hours), 0)
+    const totalHours = timeEntries.reduce((sum, entry) => sum + Number(entry.minutes), 0)
 
     return NextResponse.json({
       totalWorkspaces: workspaces.length,

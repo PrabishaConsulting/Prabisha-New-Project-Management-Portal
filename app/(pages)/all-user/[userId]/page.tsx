@@ -46,8 +46,8 @@ export default async function UserPerformancePage({ params }: { params: Promise<
     description: task.description,
     status: task.status,
     priority: task.priority,
-    estimatedHours: task.estimatedHours ? task.estimatedHours.toNumber() : null,
-    actualHours: task.actualHours.toNumber(),
+    estimatedMinutes: task.estimatedMinutes ,
+    actualHours: task.actualMinutes,
     createdAt: task.createdAt.toISOString(),
     updatedAt: task.updatedAt.toISOString(),
     startDate: task.startDate ? task.startDate.toISOString() : null,
@@ -93,8 +93,8 @@ export default async function UserPerformancePage({ params }: { params: Promise<
   // Transform tasks for UserPerformanceClient (SafeTask[])
   const safeTasksForClient: SafeTask[] = user.assignedTasks.map((task) => ({
     ...task,
-    estimatedHours: task.estimatedHours ? task.estimatedHours.toNumber() : null,
-    actualHours: task.actualHours.toNumber(),
+    estimatedHours: task.estimatedMinutes ,
+    actualHours: task.actualMinutes,
   }));
 
   // Create safeUser with SafeTask[] for assignedTasks
