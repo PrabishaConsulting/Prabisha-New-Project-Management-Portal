@@ -5,7 +5,19 @@ import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
-import { CalendarIcon, Loader2, Bug, Lightbulb, Wrench, Target, FolderOpen, Building } from "lucide-react";
+import {
+  CalendarIcon,
+  Loader2,
+  Bug,
+  Lightbulb,
+  Target,
+  FolderOpen,
+  Building,
+  Check,
+  ChevronsUpDown,
+  Clock,
+} from "lucide-react";
+
 import { cn } from "@/lib/utils";
 
 // Your types and schemas
@@ -27,6 +39,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 import {
   Form,
   FormControl,
@@ -58,6 +77,7 @@ import {
 import { toast } from "sonner";
 import z from "zod";
 import { TaskType } from "@prisma/client";
+import { ScrollArea } from "../ui/scroll-area";
 
 // --- Props Interface ---
 interface TaskFormDialogProps {
@@ -123,7 +143,7 @@ export function TaskFormDialog({
     if (formContextData && userDepartment && !isInitialized) {
       form.setValue("departmentId", userDepartment.id, { shouldDirty: false });
       setIsInitialized(true);
-      
+
       // Show task type if user's department is IT
       setShowTaskType(userDepartment.name === "IT");
     }
@@ -172,7 +192,9 @@ export function TaskFormDialog({
 
       // Set department to project's department if it exists, otherwise keep current
       if (selectedProject.department) {
-        form.setValue("departmentId", selectedProject.department.id, { shouldDirty: false });
+        form.setValue("departmentId", selectedProject.department.id, {
+          shouldDirty: false,
+        });
       }
     } else {
       // Reset dependent fields if no project is selected
@@ -180,10 +202,19 @@ export function TaskFormDialog({
       form.resetField("assigneeId");
       // Reset to user's department if no project is selected
       if (userDepartment) {
-        form.setValue("departmentId", userDepartment.id, { shouldDirty: false });
+        form.setValue("departmentId", userDepartment.id, {
+          shouldDirty: false,
+        });
       }
     }
-  }, [watchedProjectId, projects, currentUser, form, formContextData, userDepartment]);
+  }, [
+    watchedProjectId,
+    projects,
+    currentUser,
+    form,
+    formContextData,
+    userDepartment,
+  ]);
 
   // Reset form when dialog closes
   useEffect(() => {
@@ -264,10 +295,31 @@ export function TaskFormDialog({
       setIsSubmitting(false);
     }
   };
+  const getRecentProjects = () => {
+    // This would typically come from your state management or localStorage
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("recentProjects");
+      return stored ? JSON.parse(stored) : [];
+    }
+    return [];
+  };
+
+  // Function to add a project to recently used
+  const addToRecentProjects = (project: { id: string; name: string }) => {
+    if (typeof window === "undefined") return;
+
+    const recentProjects = getRecentProjects();
+    // Remove if already exists to avoid duplicates
+    const filtered = recentProjects.filter((p: any) => p.id !== project.id);
+    // Add to beginning and limit to 5 items
+    const updated = [project, ...filtered].slice(0, 5);
+    localStorage.setItem("recentProjects", JSON.stringify(updated));
+  };
+// In your recent-projects.ts file
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-[65vw]">
         <DialogHeader>
           <DialogTitle>Add New Task</DialogTitle>
         </DialogHeader>
@@ -281,7 +333,7 @@ export function TaskFormDialog({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleFormSubmit)}
-              className="space-y-4 pr-2 max-h-[65vh] overflow-y-auto z-auto"
+              className="space-y-4 pr-2 max-h-[65vh]   overflow-y-auto z-auto"
             >
               <div className="space-y-4">
                 {/* Essential Fields */}
@@ -305,34 +357,121 @@ export function TaskFormDialog({
                   <FormField
                     name="projectId"
                     control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Project *</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value || ""}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a project" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {projects.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const [open, setOpen] = useState(false);
+                      const selectedProject = projects.find(
+                        (p) => p.id === field.value
+                      );
+                      const recentProjects = getRecentProjects();
+                      
+
+                      return (
+                        <FormItem className="flex flex-col">
+                          <FormLabel>Project *</FormLabel>
+                          <Popover open={open} onOpenChange={setOpen}>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className={cn(
+                                    "w-full justify-between",
+                                    !field.value && "text-muted-foreground"
+                                  )}
+                                >
+                                  {selectedProject
+                                    ? selectedProject.name
+                                    : "Select a project"}
+                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+
+                            <PopoverContent className="w-full p-0">
+                              <ScrollArea className="h-[30rem] ">
+                                <Command>
+                                  <CommandInput placeholder="Search projects..." />
+                                  <CommandEmpty>
+                                    No projects found.
+                                  </CommandEmpty>
+
+                                  {/* Recently Used Projects Section */}
+                                  {recentProjects.length > 0 && (
+                                    <CommandGroup heading="Recently used">
+                                      {recentProjects.map((project: any) => (
+                                        <CommandItem
+                                          value={project.name}
+                                          key={`recent-${project.id}`}
+                                          onSelect={() => {
+                                            form.setValue(
+                                              "projectId",
+                                              project.id
+                                            );
+                                            addToRecentProjects(project);
+                                            setOpen(false);
+                                          }}
+                                        >
+                                          <Check
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              project.id === field.value
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            )}
+                                          />
+                                          <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                          {project.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  )}
+
+                                  {/* All Projects Section */}
+                                  <CommandGroup
+                                    heading={
+                                      recentProjects.length > 0
+                                        ? "All projects"
+                                        : undefined
+                                    }
+                                  >
+                                    {projects.map((project) => (
+                                      <CommandItem
+                                        value={project.name}
+                                        key={project.id}
+                                        onSelect={() => {
+                                          form.setValue(
+                                            "projectId",
+                                            project.id
+                                          );
+                                          addToRecentProjects(project);
+                                          setOpen(false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            project.id === field.value
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          )}
+                                        />
+                                        {project.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </Command>
+                              </ScrollArea>
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
                   />
                 </div>
-                
+
                 {/* Assignment Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <FormField
                     name="assigneeId"
                     control={form.control}
@@ -395,18 +534,14 @@ export function TaskFormDialog({
                       </FormItem>
                     )}
                   />
-                </div>
-                
-                {/* Department and Task Type */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     name="departmentId"
                     control={form.control}
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Department</FormLabel>
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value || ""}
                           defaultValue={userDepartment?.id || ""}
                         >
@@ -430,7 +565,7 @@ export function TaskFormDialog({
                       </FormItem>
                     )}
                   />
-                  
+
                   {/* Task Type Field - Conditionally shown for IT department */}
                   {showTaskType && (
                     <FormField
@@ -439,8 +574,8 @@ export function TaskFormDialog({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Task Type</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
+                          <Select
+                            onValueChange={field.onChange}
                             defaultValue={TaskType.TASK}
                           >
                             <FormControl>
@@ -481,7 +616,9 @@ export function TaskFormDialog({
                     />
                   )}
                 </div>
-                
+
+                {/* Department and Task Type */}
+
                 {/* Time Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
@@ -552,7 +689,10 @@ export function TaskFormDialog({
                     control={form.control}
                     render={({ field }) => {
                       // Get startDate from form and assert type
-                      const startDate = form.getValues("startDate") as Date | null | undefined;
+                      const startDate = form.getValues("startDate") as
+                        | Date
+                        | null
+                        | undefined;
 
                       // Compute minDueDate = startDate + 3 hours
                       const minDueDate = startDate
@@ -572,14 +712,19 @@ export function TaskFormDialog({
                                     !field.value && "text-muted-foreground"
                                   )}
                                 >
-                                  {field.value
-                                    ? format(field.value as Date, "MMM d")
-                                    : <span>Set date</span>}
+                                  {field.value ? (
+                                    format(field.value as Date, "MMM d")
+                                  ) : (
+                                    <span>Set date</span>
+                                  )}
                                   <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                 </Button>
                               </FormControl>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent
+                              className="w-auto p-0"
+                              align="start"
+                            >
                               <Calendar
                                 mode="single"
                                 selected={field.value as Date | undefined}
@@ -593,7 +738,9 @@ export function TaskFormDialog({
                                   }
                                 }}
                                 // Disable all dates before minDueDate
-                                disabled={(date) => minDueDate ? date < minDueDate : false}
+                                disabled={(date) =>
+                                  minDueDate ? date < minDueDate : false
+                                }
                                 initialFocus
                               />
                             </PopoverContent>
@@ -604,26 +751,6 @@ export function TaskFormDialog({
                     }}
                   />
                 </div>
-                
-                {/* Description */}
-                <FormField
-                  name="description"
-                  control={form.control}
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Description</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Add details..."
-                          rows={2}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
                 {/* Attachments */}
                 <Dropzone
                   src={files}
@@ -636,7 +763,7 @@ export function TaskFormDialog({
                   <DropzoneEmptyState />
                 </Dropzone>
               </div>
-              
+
               <DialogFooter className="pt-4">
                 <Button
                   type="button"
