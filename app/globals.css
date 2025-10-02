@@ -28,29 +28,29 @@
   .sidebar-trigger {
     left: 10px;
   }
-  }
+}
 
 body {
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 /* Utility classes */
 .font-poppins {
-  font-family: 'Poppins', sans-serif !important;
+  font-family: "Poppins", sans-serif !important;
 }
 
 .font-montserrat {
-  font-family: 'Montserrat', sans-serif !important;
+  font-family: "Montserrat", sans-serif !important;
 }
 
 /* Or use with Tailwind's @layer directive */
 @layer utilities {
   .font-poppins {
-    font-family: 'Poppins', sans-serif;
+    font-family: "Poppins", sans-serif;
   }
-  
+
   .font-montserrat {
-    font-family: 'Montserrat', sans-serif;
+    font-family: "Montserrat", sans-serif;
   }
 }
 /* This block allows Tailwind to understand your CSS variables for utility classes like `bg-primary` */
@@ -98,8 +98,8 @@ body {
 
   /* Neutrals - Subtle cool gray palette */
   --background: oklch(99.1% 0.005 240); /* Almost white */
-  --foreground: oklch(14% 0.01 240);   /* Dark gray for text */
-  --card: oklch(100% 0 0);              /* Pure white for cards to pop */
+  --foreground: oklch(14% 0.01 240); /* Dark gray for text */
+  --card: oklch(100% 0 0); /* Pure white for cards to pop */
   --card-foreground: oklch(14% 0.01 240);
   --popover: oklch(100% 0 0);
   --popover-foreground: oklch(14% 0.01 240);
@@ -108,22 +108,38 @@ body {
   --muted: oklch(95% 0.005 240);
   --muted-foreground: oklch(45% 0.01 240);
 
+/* Corrected CSS */
+--color-urgent: hsl(0 84.2% 60.2%);
+--color-high: hsl(25 95.8% 53.1%);
+--color-medium: hsl(43 96% 56.3%);
+--color-low: hsl(142 71% 45%);
+
   /* Brand & Action Colors */
-  --primary: oklch(59.34% 0.158 44.25);    /* #C8612B - Brand Orange */
-  --primary-foreground: oklch(98% 0 0);     /* White text for high contrast on orange */
+  --primary: oklch(59.34% 0.158 44.25); /* #C8612B - Brand Orange */
+  --primary-foreground: oklch(
+    98% 0 0
+  ); /* White text for high contrast on orange */
   --secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
-  --secondary-foreground: oklch(98% 0 0);  /* White text for high contrast on blue */
-  --accent: oklch(94% 0.01 240);           /* ✨ New Accent: A clean, light gray for highlights */
-  --accent-foreground: oklch(14% 0.01 240); /* ✨ Dark text for contrast on the light gray accent */
-  --destructive: oklch(62.8% 0.224 25.5);  /* A vibrant, accessible red */
-  --ring: oklch(59.34% 0.158 44.25);       /* ✨ Focus rings use the primary orange for high visibility */
+  --secondary-foreground: oklch(
+    98% 0 0
+  ); /* White text for high contrast on blue */
+  --accent: oklch(
+    94% 0.01 240
+  ); /* ✨ New Accent: A clean, light gray for highlights */
+  --accent-foreground: oklch(
+    14% 0.01 240
+  ); /* ✨ Dark text for contrast on the light gray accent */
+  --destructive: oklch(62.8% 0.224 25.5); /* A vibrant, accessible red */
+  --ring: oklch(
+    59.34% 0.158 44.25
+  ); /* ✨ Focus rings use the primary orange for high visibility */
 
   /* Chart Colors */
-  --chart-1: oklch(59.34% 0.158 44.25);    /* Brand Orange */
-  --chart-2: oklch(36.19% 0.196 265.51);  /* Brand Blue */
-  --chart-3: oklch(75.95% 0.17 63.87);    /* A complementary gold/yellow */
-  --chart-4: oklch(67.73% 0.19 143.12);   /* A complementary sea green */
-  --chart-5: oklch(55% 0.22 290);         /* A complementary purple */
+  --chart-1: oklch(59.34% 0.158 44.25); /* Brand Orange */
+  --chart-2: oklch(36.19% 0.196 265.51); /* Brand Blue */
+  --chart-3: oklch(75.95% 0.17 63.87); /* A complementary gold/yellow */
+  --chart-4: oklch(67.73% 0.19 143.12); /* A complementary sea green */
+  --chart-5: oklch(55% 0.22 290); /* A complementary purple */
 
   /* Sidebar Specific (Example) */
   --sidebar: oklch(98% 0.005 240);
@@ -136,37 +152,51 @@ body {
   --sidebar-ring: var(--ring);
 }
 
-
 /* 🎨 --- DARK MODE THEME --- */
 .dark {
   /* Neutrals - Inverted cool gray palette */
-  --background: oklch(10% 0.01 240);    /* Very dark blue-gray */
-  --foreground: oklch(95% 0.005 240);  /* Light gray text */
-  --card: oklch(15% 0.01 240);         /* Slightly lighter than background */
+  --background: oklch(10% 0.01 240); /* Very dark blue-gray */
+  --foreground: oklch(95% 0.005 240); /* Light gray text */
+  --card: oklch(15% 0.01 240); /* Slightly lighter than background */
   --card-foreground: oklch(95% 0.005 240);
   --popover: oklch(15% 0.01 240);
   --popover-foreground: oklch(95% 0.005 240);
   --border: oklch(25% 0.01 240);
   --input: oklch(25% 0.01 240);
-  --muted: oklch(22% 0.01 240);              /* ✨ Lighter muted for better tab backgrounds */
-  --muted-foreground: oklch(70% 0.01 240);   /* ✨ Brighter muted text for better readability */
+  --muted: oklch(
+    22% 0.01 240
+  ); /* ✨ Lighter muted for better tab backgrounds */
+  --muted-foreground: oklch(
+    70% 0.01 240
+  ); /* ✨ Brighter muted text for better readability */
 
+  /* Corrected CSS */
+  --color-urgent: hsl(0 84.2% 60.2%);
+  --color-high: hsl(25 95.8% 53.1%);
+  --color-medium: hsl(43 96% 56.3%);
+  --color-low: hsl(142 71% 45%);
   /* Brand & Action Colors - Lightened for dark background */
-  --primary: oklch(68% 0.158 44.25);      /* Lighter orange for dark mode */
-  --primary-foreground: oklch(15% 0 0);    /* Dark text for high contrast */
-  --secondary: oklch(55% 0.196 265.51);   /* Lighter blue for dark mode */
+  --primary: oklch(68% 0.158 44.25); /* Lighter orange for dark mode */
+  --primary-foreground: oklch(15% 0 0); /* Dark text for high contrast */
+  --secondary: oklch(55% 0.196 265.51); /* Lighter blue for dark mode */
   --secondary-foreground: oklch(98% 0 0);
-  --accent: oklch(30% 0.02 240);             /* ✨ Lighter accent for better tab visibility */
-  --accent-foreground: oklch(95% 0.005 240); /* ✨ High contrast text on accent */
-  --destructive: oklch(70% 0.22 25.5);    /* Lighter red for dark mode */
-  --ring: oklch(68% 0.158 44.25);         /* ✨ Focus rings use the lighter primary orange */
+  --accent: oklch(
+    30% 0.02 240
+  ); /* ✨ Lighter accent for better tab visibility */
+  --accent-foreground: oklch(
+    95% 0.005 240
+  ); /* ✨ High contrast text on accent */
+  --destructive: oklch(70% 0.22 25.5); /* Lighter red for dark mode */
+  --ring: oklch(
+    68% 0.158 44.25
+  ); /* ✨ Focus rings use the lighter primary orange */
 
   /* Chart Colors for Dark Mode */
-  --chart-1: oklch(68% 0.158 44.25);      /* Lighter Brand Orange */
-  --chart-2: oklch(55% 0.196 265.51);    /* Lighter Brand Blue */
-  --chart-3: oklch(80% 0.17 63.87);      /* Lighter Gold */
-  --chart-4: oklch(72% 0.19 143.12);     /* Lighter Green */
-  --chart-5: oklch(65% 0.22 290);        /* Lighter Purple */
+  --chart-1: oklch(68% 0.158 44.25); /* Lighter Brand Orange */
+  --chart-2: oklch(55% 0.196 265.51); /* Lighter Brand Blue */
+  --chart-3: oklch(80% 0.17 63.87); /* Lighter Gold */
+  --chart-4: oklch(72% 0.19 143.12); /* Lighter Green */
+  --chart-5: oklch(65% 0.22 290); /* Lighter Purple */
 
   /* Sidebar Specific (Example) */
   --sidebar: oklch(15% 0.01 240);
@@ -184,7 +214,6 @@ body {
   /* --accent: var(--primary); */
   /* --accent-foreground: var(--primary-foreground); */
 }
-
 
 /* --- Base Styles --- */
 @layer base {

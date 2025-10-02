@@ -162,7 +162,7 @@ export const LiveActivity = ({ initialActivities }: { initialActivities: Activit
               const ActivityItem = (
                 <div className="flex items-start gap-3 p-2 rounded-lg hover:bg-muted transition-colors">
                   <Avatar>
-                    <AvatarImage className=' object-cover' src={activity.user.avatar} alt={activity.user.name} />
+                    <AvatarImage loading='lazy' className=' object-cover' src={activity.user.avatar} alt={activity.user.name} />
                     <AvatarFallback>{getInitials(activity.user.name)}</AvatarFallback>
                   </Avatar>
                   <div className="text-sm">
