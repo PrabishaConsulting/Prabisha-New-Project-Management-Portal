@@ -43,6 +43,7 @@ interface Project {
   dueDate: string | number | Date;
   status: string;
   lead: UserInfo;
+  isUseraMember: boolean;
   department?: { id: string; name: string };
   client?: { id: string; name: string };
   internalProduct?: { id: string; name: string };

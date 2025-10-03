@@ -143,7 +143,6 @@ export function CreateProjectModal({
       clientId: isClientProject ? selectedClientId : null,
       internalProductId: !isClientProject ? selectedInternalProductId : null,
     };
-    console.log(payload);
     toast.promise(
       fetch("/api/projects", {
         method: "POST",

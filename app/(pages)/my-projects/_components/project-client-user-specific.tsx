@@ -46,6 +46,7 @@ interface Project {
   lead: UserInfo;
   department?: { id: string; name: string };
   client?: { id: string; name: string };
+  isUseraMember : boolean;
   internalProduct?: { id: string; name: string };
   members: ProjectMember[];
   _count: {

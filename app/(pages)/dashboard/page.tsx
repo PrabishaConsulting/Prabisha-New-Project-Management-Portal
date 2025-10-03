@@ -19,7 +19,6 @@ export default async function DashboardPage() {
         return <div>Loading...</div>
     }
 
-    console.log(departments)
     
     return (
         <div className="p-6">

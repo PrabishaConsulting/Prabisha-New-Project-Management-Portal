@@ -2,8 +2,6 @@
 
 "use client";
 
-import { isValidElement } from "react";
-import ReactDOMServer from "react-dom/server";
 import * as React from "react";
 import {
   ColumnDef,

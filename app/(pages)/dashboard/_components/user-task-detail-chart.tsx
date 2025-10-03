@@ -44,14 +44,12 @@ export const UserTaskDetailChart = ({ userId, userName }: { userId: string; user
   const pathname = usePathname();
   const apiUrl = `/api/tasks/user-status-summary?userId=${userId}`;
   const { data, error, isLoading } = useSWR<UserStatusData>(apiUrl, fetcher);
-  console.log(data);
   // Transform data for Recharts
   const chartData = data ? Object.entries(data).map(([status, count]) => ({
     name: status.replace('_', ' '),
     count,
   })) : [];
 
-  console.log(chartData , "test");
 
   const handleBackClick = () => {
     // Navigate back to the base dashboard page, removing the userId query param

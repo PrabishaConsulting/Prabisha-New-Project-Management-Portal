@@ -101,7 +101,6 @@ export default function MyWorkPage({ userId }: { userId: string }) {
 
   // --- NEW: The function to handle task creation ---
   const handleCreateTask = async (data: TaskFormData) => {
-    console.log("✅ Submitting New Task Data:", data);
 
     try {
       const response = await fetch("/api/tasks", {
@@ -132,7 +131,6 @@ export default function MyWorkPage({ userId }: { userId: string }) {
       // --- Success Case ---
       toast.success("Task created successfully!");
       mutate(); // Re-fetch SWR data
-      console.log("Task created and dashboard data is being refreshed.");
     } catch (error) {
       // This catches network errors or if the server is down
       console.error("Failed to submit form:", error);

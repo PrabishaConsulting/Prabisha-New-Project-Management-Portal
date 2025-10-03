@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { getUserByEmail } from "@/utils/helper-server-function"; // Assuming this is the correct path
 import { Prisma } from "@prisma/client";
+import { getCurrentUser } from "@/utils/getcurrentUser";
 
 // --- GET /api/projects ---
 export async function GET(req: NextRequest) {
@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const userData = await getUserByEmail(session.user.email);
-    const userId = userData.user?.id;
+    const userData = await getCurrentUser();
+    const userId = userData?.id;
 
     if (!userId) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
@@ -85,11 +85,15 @@ export async function GET(req: NextRequest) {
       // Find the lead member from the full list
       const leadMember = p.members.find((m) => m.role === "LEAD");
       const lead = leadMember ? leadMember.user : p.creator;
-
+      const isUseraMember = p.members.some(
+        (member) => member.user.id === userId
+      );
       // Return the original project data (which includes the full members array)
       // and add the identified 'lead' property.
-      return { ...p, lead };
+      return { ...p, lead , isUseraMember};
     });
+
+   
 
     return NextResponse.json({
       projects,

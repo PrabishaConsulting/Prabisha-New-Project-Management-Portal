@@ -284,7 +284,6 @@ const handleDeleteTask = async (taskId: string) => {
     // Add your logic here - e.g., open task details, navigate, etc.
     navigator.clipboard.writeText(task.title);
     toast.success("Task name copied to clipboard");
-    console.log("Task clicked:", task);
     // Example: router.push(`/tasks/${task.id}`);
   };
 

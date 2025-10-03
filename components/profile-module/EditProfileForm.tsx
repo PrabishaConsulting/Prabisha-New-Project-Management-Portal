@@ -90,7 +90,6 @@ export default function EditProfileForm({
           // Case 1: A new avatar was uploaded
           const imageFormData = new FormData();
           imageFormData.append("avatar", values.avatar);
-          console.log(imageFormData, values.avatar);
 
           try {
             const response = await fetch(

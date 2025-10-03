@@ -14,7 +14,6 @@ export async function POST(request: NextRequest) {
       where: { email }
     })
 
-    console.log(user , "from the forget password")
 
     if (!user) {
       // Don't reveal if user exists or not for security
@@ -99,7 +98,6 @@ const mailResult = await sendMail({
   html: emailHtml
 })
 
-console.log('Forgot password email sent:', mailResult)
 
 
     return NextResponse.json(

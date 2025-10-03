@@ -165,7 +165,6 @@ export function DataTable({
     
     // In a real implementation, you would use a library like xlsx
     alert('Exporting to Excel...');
-    console.log('Excel export data:', sortedData);
   };
 
   // Export to PDF
@@ -174,7 +173,6 @@ export function DataTable({
     
     // In a real implementation, you would use a library like jspdf
     alert('Exporting to PDF...');
-    console.log('PDF export data:', sortedData);
   };
 
   // Handle update

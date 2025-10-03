@@ -17,8 +17,6 @@ export interface ProjectCreationData {
   internalProductId?: string;
 }
 
-
-
 export const createProjectInDb = async (projectData: ProjectCreationData) => {
   // --- VALIDATION ---
   if (projectData.isClientProject && !projectData.clientId) {
@@ -49,7 +47,10 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
   // FIX #1: Get the current user *before* starting the transaction to prevent timeouts.
   const currentUser = await getCurrentUser();
   if (!currentUser) {
-      throw new ProjectCreationError("User not found or not authenticated.", "AUTH_ERROR");
+    throw new ProjectCreationError(
+      "User not found or not authenticated.",
+      "AUTH_ERROR"
+    );
   }
 
   // --- DB TRANSACTION ---
@@ -64,6 +65,8 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
           departmentId: projectData.departmentId,
           isClientProject: projectData.isClientProject,
           clientId: projectData.isClientProject ? projectData.clientId : null,
+          projectCode: projectData.projectCode,
+
           internalProductId: !projectData.isClientProject
             ? projectData.internalProductId
             : null,

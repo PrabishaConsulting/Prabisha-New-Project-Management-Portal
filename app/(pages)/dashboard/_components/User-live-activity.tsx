@@ -37,7 +37,6 @@ export const LiveActivity = ({ initialActivities }: { initialActivities: Activit
   
   // SWR fetcher function with proper typing
   const fetcher = async (url: string): Promise<{ data: Activity[], pagination: any }> => {
-    console.log(`Fetching: ${url}`);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch activities');

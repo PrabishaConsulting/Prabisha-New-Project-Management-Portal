@@ -38,12 +38,15 @@ interface UserInfo {
 type ProjectMember = {
   user: UserInfo;
 };
+
+
 interface Project {
   id: string;
   name: string;
   dueDate: string | number | Date;
   status: string;
   lead: UserInfo;
+  isUseraMember: boolean;
   department?: { id: string; name: string };
   client?: { id: string; name: string };
   internalProduct?: { id: string; name: string };

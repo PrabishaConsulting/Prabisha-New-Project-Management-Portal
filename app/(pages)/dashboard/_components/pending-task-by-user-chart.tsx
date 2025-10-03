@@ -107,7 +107,6 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
 
   const { data, error, isLoading } = useSWR<ChartDataItem[]>(apiUrl, fetcher);
 
-  console.log(data);
 
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));

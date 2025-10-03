@@ -198,7 +198,6 @@ function ProjectManagementTab() {
   const { data: projects, isLoading: projectsLoading } = useSWR<Project[]>('/api/admin/projects', fetcher);
   const { mutate } = useSWRConfig();
 
-  console.log( )
   
   const [isEditProjectOpen, setIsEditProjectOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);

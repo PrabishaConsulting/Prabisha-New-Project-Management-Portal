@@ -155,7 +155,6 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const data = await request.json();
-    console.log('Received asset data:', data);
 
     let domainInfo = null;
     let liveStatus = "UNKNOWN";
