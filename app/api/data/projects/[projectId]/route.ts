@@ -6,9 +6,9 @@ import { ProjectStatus, Priority, ProjectType } from '@prisma/client';
 import { hasUserRole } from "@/services/role-services/has-user-role.service";
 import { logActivity } from '@/services/activity-user/activity-user.service'; // Adjust path if needed
 import { ACTIVITY_ACTIONS } from '@/services/activity-user/helper'; // Adjust path if needed
-import { getCurrentUser } from "@/utils/getcurrentUser";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { projectMembership } from "@/services/role-services/has-user-project-role.service";
 
 /**
  * Zod schema for validating the incoming request body for PATCH requests.
@@ -105,10 +105,16 @@ export async function PATCH(
   const currentUserId = session.user.id;
   const { projectId } = await params;
 
-  // const canUpdate = await hasUserRole( currentUserId, [ProjectRole.LEAD, 'ADMIN']);
-  // if (!canUpdate) {
-  //   return NextResponse.json({ message: 'Forbidden: You do not have permission to edit this project.' }, { status: 403 });
-  // }
+  const canUpdate = await hasUserRole( currentUserId, 'ADMIN');
+  const membership = await projectMembership(projectId , currentUserId)
+
+  console.log(canUpdate , membership)
+
+  if (!canUpdate || !membership) {
+    return NextResponse.json({ message: 'Forbidden: You do not have permission to edit this project.' }, { status: 403 });
+  }
+
+
 
   const body = await request.json();
   const validation = updateProjectSchema.safeParse(body);

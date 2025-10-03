@@ -97,11 +97,7 @@ export const projectFormSchema = z
       .nullable()
       .optional(),
     zohoFolderLink: z
-      .union([
-        z.string().url("Must be a valid URL"),
-        z.literal(""),
-        z.null(),
-      ])
+      .union([z.string().url("Must be a valid URL"), z.literal(""), z.null()])
       .transform((val) => (val === "" ? null : val))
       .nullable()
       .optional(),
@@ -252,6 +248,51 @@ export function ProjectEditForm({
 
   const onSubmit = (data: ProjectFormData) => {
     startTransition(async () => {
+      // Create comparable objects
+      const currentData = {
+        name: data.name,
+        description: data.description,
+        startDate: data.startDate?.toISOString().split("T")[0],
+        dueDate: data.dueDate?.toISOString().split("T")[0],
+        status: data.status,
+        priority: data.priority,
+        projectType: data.projectType,
+        isClientProject: data.isClientProject,
+        clientId: data.clientId,
+        departmentId: data.departmentId,
+        internalProductId: data.internalProductId,
+        zohoFolderLink: data.zohoFolderLink,
+        members: data.members
+          .map(({ userId, role }) => ({ userId, role }))
+          .sort((a, b) => a.userId.localeCompare(b.userId)),
+      };
+
+      const initialData = {
+        name: initialProject.name,
+        description: initialProject.description ?? "",
+        startDate: initialProject.startDate?.toISOString().split("T")[0],
+        dueDate: initialProject.dueDate?.toISOString().split("T")[0],
+        status: initialProject.status,
+        priority: initialProject.priority,
+        projectType: initialProject.projectType,
+        isClientProject: initialProject.isClientProject,
+        clientId: initialProject.clientId ?? undefined,
+        departmentId: initialProject.departmentId ?? undefined,
+        internalProductId: initialProject.internalProductId ?? undefined,
+        zohoFolderLink: initialProject.zohoFolderLink ?? null,
+        members: initialProject.members
+          .map((m) => ({ userId: m.user.id, role: m.role }))
+          .sort((a, b) => a.userId.localeCompare(b.userId)),
+      };
+
+      // Check if there are any changes
+      if (JSON.stringify(currentData) === JSON.stringify(initialData)) {
+        toast.info("No changes detected", {
+          description: "Please make some changes before saving.",
+        });
+        return;
+      }
+
       // Ensure zohoFolderLink is null if empty
       const payload = {
         ...data,

@@ -8,30 +8,38 @@ import { ProjectStatus, Priority, ProjectRole } from '@prisma/client';
 import { getServerSession } from 'next-auth';
 import { hasUserRole } from '@/services/role-services/has-user-role.service';
 import { logActivity } from '@/services/activity-user/activity-user.service';
+import { projectMembership } from '@/services/role-services/has-user-project-role.service';
 
 // --- MOCKS ---
 jest.mock('@/lib/db', () => ({
   db: {
     project: { findUnique: jest.fn(), update: jest.fn() },
-    projectMember: { deleteMany: jest.fn(), upsert: jest.fn() }, // upsert is fine for mocking this logic
+    projectMember: { 
+      findUnique: jest.fn(), // Add this
+      deleteMany: jest.fn(), 
+      upsert: jest.fn() 
+    },
     user: { findMany: jest.fn(), findUnique: jest.fn() },
     department: { findUnique: jest.fn() }
   },
 }));
+
 jest.mock('next-auth');
 jest.mock('@/services/role-services/has-user-role.service');
 jest.mock('@/services/activity-user/activity-user.service');
-
+jest.mock('@/services/role-services/has-user-project-role.service'); // Add this
 
 // --- TYPE ASSERTIONS FOR MOCKS ---
 const mockedProjectFindUnique = db.project.findUnique as jest.Mock;
 const mockedProjectUpdate = db.project.update as jest.Mock;
+const mockedProjectMemberFindUnique = db.projectMember.findUnique as jest.Mock; // Add this
 const mockedProjectMemberDeleteMany = db.projectMember.deleteMany as jest.Mock;
 const mockedProjectMemberUpsert = db.projectMember.upsert as jest.Mock;
 const mockedUserFindMany = db.user.findMany as jest.Mock;
 const mockedUserFindUnique = db.user.findUnique as jest.Mock;
 const mockedGetServerSession = getServerSession as jest.Mock;
 const mockedHasUserRole = hasUserRole as jest.Mock;
+const mockedProjectMembership = projectMembership as jest.Mock; // Add this
 
 describe('PATCH /api/data/projects/[projectId]', () => {
   const mockProjectId = 'clwqcac2a0000356v9j4d5m3i';
@@ -59,6 +67,7 @@ describe('PATCH /api/data/projects/[projectId]', () => {
     mockedGetServerSession.mockResolvedValue({ user: { id: mockUserId } });
     mockedHasUserRole.mockResolvedValue(true);
     mockedUserFindUnique.mockResolvedValue({ name: 'Test User' });
+    mockedProjectMembership.mockResolvedValue(true); // Add this
   });
 
   const createMockRequest = (body: object) => {
@@ -78,8 +87,6 @@ describe('PATCH /api/data/projects/[projectId]', () => {
     const response = await PATCH(req, mockParams);
     expect(response.status).toBe(401);
   });
-  
-
 
   it('should return 404 Not Found if the project does not exist', async () => {
     mockedProjectFindUnique.mockResolvedValue(null);
@@ -92,6 +99,14 @@ describe('PATCH /api/data/projects/[projectId]', () => {
     const req = createMockRequest({ name: 'A' });
     const response = await PATCH(req, mockParams);
     expect(response.status).toBe(400);
+  });
+
+  it('should return 403 Forbidden if user is not admin or project member', async () => {
+    mockedHasUserRole.mockResolvedValue(false);
+    mockedProjectMembership.mockResolvedValue(false);
+    const req = createMockRequest({ name: 'New Name' });
+    const response = await PATCH(req, mockParams);
+    expect(response.status).toBe(403);
   });
 
   it('should successfully assign a new department', async () => {
@@ -110,7 +125,7 @@ describe('PATCH /api/data/projects/[projectId]', () => {
     });
   });
 
-it('should successfully update project members', async () => {
+  it('should successfully update project members', async () => {
     mockedProjectFindUnique.mockResolvedValue(mockExistingProject);
     mockedProjectUpdate.mockResolvedValue({});
     mockedUserFindMany.mockResolvedValue([
@@ -131,8 +146,6 @@ it('should successfully update project members', async () => {
       where: { projectId: mockProjectId, userId: { in: ['clwqcac2a0004356vdeadbeef'] } },
     });
 
-    // FIX #3: The test was checking the wrong database function.
-    // It should check that projectMember.upsert is called for the role change, not project.update.
     expect(mockedProjectMemberUpsert).toHaveBeenCalledWith({
       where: { projectId_userId: { projectId: mockProjectId, userId: 'clwqcac2a0005356vbeefdead' } },
       update: { role: ProjectRole.LEAD },
