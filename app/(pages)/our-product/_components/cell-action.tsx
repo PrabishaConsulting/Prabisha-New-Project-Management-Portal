@@ -25,7 +25,6 @@ export const CellAction: React.FC<CellActionProps> = ({ data, tableMeta }) => {
     try {
       setLoading(true);
       await axios.delete(`/api/our-products/${data.id}`);
-      tableMeta?.onProductDeleted(data.id);
       toast.success("Product deleted.");
     } catch (error) {
       toast.error("Something went wrong.");
