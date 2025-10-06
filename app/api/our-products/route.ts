@@ -4,12 +4,13 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { ProductStatus } from "@prisma/client";
 import { getCurrentUser } from "@/utils/getcurrentUser";
-import { User } from "lucide-react";
 
 const productSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
-  url: z.string().url("Must be a valid URL").min(1, "URL is required"),
   status: z.nativeEnum(ProductStatus),
+  url: z.string().url("Must be a valid URL"),
+  icon: z.string().max(255).nullable().optional(),
+  image: z.string().max(255).nullable().optional(),
 });
 
 export async function POST(req: Request) {

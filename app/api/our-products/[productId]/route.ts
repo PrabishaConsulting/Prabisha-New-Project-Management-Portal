@@ -6,8 +6,10 @@ import { ProductStatus } from "@prisma/client";
 
 const productSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
-  url: z.string().url("Must be a valid URL").min(1, "URL is required"),
+  url: z.string().url("Must be a valid URL"),
   status: z.nativeEnum(ProductStatus),
+  icon: z.string().max(255).nullable().optional(),
+  image: z.string().max(255).nullable().optional(),
 });
 
 
@@ -20,6 +22,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ produc
 
     const body = await req.json();
     const validatedData = productSchema.parse(body);
+
+    console.log(validatedData.icon , "Data")
 
     const id = await params;
 

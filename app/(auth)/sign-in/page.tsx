@@ -191,7 +191,7 @@ export default function SignInPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-lg text-foreground transition-colors"
+                  className="w-full h-12 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? (

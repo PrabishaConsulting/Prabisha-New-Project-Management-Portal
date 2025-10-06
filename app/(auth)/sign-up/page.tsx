@@ -83,7 +83,7 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen  flex items-center justify-center px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-4xl p-0 overflow-hidden shadow-2xl rounded-2xl">
         <CardContent className="grid md:grid-cols-2 p-0">
           {/* Left Section - Enhanced with background and content */}
@@ -134,7 +134,7 @@ export default function SignUpPage() {
           </div>
 
           {/* Right Section - Form */}
-          <div className="p-8 md:p-12 flex flex-col justify-center">
+          <div className="p-8 md:p-10 flex flex-col justify-center">
             <div className="absolute top-4 right-4 z-10">
               <ModeToggle />
             </div>
@@ -267,7 +267,7 @@ export default function SignUpPage() {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-lg text-foreground transition-colors"
+                  className="w-full h-12 rounded-lg  transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? (

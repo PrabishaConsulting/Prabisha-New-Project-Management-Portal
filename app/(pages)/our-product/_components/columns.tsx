@@ -44,7 +44,7 @@ export const columns: ColumnDef<products>[] = [
     accessorKey: "url",
     header: "URL",
     cell: ({ row }) => (
-      <a href={row.original.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+      <a href={row.original.url || "NA"} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
         {row.original.url}
       </a>
     )

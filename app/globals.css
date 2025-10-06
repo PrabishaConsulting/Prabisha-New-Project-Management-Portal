@@ -108,21 +108,18 @@ body {
   --muted: oklch(95% 0.005 240);
   --muted-foreground: oklch(45% 0.01 240);
 
-/* Corrected CSS */
---color-urgent: hsl(0 84.2% 60.2%);
---color-high: hsl(25 95.8% 53.1%);
---color-medium: hsl(43 96% 56.3%);
---color-low: hsl(142 71% 45%);
+  /* Corrected CSS */
+  --color-urgent: hsl(0 84.2% 60.2%);
+  --color-high: hsl(25 95.8% 53.1%);
+  --color-medium: hsl(43 96% 56.3%);
+  --color-low: hsl(142 71% 45%);
 
-  /* Brand & Action Colors */
-  --primary: oklch(59.34% 0.158 44.25); /* #C8612B - Brand Orange */
-  --primary-foreground: oklch(
-    98% 0 0
-  ); /* White text for high contrast on orange */
-  --secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
-  --secondary-foreground: oklch(
-    98% 0 0
-  ); /* White text for high contrast on blue */
+  --primary: oklch(68% 0.158 44.25); /* Lighter orange for dark mode */
+--primary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
+--secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
+--secondary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
+
+
   --accent: oklch(
     94% 0.01 240
   ); /* ✨ New Accent: A clean, light gray for highlights */

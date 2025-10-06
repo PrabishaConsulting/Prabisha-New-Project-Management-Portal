@@ -16,24 +16,33 @@ interface ProductClientProps {
   initialData: products[];
   columns: ColumnDef<products>[];
   pageCount: number;
-  onDataChange: () => void;
 }
 
-export function ProductClient({ initialData, columns, pageCount, onDataChange }: ProductClientProps) {
+export function ProductClient({ initialData, columns, pageCount }: ProductClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<products | null>(null);
 
-  // This handler is called after a create, update, or delete action is successful
   const handleSuccess = () => {
-    onDataChange(); // Calls the server action to revalidate and refetch
+    setIsModalOpen(false);
+    setEditingProduct(null);
+    router.refresh(); // Optional: force a client-side refresh
   };
 
   return (
     <>
+      {/* Your table/data display here */}
+      
+      
+
       <ProductFormModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={handleSuccess}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingProduct(null);
+        }}
+        onSuccess={handleSuccess} // Pass the function here
+        initialData={editingProduct}
       />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
