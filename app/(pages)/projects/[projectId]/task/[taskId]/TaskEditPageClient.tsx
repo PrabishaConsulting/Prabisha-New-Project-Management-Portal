@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   type Task,
   type TaskComment,
@@ -83,7 +83,7 @@ type ClientTask = Omit<
 
 interface TaskEditPageClientProps {
   initialTask: ClientTask;
-  projectMembers: MemberWithUser[]; // This now uses the correct type
+  projectMembers: MemberWithUser[];
   currentUserId: string;
 }
 
@@ -102,40 +102,74 @@ const formatMinutes = (minutes: number | null) => {
 
 export function TaskEditPageClient({
   initialTask,
-  projectMembers, // This now uses the correct type
+  projectMembers,
   currentUserId,
 }: TaskEditPageClientProps) {
   const router = useRouter();
-  // State initialization is now simple, as the data is already in the correct format.
   const [task, setTask] = useState<ClientTask>(initialTask);
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
-// Track which fields have pending changes
+  
+  // Local states for all editable fields
+  const [localTitle, setLocalTitle] = useState(initialTask.title);
+  const [localDescription, setLocalDescription] = useState(initialTask.description || "");
+  const [localEstimatedMinutes, setLocalEstimatedMinutes] = useState<number | null>(
+    initialTask.estimatedMinutes
+  );
+  
+  // NEW: Single pending updates object that batches all changes
   const [pendingUpdates, setPendingUpdates] = useState<Partial<ClientTask>>({});
-  const [debouncedUpdates] = useDebounce(pendingUpdates, 500);
+  const [debouncedUpdates] = useDebounce(pendingUpdates, 1000);
+  
+  // Track if this is the first render to skip initial API call
+  const isFirstRender = useRef(true);
+  // NEW: Track last saved state to avoid duplicate API calls
+  const lastSavedUpdates = useRef<string>("");
 
-  // Effect to handle debounced API calls
+  // Effect to handle debounced API calls - NOW BATCHES ALL CHANGES
   useEffect(() => {
+    // Skip the first render to avoid initial API call on mount
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    
     if (Object.keys(debouncedUpdates).length > 0) {
-      saveTaskUpdates(debouncedUpdates);
-      setPendingUpdates({});
+      const updatesString = JSON.stringify(debouncedUpdates);
+      
+      // NEW: Only make API call if the updates are different from last saved
+      if (updatesString !== lastSavedUpdates.current) {
+        lastSavedUpdates.current = updatesString;
+        saveTaskUpdates(debouncedUpdates);
+        setPendingUpdates({});
+      }
     }
   }, [debouncedUpdates]);
 
-  // Function to queue updates (doesn't make API call immediately)
+  // Sync local states when task updates from external sources
+  useEffect(() => {
+    setLocalTitle(task.title);
+    setLocalDescription(task.description || "");
+    setLocalEstimatedMinutes(task.estimatedMinutes);
+  }, [task.title, task.description, task.estimatedMinutes]);
+
+  // UPDATED: Function to queue updates - now batches multiple changes
   const handleTaskUpdate = (updates: Partial<ClientTask>) => {
     // Update local state immediately for responsive UI
     setTask((prev) => ({ ...prev, ...updates }));
-    // Queue the updates for debounced API call
+    
+    // NEW: Merge with existing pending updates instead of replacing
     setPendingUpdates((prev) => ({ ...prev, ...updates }));
   };
 
   // Function that actually makes the API call
   const saveTaskUpdates = async (updates: Partial<ClientTask>) => {
     try {
+      console.log('🚀 Making API call with batched updates:', updates);
+      
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -162,9 +196,14 @@ export function TaskEditPageClient({
       // Revert to initial task state on error
       setTask(initialTask);
       setPendingUpdates({});
+      // Also revert local states
+      setLocalTitle(initialTask.title);
+      setLocalDescription(initialTask.description || "");
+      setLocalEstimatedMinutes(initialTask.estimatedMinutes);
+      // Reset last saved state
+      lastSavedUpdates.current = "";
     }
   };
-
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,77 +253,71 @@ export function TaskEditPageClient({
     Priority.LOW,
   ];
 
-const handleDeleteTask = async (taskId: string) => {
-  setIsDeletingTask(true);
-  try {
-    const response = await fetch(`/api/tasks/${taskId}/delete-task`, {
-      method: "DELETE",
-    });
-
-    if (!response.ok) {
-      // Try to parse error response
-      let errorData;
-      try {
-        errorData = await response.json();
-      } catch (e) {
-        // If parsing fails, use status text
-        throw new Error(response.statusText || "Failed to delete task.");
-      }
-
-      // Handle specific 403 error - FIXED: Check for errorData.error instead of message
-      if (response.status === 403) {
-        if (errorData.error === "Forbidden: You are not a member") {
-          throw new Error("You don't have permission to delete this task. Only team members can delete tasks.");
-        }
-        throw new Error("Permission denied. You cannot delete this task.");
-      }
-
-      // Handle other error cases - FIXED: Check for error property first
-      throw new Error(errorData.error || errorData.message || "Failed to delete task.");
-    }
-
-    // Success case
-    toast.success("Task deleted successfully.");
-    router.push(`/all-task`);
-  } catch (error) {
-    const errorMessage = (error as Error).message;
-    
-    // Show specific toast for permission errors
-    if (errorMessage.includes("permission") || errorMessage.includes("Permission")) {
-      toast.error("Permission Denied", {
-        description: errorMessage, // Use the actual error message
-        action: {
-          label: "Contact Admin",
-          onClick: () => router.push("/support"),
-        }
+  const handleDeleteTask = async (taskId: string) => {
+    setIsDeletingTask(true);
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/delete-task`, {
+        method: "DELETE",
       });
-    } else {
-      toast.error("Deletion Failed", { description: errorMessage });
+
+      if (!response.ok) {
+        // Try to parse error response
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          // If parsing fails, use status text
+          throw new Error(response.statusText || "Failed to delete task.");
+        }
+
+        // Handle specific 403 error
+        if (response.status === 403) {
+          if (errorData.error === "Forbidden: You are not a member") {
+            throw new Error("You don't have permission to delete this task. Only team members can delete tasks.");
+          }
+          throw new Error("Permission denied. You cannot delete this task.");
+        }
+
+        // Handle other error cases
+        throw new Error(errorData.error || errorData.message || "Failed to delete task.");
+      }
+
+      // Success case
+      toast.success("Task deleted successfully.");
+      router.push(`/all-task`);
+    } catch (error) {
+      const errorMessage = (error as Error).message;
+      
+      // Show specific toast for permission errors
+      if (errorMessage.includes("permission") || errorMessage.includes("Permission")) {
+        toast.error("Permission Denied", {
+          description: errorMessage,
+          action: {
+            label: "Contact Admin",
+            onClick: () => router.push("/support"),
+          }
+        });
+      } else {
+        toast.error("Deletion Failed", { description: errorMessage });
+      }
+    } finally {
+      setIsDeletingTask(false);
     }
-  } finally {
-    setIsDeletingTask(false);
-  }
-};
+  };
 
   const formatStatus = (status: string) => {
     if (!status) return "";
 
     return status
-      .toLowerCase() // 1. -> "to_do"
-      .split("_") // 2. -> ["to", "do"]
-      .map(
-        (
-          word // 3. -> ["To", "Do"]
-        ) => word.charAt(0).toUpperCase() + word.slice(1)
-      )
-      .join(" "); // 4. -> "To Do"
+      .toLowerCase()
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   const handleTaskClick = (task: any) => {
-    // Add your logic here - e.g., open task details, navigate, etc.
     navigator.clipboard.writeText(task.title);
     toast.success("Task name copied to clipboard");
-    // Example: router.push(`/tasks/${task.id}`);
   };
 
   return (
@@ -292,14 +325,22 @@ const handleDeleteTask = async (taskId: string) => {
       {/* Left Column: Main Content */}
       <div className="flex-1 pr-8 space-y-8">
         <Input
-          defaultValue={task.title}
-          onBlur={(e) => handleTaskUpdate({ title: e.target.value })}
+          value={localTitle}
+          onChange={(e) => {
+            const value = e.target.value;
+            setLocalTitle(value);
+            handleTaskUpdate({ title: value });
+          }}
           className="text-2xl font-bold h-12 bg-transparent border-0 focus-visible:ring-1 focus-visible:ring-primary px-2"
         />
         <Textarea
-          defaultValue={task.description || ""}
+          value={localDescription}
           placeholder="Add a description..."
-          onBlur={(e) => handleTaskUpdate({ description: e.target.value })}
+          onChange={(e) => {
+            const value = e.target.value;
+            setLocalDescription(value);
+            handleTaskUpdate({ description: value });
+          }}
           className="min-h-[200px] bg-muted/30 border-border"
         />
         <TimeTracking
@@ -386,7 +427,6 @@ const handleDeleteTask = async (taskId: string) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="unassigned">Unassigned</SelectItem>
-              {/* FIX: Map over projectMembers correctly */}
               {projectMembers.map((member) => (
                 <SelectItem key={member.id} value={member.user.id}>
                   {member.user.name}
@@ -418,7 +458,7 @@ const handleDeleteTask = async (taskId: string) => {
           </Select>
         </div>
         
-        {/* NEW: Estimated Minutes Field */}
+        {/* OPTIMIZED: Estimated Minutes Field with Batched Updates */}
         <div>
           <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
             <Clock className="h-3 w-3" />
@@ -427,11 +467,17 @@ const handleDeleteTask = async (taskId: string) => {
           <div className="flex items-center gap-2">
             <Input
               type="number"
-              value={task.estimatedMinutes || ""}
+              value={localEstimatedMinutes || ""}
               onChange={(e) => {
                 const value = e.target.value;
+                const numValue = value ? parseInt(value) : null;
+                
+                // Update local state immediately for responsive UI
+                setLocalEstimatedMinutes(numValue);
+                
+                // Queue for debounced API call (will be batched with other changes)
                 handleTaskUpdate({
-                  estimatedMinutes: value ? parseInt(value) : null,
+                  estimatedMinutes: numValue,
                 });
               }}
               placeholder="e.g., 60"
@@ -439,9 +485,9 @@ const handleDeleteTask = async (taskId: string) => {
             />
             <span className="text-xs text-muted-foreground">minutes</span>
           </div>
-          {task.estimatedMinutes && (
+          {localEstimatedMinutes && (
             <p className="text-xs text-muted-foreground mt-1">
-              = {formatMinutes(task.estimatedMinutes)}
+              = {formatMinutes(localEstimatedMinutes)}
             </p>
           )}
         </div>
@@ -518,7 +564,7 @@ const handleDeleteTask = async (taskId: string) => {
                 To confirm, type{"  "}
                 <button
                   type="button"
-                  onClick={() => handleTaskClick(task)} // Add your click handler
+                  onClick={() => handleTaskClick(task)}
                   className="inline-flex items-center p-0 m-0 bg-transparent border-none cursor-pointer"
                 >
                   <Badge variant="outline" className="font-mono font-bold">

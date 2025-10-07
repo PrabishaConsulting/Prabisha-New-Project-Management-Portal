@@ -3,8 +3,6 @@
 import { db } from "@/lib/db";
 import { ProductClient } from "./_components/client";
 import { columns } from "./_components/columns";
-import { revalidatePath } from "next/cache";
-
 // Explicitly mark this page as dynamic
 export const dynamic = "force-dynamic";
 
@@ -31,6 +29,9 @@ export default async function OurProductPage({
       },
       take: PAGE_SIZE,
       skip: (page - 1) * PAGE_SIZE,
+      include: {
+        categories: true // Include categories in the response
+      }
     }),
     db.products.count(),
   ]);

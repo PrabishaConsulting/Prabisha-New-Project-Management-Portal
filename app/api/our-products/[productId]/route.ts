@@ -6,12 +6,12 @@ import { ProductStatus } from "@prisma/client";
 
 const productSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),
-  url: z.string().url("Must be a valid URL"),
   status: z.nativeEnum(ProductStatus),
+  url: z.string().url("Must be a valid URL"),
   icon: z.string().max(255).nullable().optional(),
   image: z.string().max(255).nullable().optional(),
+  categories: z.array(z.string()).optional(),
 });
-
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ productId: string }> }) {
   try {
@@ -23,20 +23,40 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ produc
     const body = await req.json();
     const validatedData = productSchema.parse(body);
 
-    console.log(validatedData.icon , "Data")
-
+    const { categories, ...productData } = validatedData;
     const id = await params;
 
-    if (!id.productId ) {
+    if (!id.productId) {
       return new NextResponse("Product ID is required", { status: 400 });
     }
 
+    // First, disconnect all existing categories
+    await db.products.update({
+      where: { id: id.productId },
+      data: {
+        categories: {
+          set: []
+        }
+      }
+    });
+
+    // Then update the product and connect new categories
     const product = await db.products.update({
       where: { id: id.productId },
-      data: validatedData,
+      data: {
+        ...productData,
+        categories: categories && categories.length > 0
+          ? {
+              connect: categories.map(id => ({ id }))
+            }
+          : undefined
+      },
+      include: {
+        categories: true
+      }
     });
-    return NextResponse.json(product);
 
+    return NextResponse.json(product);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return new NextResponse(error.message, { status: 400 });
@@ -53,15 +73,14 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ produ
       return new NextResponse("Unauthorized", { status: 403 });
     }
 
-     const id = await params;
+    const id = await params;
 
-    if (!id.productId ) {
+    if (!id.productId) {
       return new NextResponse("Product ID is required", { status: 400 });
     }
     
     await db.products.delete({ where: { id: id.productId } });
     return new NextResponse(null, { status: 204 });
-
   } catch (error) {
     console.error("[PRODUCT_DELETE]", error);
     return new NextResponse("Internal Server Error", { status: 500 });

@@ -13,7 +13,7 @@ import { ProductFormModal } from "@/components/modals/product-form-modal";
 import { DataTable } from "./data-table";
 
 interface ProductClientProps {
-  initialData: products[];
+  initialData: any;
   columns: ColumnDef<products>[];
   pageCount: number;
 }
@@ -21,7 +21,7 @@ interface ProductClientProps {
 export function ProductClient({ initialData, columns, pageCount }: ProductClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<products | null>(null);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
   const handleSuccess = () => {
     setIsModalOpen(false);

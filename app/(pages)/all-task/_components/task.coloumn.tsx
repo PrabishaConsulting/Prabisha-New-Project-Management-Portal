@@ -109,7 +109,7 @@ export const taskColumns: ColumnDef<TaskData>[] = [
       </Button>
     ),
     cell: ({ row }) => (
-      <div className="truncate capitalize w-[20rem]">
+      <div className="truncate capitalize w-[16rem]">
         {row.getValue("title")}
       </div>
     ),
@@ -117,7 +117,12 @@ export const taskColumns: ColumnDef<TaskData>[] = [
   {
     accessorKey: "project.name", // Assumes your project model has a 'name' field
     header: "Project",
-    cell: ({ row }) => row.original.project?.name ?? "-",
+    cell: ({ row }) => (
+
+       <div className="truncate capitalize w-[10rem]">
+        {row.original.project?.name ?? "-"}
+      </div>
+    ),
   },
 
   {

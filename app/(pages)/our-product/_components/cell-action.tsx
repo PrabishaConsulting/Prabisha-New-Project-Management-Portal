@@ -12,8 +12,9 @@ import { ProductFormModal } from "@/components/modals/product-form-modal";
 import { AlertModal } from "@/components/modals/alert-modal";
 
 interface CellActionProps {
-  data: products;
+  data: any;
   tableMeta: any;
+  
 }
 
 export const CellAction: React.FC<CellActionProps> = ({ data, tableMeta }) => {
