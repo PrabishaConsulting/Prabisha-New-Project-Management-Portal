@@ -149,7 +149,8 @@ print(products)
 
 # Project API Documentation
 
-## Get All Projects
+# Get All Projects
+
 
 Retrieves a paginated list of projects with filtering, sorting, and optional related data.
 
@@ -481,3 +482,175 @@ try {
 **Base URL:** `https://projects.prabisha.com`  
 **API Version:** v1  
 **Last Updated:** September 2024
+
+
+
+
+
+
+# Client API Docs
+
+The Client API provides access to client data stored in our system. This API follows RESTful principles and returns data in JSON format. All requests require authentication using an API key.
+
+## Base URL
+```
+http://projects.prabisha.com/api/v1/get/our-client
+```
+
+## Authentication
+All requests to the Client API must include an API key in the request headers:
+```
+x-api-key: YOUR_API_KEY
+```
+
+
+
+### Get Client Data
+Retrieve client data with optional filtering and pagination.
+
+**Endpoint:** `GET /api/v1/get/our-client`
+
+**Query Parameters:**
+| Parameter | Type | Required | Description | Default |
+|-----------|------|----------|-------------|---------|
+| `type` | string | Yes | Must be "user" to retrieve user data | - |
+| `userType` | string | No | Filter users by type (only "CLIENT" is supported) | - |
+| `page` | number | No | Page number for pagination | 1 |
+| `limit` | number | No | Number of items per page (max 100) | 10 |
+
+**Example Request:**
+```bash
+curl -X GET "http://projects.prabisha.com/api/v1/get/our-client?type=user&userType=CLIENT&page=1&limit=10" \
+-H "x-api-key: YOUR_API_KEY"
+```
+
+**Success Response (200 OK):**
+```json
+{
+  "data": [
+    {
+      "id": "clx1a2b3c4d5e6",
+      "userCode": "CLI-001",
+      "email": "client@example.com",
+      "name": "John Doe",
+      "userType": "CLIENT",
+      "industry": "Technology",
+      "location": "New York",
+      "createdAt": "2023-05-15T14:30:00.000Z",
+      "updatedAt": "2023-06-20T09:15:00.000Z"
+    },
+    {
+      "id": "clx7f8g9h0i1j2",
+      "userCode": "CLI-002",
+      "email": "jane@example.com",
+      "name": "Jane Smith",
+      "userType": "CLIENT",
+      "industry": "Finance",
+      "location": "London",
+      "createdAt": "2023-06-10T11:20:00.000Z",
+      "updatedAt": "2023-06-22T16:45:00.000Z"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "totalCount": 25,
+    "totalPages": 3
+  }
+}
+```
+
+**Error Responses:**
+
+- **401 Unauthorized**
+  ```json
+  {
+    "error": "Unauthorized: Invalid API key"
+  }
+  ```
+
+- **400 Bad Request**
+  ```json
+  {
+    "error": "Invalid pagination parameters"
+  }
+  ```
+  or
+  ```json
+  {
+    "error": "Invalid userType parameter"
+  }
+  ```
+  or
+  ```json
+  {
+    "error": "Invalid type parameter. Use \"user\" or \"product\""
+  }
+  ```
+
+- **500 Internal Server Error**
+  ```json
+  {
+    "error": "Internal server error"
+  }
+  ```
+
+## Data Model
+
+### User Object
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique identifier for the user |
+| `userCode` | string | Optional unique user code |
+| `email` | string | User's email address (unique) |
+| `name` | string | User's full name |
+| `userType` | string | Type of user (e.g., "CLIENT") |
+| `industry` | string | Industry associated with the user |
+| `location` | string | User's location |
+| `createdAt` | string | ISO 8601 timestamp when the user was created |
+| `updatedAt` | string | ISO 8601 timestamp when the user was last updated |
+
+### Pagination Object
+| Field | Type | Description |
+|-------|------|-------------|
+| `page` | number | Current page number |
+| `limit` | number | Number of items per page |
+| `totalCount` | number | Total number of items available |
+| `totalPages` | number | Total number of pages available |
+
+## Implementation Notes
+
+1. **Security**:
+   - The API implements a zero-trust security model requiring API key authentication
+   - The API key should be stored securely in environment variables
+   - Only "CLIENT" user type is supported in this implementation
+
+2. **Pagination**:
+   - Results are paginated with configurable page size (max 100 items per page)
+   - Pagination metadata includes current page, items per page, total count, and total pages
+
+3. **Data Filtering**:
+   - Results can be filtered by userType (only "CLIENT" is supported)
+   - Results are sorted by creation date in descending order (newest first)
+
+4. **Rate Limiting**:
+   - Consider implementing rate limiting in production to prevent abuse
+
+5. **Caching**:
+   - Consider implementing caching for frequently accessed data to improve performance
+
+## Testing the API
+
+To test this API endpoint:
+
+1. Obtain a valid API key
+2. Use a tool like Postman, Insomnia, or curl to make requests
+3. Include the API key in the `x-api-key` header
+4. Specify the required `type=user` parameter
+5. Optionally include pagination parameters (`page`, `limit`) and filtering (`userType=CLIENT`)
+
+Example using curl:
+```bash
+curl -X GET "http://projects.prabisha.com/api/v1/get/our-client?type=user&userType=CLIENT" \
+-H "x-api-key: YOUR_API_KEY" | jq
+```
