@@ -504,7 +504,6 @@ x-api-key: YOUR_API_KEY
 ```
 
 
-
 ### Get Client Data
 Retrieve client data with optional filtering and pagination.
 
