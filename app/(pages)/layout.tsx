@@ -258,7 +258,7 @@ export default function DashboardLayout({
             <MobileHeader />
             
             {/* Header with laptop-optimized spacing */}
-            <div className="sticky top-0 z-[999]">
+            <div className="sticky top-0">
               <Header 
                 session={session}
                 className="" 

@@ -1,20 +1,21 @@
+// services/project-service/create-project.service.ts
 import { db } from "@/lib/db";
 import { ProjectCreationError } from "@/utils/errors";
-import { logActivity } from "../activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "../activity-user/helper";
 import { getCurrentUser } from "@/utils/getcurrentUser";
-import { Prisma } from "@prisma/client"; // Import Prisma for the transaction client type
+import { generateNextProjectCode } from "@/utils/project-code";
+import { ProjectRole } from "@prisma/client";
+
 
 export interface ProjectCreationData {
   name: string;
   workspaceId: string;
   userId: string;
-  dueDate: Date;
   departmentId: string;
   isClientProject: boolean;
-  clientId?: string;
-  projectCode?: string;
-  internalProductId?: string;
+  clientId?: string; 
+  internalProductId?:string;
+  memberIds: string[] ;
 }
 
 export const createProjectInDb = async (projectData: ProjectCreationData) => {
@@ -32,19 +33,7 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
     );
   }
 
-  const existingProject = await checkProjectNameExists({
-    name: projectData.name,
-    workspaceId: projectData.workspaceId,
-  });
-
-  if (existingProject) {
-    throw new ProjectCreationError(
-      "Project already exists. Please search and add tasks to it.",
-      "DUPLICATE_ERROR"
-    );
-  }
-
-  // FIX #1: Get the current user *before* starting the transaction to prevent timeouts.
+  // Get the current user *before* starting the transaction
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     throw new ProjectCreationError(
@@ -53,55 +42,91 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
     );
   }
 
-  // --- DB TRANSACTION ---
+  // Generate project code outside transaction
+  const projectCode = await generateNextProjectCode();
+  
+  // Calculate due date as one month from now
+  const dueDate = new Date();
+  dueDate.setMonth(dueDate.getMonth() + 1);
+
   try {
+    // Use a transaction with increased timeout
     const result = await db.$transaction(async (tx) => {
+      // Create the project
       const newProject = await tx.project.create({
         data: {
           name: projectData.name,
           workspaceId: projectData.workspaceId,
           createdBy: projectData.userId,
-          dueDate: projectData.dueDate,
+          dueDate,
           departmentId: projectData.departmentId,
           isClientProject: projectData.isClientProject,
           clientId: projectData.isClientProject ? projectData.clientId : null,
-          projectCode: projectData.projectCode,
-
+          projectCode,
           internalProductId: !projectData.isClientProject
             ? projectData.internalProductId
             : null,
         },
       });
 
-      await tx.projectMember.create({
-        data: {
-          projectId: newProject.id,
-          userId: projectData.userId,
-          role: "LEAD",
-        },
-      });
-
-      // FIX #2: Pass the transactional client `tx` to the logger.
-      // This makes the log part of the same atomic operation.
-      await logActivity(tx as unknown as Prisma.TransactionClient, {
-        userId: projectData.userId,
+      // Prepare project members data
+      const projectMembersData = projectData.memberIds.map((memberId, index) => ({
         projectId: newProject.id,
-        action: ACTIVITY_ACTIONS.CREATE_PROJECT,
-        description: `${currentUser.name} created the project "${newProject.name}".`,
+        userId: memberId,
+        role: index === 0 ? ProjectRole.LEAD : ProjectRole.MEMBER, // First member (creator) is LEAD
+      }));
+
+      // Create all project members in a single operation
+      await tx.projectMember.createMany({
+        data: projectMembersData,
       });
 
       return { project: newProject, creatorId: projectData.userId };
+    }, {
+      maxWait: 5000, // The maximum time to wait for a transaction to become available
+      timeout: 15000, // The maximum time a transaction can run
     });
+
+    // Log activity outside the transaction to avoid timeout issues
+    try {
+      await db.activityLog.create({
+        data: {
+          userId: projectData.userId,
+          projectId: result.project.id,
+          action: ACTIVITY_ACTIONS.CREATE_PROJECT,
+          description: `${currentUser.name} created the project "${result.project.name}".`,
+        },
+      });
+    } catch (logError) {
+      console.error("Failed to log activity:", logError);
+      // Don't throw here - the project was created successfully
+    }
 
     return result;
   } catch (error: any) {
     if (error.code === "P2002") {
+      // Check if it's a workspace+name constraint violation
+      if (error.meta?.target?.includes("workspaceId") && error.meta?.target?.includes("name")) {
+        throw new ProjectCreationError(
+          "A project with this name already exists in this workspace. Please choose a different name.",
+          "DUPLICATE_ERROR"
+        );
+      }
       throw new ProjectCreationError(
-        "Project name already exists in this workspace.",
+        "Database constraint violation.",
         "DB_CONSTRAINT_ERROR",
         error
       );
     }
+    
+    if (error.code === "P2028") {
+      throw new ProjectCreationError(
+        "Transaction timeout. Please try again with fewer members or contact support.",
+        "TRANSACTION_TIMEOUT",
+        error
+      );
+    }
+    
     console.error("[PROJECT_CREATION] Unexpected DB error:", {
       message: error.message,
       code: error.code,
@@ -114,21 +139,4 @@ export const createProjectInDb = async (projectData: ProjectCreationData) => {
       "UNEXPECTED_ERROR"
     );
   }
-};
-
-export const checkProjectNameExists = async ({
-  name,
-  workspaceId,
-}: {
-  name: string;
-  workspaceId: string;
-}) => {
-  const existingProject = await db.project.findFirst({
-    where: {
-      name: name,
-      workspaceId: workspaceId,
-    },
-  });
-
-  return existingProject;
 };

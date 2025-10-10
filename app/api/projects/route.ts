@@ -108,7 +108,7 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-// --- POST /api/projects ---
+// app/api/projects/route.ts
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.email) {
@@ -122,42 +122,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  // Check if user has admin role (case-insensitive check)
+  // Check if user has admin role
   const permissionToCreateProject = await hasUserRole(userId, "ADMIN") || await hasUserRole(userId, "admin");
   
   if (!permissionToCreateProject) {
-    // Updated error message to match test expectations
     return NextResponse.json({ error: "Forbidden: Admin access required" }, { status: 403 });
   }
   
   try {
     const body = await req.json();
-    // --- 2. PARSE THE FULL PAYLOAD ---
-
-    const { name, workspaceId, departmentId, isClientProject, clientId, internalProductId } = createProjectSchema.parse(body);
-    const projectCode = await generateNextProjectCode();
-
-    // Calculate due date as one month from now
-    const dueDate = new Date();
-    dueDate.setMonth(dueDate.getMonth() + 1);
-
+    const { name, workspaceId, departmentId, isClientProject, clientId, internalProductId, memberIds = [] } = createProjectSchema.parse(body);
+    
+    // Ensure the creator is included in the member list
+    const allMemberIds = [...new Set([userId, ...memberIds])];
+    
     const projectData = {
-      name: name,
-      workspaceId: workspaceId,
-      departmentId: departmentId,
-      userId: userId,
-      dueDate: dueDate,
-      projectCode : projectCode,
-      isClientProject: isClientProject,
+      name,
+      workspaceId,
+      departmentId,
+      userId,
+      isClientProject,
       clientId: isClientProject ? clientId : null,
-      internalProductId: internalProductId ? internalProductId : null,
+      internalProductId: !isClientProject ? internalProductId : null,
+      memberIds: allMemberIds,
     };
 
-    const projectCreation = await createProjectInDb(
-      projectData as ProjectCreationData
-    );
-
-    // await queueProjectCreatedNotification(projectCreation.project, userData.user!);
+    const projectCreation = await createProjectInDb(projectData as any);
 
     return NextResponse.json(
       { project: projectCreation.project, creator: projectCreation.creatorId },
@@ -165,7 +155,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      // This line is crucial for returning a real array
       return NextResponse.json({ error: error.issues }, { status: 400 });
     }
 

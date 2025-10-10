@@ -1,17 +1,19 @@
 "use client";
 
-import { useState, FormEvent, useEffect } from "react";
+import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import useSWR from "swr";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -22,10 +24,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus } from "lucide-react";
-import { AddInternalProductModal } from "./AddInternalProductModal"; // --- NEW --- Import the new modal
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Plus, X, UserPlus } from "lucide-react";
+import { AddInternalProductModal } from "./AddInternalProductModal";
 
-// --- UPDATED --- Define types for all fetched data
+// Define types for the form data
 interface Department {
   id: string;
   name: string;
@@ -34,6 +38,7 @@ interface Department {
 interface Client {
   id: string;
   name: string;
+  email: string;
 }
 
 interface InternalProduct {
@@ -41,10 +46,31 @@ interface InternalProduct {
   name: string;
 }
 
+interface WorkspaceMember {
+  id: string;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatar: string;
+  };
+  role: string;
+}
+
+interface FormData {
+  departments: Department[];
+  clients: Client[];
+  internalProducts: InternalProduct[];
+  workspaceMembers: WorkspaceMember[];
+}
+
 interface CreateProjectModalProps {
   workspaceId: string;
   onProjectCreated?: (newProject: any) => void;
 }
+
+// SWR fetcher function
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export function CreateProjectModal({
   workspaceId,
@@ -53,58 +79,43 @@ export function CreateProjectModal({
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { data: session } = useSession();
 
-  // --- UPDATED --- State for form fields
+  // Form state
   const [projectName, setProjectName] = useState("");
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
-  const [isClientProject, setIsClientProject] = useState(false); // Renamed for clarity
+  const [isClientProject, setIsClientProject] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [selectedInternalProductId, setSelectedInternalProductId] = useState(""); // --- NEW ---
+  const [selectedInternalProductId, setSelectedInternalProductId] = useState("");
+  const [selectedMembers, setSelectedMembers] = useState<WorkspaceMember[]>([]);
 
-  // --- UPDATED --- State for data fetched from API
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
-  const [internalProducts, setInternalProducts] = useState<InternalProduct[]>([]); // --- NEW ---
+  // Fetch form data using SWR
+  const {
+    data: formData,
+    error,
+    mutate,
+  } = useSWR<FormData>(
+    isOpen ? `/api/project-form-data?workspaceId=${workspaceId}` : null,
+    fetcher
+  );
 
-  // --- UPDATED --- Fetch all data when modal opens
-  const fetchData = async () => {
-    try {
-      // --- NEW --- Fetch internal products alongside other data
-      const [deptRes, clientRes, internalProductRes] = await Promise.all([
-        fetch("/api/departments"),
-        fetch("/api/get/users?userType=CLIENT"),
-        fetch("/api/internal-products"), // Assumes you create this API endpoint
-      ]);
+  // Extract data from formData
+  const departments = formData?.departments || [];
+  const clients = formData?.clients || [];
+  const internalProducts = formData?.internalProducts || [];
+  const workspaceMembers = formData?.workspaceMembers || [];
 
-      if (!deptRes.ok || !clientRes.ok || !internalProductRes.ok) {
-        throw new Error("Failed to load required data for the form.");
-      }
+  // Find workspace owner and current user
+  const workspaceOwner = workspaceMembers.find((m) => m.role === "OWNER");
+  const currentUser = workspaceMembers.find((m) => m.user.id === session?.user?.id);
 
-      const departmentsData = await deptRes.json();
-      const usersData = await clientRes.json();
-      const internalProductsData = await internalProductRes.json(); // --- NEW ---
-
-      setDepartments(departmentsData || []);
-      setClients(usersData || []);
-      setInternalProducts(internalProductsData || []); // --- NEW ---
-    } catch (err: any) {
-      toast.error(err.message || "Failed to fetch initial data.");
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchData();
-    }
-  }, [isOpen]);
-
-  // --- UPDATED --- Reset all relevant form fields
   const resetForm = () => {
     setProjectName("");
     setSelectedDepartmentId("");
     setIsClientProject(false);
     setSelectedClientId("");
-    setSelectedInternalProductId(""); // --- NEW ---
+    setSelectedInternalProductId("");
+    setSelectedMembers([]);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -114,11 +125,23 @@ export function CreateProjectModal({
     setIsOpen(open);
   };
 
+  const handleMemberSelect = (member: WorkspaceMember) => {
+    // Don't allow adding the current user since they're automatically included
+    if (member.user.id === session?.user?.id) return;
+    
+    if (!selectedMembers.some((m) => m.id === member.id)) {
+      setSelectedMembers([...selectedMembers, member]);
+    }
+  };
+
+  const handleMemberRemove = (memberId: string) => {
+    setSelectedMembers(selectedMembers.filter((m) => m.id !== memberId));
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!projectName || isLoading) return;
     
-    // --- UPDATED --- Validation logic
     if (!selectedDepartmentId) {
       toast.error("Please select a department for this project.");
       return;
@@ -134,7 +157,16 @@ export function CreateProjectModal({
     
     setIsLoading(true);
     
-    // --- UPDATED --- Construct the payload for the backend
+    // Get all member IDs including:
+    // 1. Current user (will be lead and creator)
+    // 2. Workspace owner (if different from current user)
+    // 3. Selected members
+    const memberIds = [
+      session?.user?.id, // Current user is always included
+      ...(workspaceOwner && workspaceOwner.user.id !== session?.user?.id ? [workspaceOwner.user.id] : []),
+      ...selectedMembers.map(m => m.user.id)
+    ].filter((id, index, self) => self.indexOf(id) === index); // Remove duplicates
+    
     const payload = {
       name: projectName,
       workspaceId,
@@ -142,37 +174,53 @@ export function CreateProjectModal({
       isClientProject: isClientProject,
       clientId: isClientProject ? selectedClientId : null,
       internalProductId: !isClientProject ? selectedInternalProductId : null,
+      memberIds: memberIds,
     };
-    toast.promise(
-      fetch("/api/projects", {
+    
+    try {
+      const response = await fetch("/api/projects", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
-      }).then(async (response) => {
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Failed to create project.");
-        }
-        return response.json();
-      }),
-      {
-        loading: "Creating project...",
-        success: (data) => {
-          handleOpenChange(false);
-          if (onProjectCreated) {
-            onProjectCreated(data.project);
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        // Handle specific error messages
+        if (data.error && typeof data.error === 'string') {
+          if (data.error.includes("already exists in this workspace")) {
+            toast.error("A project with this name already exists in this workspace. Please choose a different name.");
+          } else if (data.error.includes("Transaction timeout")) {
+            toast.error("The request timed out. Please try again with fewer members.");
           } else {
-            router.refresh();
+            toast.error(data.error || "Failed to create project.");
           }
-          setIsLoading(false);
-          return `Project "${data.project.name}" created successfully!`;
-        },
-        error: (err) => {
-          setIsLoading(false);
-          return err.message;
-        },
+        } else if (data.error && Array.isArray(data.error)) {
+          // Handle Zod validation errors
+          const errorMessages = data.error.map((err: any) => err.message).join(", ");
+          toast.error(`Validation failed: ${errorMessages}`);
+        } else {
+          toast.error("Failed to create project.");
+        }
+        setIsLoading(false);
+        return;
       }
-    );
+      
+      toast.success(`Project "${data.project.name}" created successfully!`);
+      handleOpenChange(false);
+      
+      if (onProjectCreated) {
+        onProjectCreated(data.project);
+      } else {
+        router.refresh();
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error creating project:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -182,72 +230,290 @@ export function CreateProjectModal({
         New Project
       </Button>
 
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Create a new project</DialogTitle>
-            <DialogDescription>
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <SheetContent className="sm:max-w-[600px] w-full px-4 overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Create a new project</SheetTitle>
+            <SheetDescription>
               Fill in the details for your new project to get started.
-            </DialogDescription>
-          </DialogHeader>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              {/* Project Name and Department (No changes) */}
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="name" className="text-right">Name</Label>
-                <Input id="name" value={projectName} onChange={(e) => setProjectName(e.target.value)} className="col-span-3" placeholder="e.g., Video Creation" required />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="department" className="text-right">Department</Label>
-                <Select onValueChange={setSelectedDepartmentId} value={selectedDepartmentId}>
-                  <SelectTrigger className="col-span-3"><SelectValue placeholder="Select a department" /></SelectTrigger>
-                  <SelectContent>{departments.map((dept) => (<SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>))}</SelectContent>
-                </Select>
-              </div>
+            </SheetDescription>
+          </SheetHeader>
 
-              {/* --- UPDATED --- Client Project Switch */}
-              <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                <div className="space-y-0.5">
-                  <Label htmlFor="is-client-project">External Client Project</Label>
-                  <p className="text-xs text-muted-foreground">
-                    Is this project for a paying client?
-                  </p>
-                </div>
-                <Switch id="is-client-project" checked={isClientProject} onCheckedChange={setIsClientProject} />
-              </div>
+          {error && (
+            <div className="bg-destructive/10 text-destructive p-3 rounded-md">
+              Failed to load form data. Please try again.
+            </div>
+          )}
 
-              {/* --- UPDATED --- Conditional Client/Product Select */}
-              {isClientProject ? (
-                // Show External Clients Dropdown
+          {!formData ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-6 py-4">
+              <div className="grid gap-4">
+                {/* Project Name and Department */}
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="client" className="text-right">Client</Label>
-                  <Select onValueChange={setSelectedClientId} value={selectedClientId}>
-                    <SelectTrigger className="col-span-3"><SelectValue placeholder="Select a client" /></SelectTrigger>
-                    <SelectContent>{clients.map((client) => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}</SelectContent>
+                  <Label htmlFor="name" className="text-right">
+                    Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={projectName}
+                    onChange={(e) => setProjectName(e.target.value)}
+                    className="col-span-3"
+                    placeholder="e.g., Video Creation"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="department" className="text-right">
+                    Department
+                  </Label>
+                  <Select
+                    onValueChange={setSelectedDepartmentId}
+                    value={selectedDepartmentId}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select a department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>
+                          {dept.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 </div>
-              ) : (
-                // Show Internal Products Dropdown
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="internal-product" className="text-right">Client</Label>
-                  <div className="col-span-3 flex items-center gap-2">
-                    <Select onValueChange={setSelectedInternalProductId} value={selectedInternalProductId}>
-                      <SelectTrigger><SelectValue placeholder="Select a product" /></SelectTrigger>
-                      <SelectContent>{internalProducts.map((prod) => (<SelectItem key={prod.id} value={prod.id}>{prod.name}</SelectItem>))}</SelectContent>
+                
+                {/* Client Project Switch */}
+                <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="is-client-project">
+                      External Client Project
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Is this project for a paying client?
+                    </p>
+                  </div>
+                  <Switch
+                    id="is-client-project"
+                    checked={isClientProject}
+                    onCheckedChange={setIsClientProject}
+                  />
+                </div>
+                
+                {/* Conditional Client/Product Select */}
+                {isClientProject ? (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="client" className="text-right">
+                      Client
+                    </Label>
+                    <Select
+                      onValueChange={setSelectedClientId}
+                      value={selectedClientId}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select a client" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {clients.map((client) => (
+                          <SelectItem key={client.id} value={client.id}>
+                            {client.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
                     </Select>
-                    {/* --- NEW --- Button to open the "Add Product" modal */}
-                    <AddInternalProductModal onProductAdded={fetchData}  name=""/>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="internal-product" className="text-right">
+                      Product
+                    </Label>
+                    <div className="col-span-3 flex items-center gap-2">
+                      <Select
+                        onValueChange={setSelectedInternalProductId}
+                        value={selectedInternalProductId}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a product" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {internalProducts.map((prod) => (
+                            <SelectItem key={prod.id} value={prod.id}>
+                              {prod.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <AddInternalProductModal
+                        onProductAdded={() => mutate()}
+                        name=""
+                      />
+                    </div>
+                  </div>
+                )}
+                
+                {/* Project Members Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label>Project Members</Label>
+                    <span className="text-sm text-muted-foreground">
+                      {selectedMembers.length + 1} members
+                      {/* +1 for current user who is always included */}
+                    </span>
+                  </div>
+                  
+                  {/* Current User (always included as lead and creator) */}
+                  {currentUser && (
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={currentUser.user.avatar || ""} />
+                          <AvatarFallback>
+                            {currentUser.user.name?.charAt(0).toUpperCase() || 
+                             currentUser.user.email.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {currentUser.user.name || currentUser.user.email}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Project Lead (You)
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="default">Lead</Badge>
+                    </div>
+                  )}
+                  
+                  {/* Workspace Owner (if different from current user) */}
+                  {workspaceOwner && workspaceOwner.user.id !== session?.user?.id && (
+                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={workspaceOwner.user.avatar || ""} />
+                          <AvatarFallback>
+                            {workspaceOwner.user.name?.charAt(0).toUpperCase() || 
+                             workspaceOwner.user.email.charAt(0).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">
+                            {workspaceOwner.user.name || workspaceOwner.user.email}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Workspace Owner
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">Owner</Badge>
+                    </div>
+                  )}
+                  
+                  {/* Selected Members */}
+                  {selectedMembers.length > 0 && (
+                    <div className="space-y-2">
+                      {selectedMembers.map((member) => (
+                        <div
+                          key={member.id}
+                          className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={member.user.avatar || ""} />
+                              <AvatarFallback>
+                                {member.user.name?.charAt(0).toUpperCase() ||
+                                  member.user.email.charAt(0).toUpperCase()}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <p className="font-medium">
+                                {member.user.name || member.user.email}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {member.role}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleMemberRemove(member.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Add Members */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">Add Members</Label>
+                    {workspaceMembers.filter(
+                      (member) =>
+                        // Filter out current user and already selected members
+                        member.user.id !== session?.user?.id &&
+                        !selectedMembers.some((m) => m.id === member.id)
+                    ).length > 0 ? (
+                      <div className="flex flex-wrap gap-2">
+                        {workspaceMembers
+                          .filter(
+                            (member) =>
+                              member.user.id !== session?.user?.id &&
+                              !selectedMembers.some((m) => m.id === member.id)
+                          )
+                          .map((member) => (
+                            <Button
+                              key={member.id}
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleMemberSelect(member)}
+                              className="flex items-center gap-2"
+                            >
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={member.user.avatar || ""} />
+                                <AvatarFallback className="text-xs">
+                                  {member.user.name?.charAt(0).toUpperCase() ||
+                                    member.user.email.charAt(0).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate max-w-[100px]">
+                                {member.user.name || member.user.email}
+                              </span>
+                              <UserPlus className="h-3 w-3" />
+                            </Button>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        All workspace members are already added
+                      </p>
+                    )}
                   </div>
                 </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => handleOpenChange(false)}>Cancel</Button>
-              <Button type="submit" disabled={isLoading}>{isLoading ? "Creating..." : "Create Project"}</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+              </div>
+              <SheetFooter>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => handleOpenChange(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isLoading}>
+                  {isLoading ? "Creating..." : "Create Project"}
+                </Button>
+              </SheetFooter>
+            </form>
+          )}
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

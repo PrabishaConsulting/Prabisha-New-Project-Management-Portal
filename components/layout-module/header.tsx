@@ -46,7 +46,6 @@ import {
 } from "@/components/ui/command";
 
 // Import SidebarTrigger component
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
 type UserMenuItem =
   | {

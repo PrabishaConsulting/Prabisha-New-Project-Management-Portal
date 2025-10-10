@@ -82,6 +82,8 @@ export const createProjectSchema = z.object({
 
   // For internal products.
   internalProductId: z.string().optional().nullable(),
+  memberIds: z.array(z.string()).optional(),
+
 })
 .superRefine((data, ctx) => {
   // If it's a project for an external client...

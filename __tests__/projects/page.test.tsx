@@ -1,32 +1,30 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import "@testing-library/jest-dom";
-// Make sure this path is correct for your project structure
 import { CreateProjectModal } from "@/components/modals/CreateProjectModal";
 import { useRouter } from "next/navigation";
+import { SessionProvider } from "next-auth/react";
 
 // Mock Next.js router
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
 }));
 
-// Mock sonner toast
+// Mock sonner toast - FIXED: Added success mock
 jest.mock("sonner", () => ({
   toast: {
     error: jest.fn(),
+    success: jest.fn(), // Added this
     promise: jest.fn((promise, options) => {
-      // Ensure the promise resolves for testing success paths
       return promise.then(options.success).catch(options.error);
     }),
   },
 }));
 
-// Mock the nested AddInternalProductModal to isolate the component under test
+// Mock the nested AddInternalProductModal
 jest.mock("@/components/modals/AddInternalProductModal", () => ({
-    // The path to AddInternalProductModal might need adjustment
-    AddInternalProductModal: () => <button>Add Product</button>,
+  AddInternalProductModal: () => <button>Add Product</button>,
 }));
-
 
 // Mock fetch API
 global.fetch = jest.fn();
@@ -40,43 +38,73 @@ const mockRouter = {
 const mockDepartments = [{ id: "dept-1", name: "Engineering" }];
 const mockClients = [{ id: "client-1", name: "Global Tech Inc." }];
 const mockInternalProducts = [{ id: "prod-1", name: "Project Phoenix" }];
+const mockWorkspaceMembers = [
+  {
+    id: "member-1",
+    user: {
+      id: "user-1",
+      name: "Current User",
+      email: "current@example.com",
+      avatar: "",
+    },
+    role: "ADMIN",
+  },
+  {
+    id: "member-2",
+    user: {
+      id: "user-2",
+      name: "Workspace Owner",
+      email: "owner@example.com",
+      avatar: "",
+    },
+    role: "OWNER",
+  },
+];
 
 // Helper function to generate unique project names
 const generateUniqueProjectName = () => {
   return `Test Project ${Date.now()}`;
 };
 
-// Helper function to select an option from a ShadCN/Radix Select dropdown
+// Helper function to select an option from a dropdown
 const selectFromDropdown = async (triggerText: string, optionText: string) => {
   fireEvent.click(screen.getByText(triggerText));
   const option = await screen.findByRole('option', { name: optionText });
   fireEvent.click(option);
 };
 
+// Wrapper component to provide session context
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const mockSession = {
+    user: {
+      id: "user-1",
+      name: "Current User",
+      email: "current@example.com",
+      avatar : "deva"
+    },
+    expires: "2023-01-01",
+  };
+
+  return <SessionProvider session={mockSession}>{children}</SessionProvider>;
+};
 
 describe("CreateProjectModal", () => {
   beforeEach(() => {
     (fetch as jest.Mock).mockClear();
     mockRouter.refresh.mockClear();
     (jest.requireMock("sonner").toast.error as jest.Mock).mockClear();
+    (jest.requireMock("sonner").toast.success as jest.Mock).mockClear(); // Clear success mock
 
     (fetch as jest.Mock).mockImplementation((url: string) => {
-      if (url === "/api/departments") {
+      if (url === "/api/project-form-data?workspaceId=ws-123") {
         return Promise.resolve({
           ok: true,
-          json: () => Promise.resolve(mockDepartments),
-        });
-      }
-      if (url === "/api/get/users?userType=CLIENT") {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockClients),
-        });
-      }
-      if (url === "/api/internal-products") {
-        return Promise.resolve({
-          ok: true,
-          json: () => Promise.resolve(mockInternalProducts),
+          json: () => Promise.resolve({
+            departments: mockDepartments,
+            clients: mockClients,
+            internalProducts: mockInternalProducts,
+            workspaceMembers: mockWorkspaceMembers,
+          }),
         });
       }
       if (url === "/api/projects") {
@@ -90,14 +118,22 @@ describe("CreateProjectModal", () => {
   });
 
   it('should render the "New Project" button', () => {
-    render(<CreateProjectModal workspaceId="ws-123" />);
+    render(
+      <TestWrapper>
+        <CreateProjectModal workspaceId="ws-123" />
+      </TestWrapper>
+    );
     expect(
       screen.getByRole("button", { name: /new project/i })
     ).toBeInTheDocument();
   });
 
-  it("should open the dialog and fetch all initial data when the button is clicked", async () => {
-    render(<CreateProjectModal workspaceId="ws-123" />);
+  it("should open the sheet and fetch all initial data when the button is clicked", async () => {
+    render(
+      <TestWrapper>
+        <CreateProjectModal workspaceId="ws-123" />
+      </TestWrapper>
+    );
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
 
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
@@ -105,16 +141,18 @@ describe("CreateProjectModal", () => {
     expect(screen.getByText("Select a product")).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledWith("/api/departments");
-      expect(fetch).toHaveBeenCalledWith("/api/get/users?userType=CLIENT");
-      expect(fetch).toHaveBeenCalledWith("/api/internal-products");
+      expect(fetch).toHaveBeenCalledWith("/api/project-form-data?workspaceId=ws-123");
     });
   });
 
   it("should submit the form for an INTERNAL project by default", async () => {
     const uniqueProjectName = generateUniqueProjectName();
 
-    render(<CreateProjectModal workspaceId="ws-123" />);
+    render(
+      <TestWrapper>
+        <CreateProjectModal workspaceId="ws-123" />
+      </TestWrapper>
+    );
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
     await screen.findByRole("dialog");
 
@@ -137,10 +175,19 @@ describe("CreateProjectModal", () => {
           isClientProject: false,
           clientId: null,
           internalProductId: "prod-1",
+          memberIds: ["user-1", "user-2"], // Current user and workspace owner
         }),
       });
     });
 
+    // Check that toast.success was called
+    await waitFor(() => {
+      expect(jest.requireMock("sonner").toast.success).toHaveBeenCalledWith(
+        `Project "New Project" created successfully!`
+      );
+    });
+
+    // Now the sheet should be closed
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
@@ -149,7 +196,11 @@ describe("CreateProjectModal", () => {
   it("should submit the form for a CLIENT project when toggled", async () => {
     const uniqueProjectName = generateUniqueProjectName();
 
-    render(<CreateProjectModal workspaceId="ws-123" />);
+    render(
+      <TestWrapper>
+        <CreateProjectModal workspaceId="ws-123" />
+      </TestWrapper>
+    );
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
     await screen.findByRole("dialog");
 
@@ -178,25 +229,37 @@ describe("CreateProjectModal", () => {
           isClientProject: true,
           clientId: "client-1",
           internalProductId: null,
+          memberIds: ["user-1", "user-2"], // Current user and workspace owner
         }),
       });
     });
 
+    // Check that toast.success was called
+    await waitFor(() => {
+      expect(jest.requireMock("sonner").toast.success).toHaveBeenCalledWith(
+        `Project "New Project" created successfully!`
+      );
+    });
+
+    // Now the sheet should be closed
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
   });
 
   it("should show validation error if required fields are missing", async () => {
-    render(<CreateProjectModal workspaceId="ws-123" />);
+    render(
+      <TestWrapper>
+        <CreateProjectModal workspaceId="ws-123" />
+      </TestWrapper>
+    );
     fireEvent.click(screen.getByRole("button", { name: /new project/i }));
     await screen.findByRole("dialog");
 
     const submitButton = screen.getByRole("button", { name: /create project/i });
     const clientSwitch = screen.getByLabelText(/External Client Project/i);
 
-    // --- FIX: Add project name to test subsequent validations ---
-    // The component checks for a name first, so we must provide one.
+    // Add project name to test subsequent validations
     fireEvent.change(screen.getByLabelText(/name/i), {
         target: { value: "Test Validation Project" },
     });

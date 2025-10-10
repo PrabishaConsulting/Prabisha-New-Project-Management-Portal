@@ -89,6 +89,7 @@ describe('POST /api/projects', () => {
   const createMockRequest = (body: object) => {
     return new NextRequest('http://localhost/api/projects', {
       method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
   };
@@ -161,6 +162,8 @@ describe('POST /api/projects', () => {
         isClientProject: mockProjectPayload.isClientProject,
         internalProductId: mockProjectPayload.internalProductId,
         userId: mockUserId,
+        memberIds: [mockUserId], // Include the expected memberIds array
+        clientId: null, // Include clientId even for internal projects (it will be null)
       })
     );
   });
@@ -181,10 +184,63 @@ describe('POST /api/projects', () => {
     // Verify that the service was called with the correct data
     expect(mockedCreateProjectInDb).toHaveBeenCalledWith(
       expect.objectContaining({
-        ...clientProjectPayload,
+        name: clientProjectPayload.name,
+        workspaceId: clientProjectPayload.workspaceId,
+        departmentId: clientProjectPayload.departmentId,
+        isClientProject: clientProjectPayload.isClientProject,
+        clientId: clientProjectPayload.clientId,
+        internalProductId: clientProjectPayload.internalProductId,
         userId: mockUserId,
-        dueDate: expect.any(Date),
+        memberIds: [mockUserId], // Include the expected memberIds array
       })
     );
+  });
+
+  it('should include memberIds in the payload when creating a project', async () => {
+    const projectWithMembersPayload = {
+      ...mockProjectPayload,
+      memberIds: [mockUserId, 'user-456'],
+    };
+    
+    const req = createMockRequest(projectWithMembersPayload);
+    const response = await POST(req);
+    
+    expect(response.status).toBe(201);
+    
+    // Verify that the service was called with the correct data including memberIds
+    expect(mockedCreateProjectInDb).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: projectWithMembersPayload.name,
+        workspaceId: projectWithMembersPayload.workspaceId,
+        departmentId: projectWithMembersPayload.departmentId,
+        isClientProject: projectWithMembersPayload.isClientProject,
+        internalProductId: projectWithMembersPayload.internalProductId,
+        userId: mockUserId,
+        memberIds: projectWithMembersPayload.memberIds, // Include the memberIds from the payload
+        clientId: null, // Include clientId even for internal projects
+      })
+    );
+  });
+
+  it('should handle the error case properly without logging to console in tests', async () => {
+    // Mock console.error to prevent it from showing in test output
+    const originalConsoleError = console.error;
+    console.error = jest.fn();
+    
+    mockedCreateProjectInDb.mockRejectedValue(new Error('Database error'));
+    
+    const req = createMockRequest(mockProjectPayload);
+    const response = await POST(req);
+    const body = await response.json();
+    
+    expect(response.status).toBe(500);
+    expect(body.error).toBe('Internal Server Error');
+    expect(console.error).toHaveBeenCalledWith(
+      "Failed to create project:",
+      expect.any(Error)
+    );
+    
+    // Restore console.error
+    console.error = originalConsoleError;
   });
 });
