@@ -1,7 +1,7 @@
 // src/services/task.service.ts
 
 import { db } from "@/lib/db";
-import { Task, Priority, TaskStatus } from "@prisma/client";
+import { Task, Priority, TaskStatus , TaskComment} from "@prisma/client";
 import { logActivity } from "@/services/activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
 import {
@@ -201,15 +201,11 @@ async function _logTaskChanges(
   }
 }
 
-/**
- * Updates the status of a specific task.
- * @param {string} taskId - The ID of the task to update.
- * @param {TaskStatus} newStatus - The new status for the task.
- * @returns {Promise<{ task: Task | null; error: string | null }>} - An object containing the updated task on success, or an error message on failure.
- */
 export const updateTaskStatus = async (
   taskId: string,
-  newStatus: TaskStatus
+  newStatus: TaskStatus,
+  actorId: string,
+  comment?: string
 ): Promise<{ task: Task | null; error: string | null }> => {
   try {
     // 1. Find the original task to check current status
@@ -247,10 +243,19 @@ export const updateTaskStatus = async (
       },
     });
 
-    // 6. If successful, return the updated task and a null error
+    // 6. If task is marked as done and comment is provided, add the comment
+    if (isMarkingAsDone && comment && comment.trim() !== "") {
+      const commentResult = await addTaskCommentService(taskId, actorId, comment);
+      if (commentResult.error) {
+        console.error(`Failed to add comment for task ${taskId}:`, commentResult.error);
+        // We don't fail the status update if comment fails, but we log it
+      }
+    }
+
+    // 7. If successful, return the updated task and a null error
     return { task: updatedTask, error: null };
   } catch (error: any) {
-    // 7. Handle potential errors
+    // 8. Handle potential errors
     console.error(`Failed to update status for task ${taskId}:`, error);
 
     // Prisma throws a specific error code 'P2025' if the record to update is not found
@@ -265,6 +270,7 @@ export const updateTaskStatus = async (
     };
   }
 };
+
 
 /**
  * Updates the time estimates for a specific task.
@@ -373,5 +379,26 @@ export const canUserAccessTask = async (
       error: "An unexpected error occurred.",
       reason: "INTERNAL_SERVER_ERROR",
     };
+  }
+};
+
+
+export const addTaskCommentService = async (
+  taskId: string,
+  userId: string,
+  content: string
+): Promise<{ comment: TaskComment | null; error: string | null }> => {
+  try {
+    const comment = await db.taskComment.create({
+      data: {
+        taskId,
+        userId,
+        content,
+      },
+    });
+    return { comment, error: null };
+  } catch (error: any) {
+    console.error(`Failed to add comment for task ${taskId}:`, error);
+    return { comment: null, error: "Failed to add comment." };
   }
 };

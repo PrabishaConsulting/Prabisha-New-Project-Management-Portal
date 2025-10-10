@@ -273,36 +273,6 @@ const TaskTable = ({
   // Your existing component code
   if (!tasks || tasks.length === 0) return <EmptyState />;
 
-  const getStatusBadge = (status: PrismaTask["status"]) => {
-    switch (status) {
-      case "IN_PROGRESS":
-        return (
-          <Badge className="text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/20">
-            In Progress
-          </Badge>
-        );
-      case "DONE":
-        return (
-          <Badge className="text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/20">
-            Completed
-          </Badge>
-        );
-      case "TO_DO":
-        return (
-          <Badge className="text-yellow-600 dark:text-yellow-400 bg-yellow-500/10 border-yellow-500/20">
-            To Do
-          </Badge>
-        );
-      case "REVIEW":
-        return (
-          <Badge className="text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/20">
-            In Review
-          </Badge>
-        );
-      default:
-        return <Badge variant="secondary">{status}</Badge>;
-    }
-  };
 const handleRefresh = () => {
     onRefresh(); // This calls SWR's 'mutate' function
     toast.success("Task status updated!");

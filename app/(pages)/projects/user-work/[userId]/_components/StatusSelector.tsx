@@ -2,7 +2,7 @@
 
 "use client"; // Required for useState and event handlers
 
-import { useState , Fragment } from "react";
+import { useState, Fragment } from "react";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -18,7 +18,19 @@ import {
   CircleDotDashed,
   ShieldCheck,
   Milestone,
+  Loader2,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 // Your Prisma task type
 type PrismaTask = {
@@ -74,6 +86,11 @@ type StatusSelectorProps = {
 
 const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
+  const [comment, setComment] = useState("");
+  const [pendingStatus, setPendingStatus] = useState<PrismaTask["status"] | null>(null);
+  const [isUpdating, setIsUpdating] = useState(false); // New state for loading
+  
   const statuses: PrismaTask["status"][] = [
     "TO_DO",
     "IN_PROGRESS",
@@ -82,15 +99,32 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   ];
   const currentStatusDetails = getStatusDetails(task.status);
 
-  const handleStatusChange = async (newStatus: PrismaTask["status"]) => {
+  const handleStatusChange = (newStatus: PrismaTask["status"]) => {
     if (newStatus === task.status) return;
+    
+    // If status is being changed to DONE, open comment dialog
+    if (newStatus === "DONE") {
+      setPendingStatus(newStatus);
+      setIsCommentDialogOpen(true);
+      setIsOpen(false); // Close the dropdown
+      return;
+    }
+    
+    // For other statuses, update immediately
+    updateTaskStatus(newStatus);
+  };
 
+  const updateTaskStatus = async (newStatus: PrismaTask["status"], commentText?: string) => {
+    setIsUpdating(true); // Start loading state
+    
     try {
-      // 🚨 REPLACE WITH YOUR API ENDPOINT
       const response = await fetch(`/api/tasks/${task.id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ 
+          status: newStatus,
+          comment: commentText || "" // Include comment if provided
+        }),
       });
 
       if (!response.ok) throw new Error("Failed to update status");
@@ -98,54 +132,128 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
     } catch (error) {
       console.error("Error updating task status:", error);
       alert("Failed to update status. Please try again.");
+    } finally {
+      setIsUpdating(false); // End loading state
     }
   };
 
+  const handleCommentSubmit = () => {
+    if (pendingStatus) {
+      updateTaskStatus(pendingStatus, comment);
+      setIsCommentDialogOpen(false);
+      setComment("");
+      setPendingStatus(null);
+    }
+  };
+
+  const handleCommentCancel = () => {
+    setIsCommentDialogOpen(false);
+    setComment("");
+    setPendingStatus(null);
+  };
+
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Badge
-          className={`${currentStatusDetails.className} cursor-pointer transition-transform duration-200 hover:scale-105`}
-        >
-          {currentStatusDetails.text}
-        </Badge>
-      </DropdownMenuTrigger>
+    <>
+      <DropdownMenu open={isOpen} onOpenChange={(open) => {
+        // Prevent opening dropdown while updating
+        if (!isUpdating) setIsOpen(open);
+      }}>
+        <DropdownMenuTrigger asChild>
+          <Badge
+            className={`${currentStatusDetails.className} cursor-pointer transition-transform duration-200 hover:scale-105 flex items-center gap-1`}
+          >
+            {isUpdating ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Updating...</span>
+              </>
+            ) : (
+              currentStatusDetails.text
+            )}
+          </Badge>
+        </DropdownMenuTrigger>
 
-      <AnimatePresence>
-        {isOpen && (
-          <DropdownMenuContent asChild forceMount align="start">
-            <motion.div
-              initial={{ opacity: 0, y: -10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.95 }}
-              transition={{ duration: 0.15, ease: "easeInOut" }}
-            >
-              {statuses.map((status  , index) => {
-                const details = getStatusDetails(status);
-                return (
-                  // 2. Use a Fragment to group the item and the potential separator
-                  <Fragment key={status}>
-                    <DropdownMenuItem
-                      onClick={() => handleStatusChange(status)}
-                      className="flex items-center gap-2"
-                    >
-                      {details.icon}
-                      <span>{details.text}</span>
-                      {task.status === status && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
-                    </DropdownMenuItem>
+        <AnimatePresence>
+          {isOpen && (
+            <DropdownMenuContent asChild forceMount align="start">
+              <motion.div
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.15, ease: "easeInOut" }}
+              >
+                {statuses.map((status, index) => {
+                  const details = getStatusDetails(status);
+                  return (
+                    <Fragment key={status}>
+                      <DropdownMenuItem
+                        onClick={() => handleStatusChange(status)}
+                        className="flex items-center gap-2"
+                        disabled={isUpdating} // Disable menu items while updating
+                      >
+                        {details.icon}
+                        <span>{details.text}</span>
+                        {task.status === status && (
+                          <Check className="ml-auto h-4 w-4" />
+                        )}
+                      </DropdownMenuItem>
 
-                    {/* 3. Conditionally render the separator */}
-                    {index < statuses.length - 1 && <DropdownMenuSeparator />}
-                  </Fragment>
-                );
-              })}
-            </motion.div>
-          </DropdownMenuContent>
-        )}
-      </AnimatePresence>
-    </DropdownMenu>
+                      {index < statuses.length - 1 && <DropdownMenuSeparator />}
+                    </Fragment>
+                  );
+                })}
+              </motion.div>
+            </DropdownMenuContent>
+          )}
+        </AnimatePresence>
+      </DropdownMenu>
+
+      {/* Comment Dialog */}
+      <Dialog open={isCommentDialogOpen} onOpenChange={(open) => {
+        // Prevent closing dialog while updating
+        if (!isUpdating) setIsCommentDialogOpen(open);
+      }}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add Completion Comment</DialogTitle>
+            <DialogDescription>
+              Please add a comment about why this task is being marked as completed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="comment" className="text-right">
+                Comment
+              </Label>
+              <Textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                className="col-span-3"
+                placeholder="Enter your comment here..."
+                rows={3}
+                disabled={isUpdating} // Disable textarea while updating
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCommentCancel} disabled={isUpdating}>
+              Cancel
+            </Button>
+            <Button onClick={handleCommentSubmit} disabled={!comment.trim() || isUpdating}>
+              {isUpdating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                "Submit"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 };
 

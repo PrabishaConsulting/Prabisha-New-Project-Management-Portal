@@ -94,7 +94,23 @@ const taskStatusEnum = z.enum(["TO_DO", "IN_PROGRESS", "REVIEW", "DONE"]);
 // Schema to validate the body of the PUT request for updating a task status
 export const updateTaskStatusSchema = z.object({
   status: taskStatusEnum,
+  comment: z.string().optional(), // Add the comment field as optional
 });
+
+// If you want to make the comment required when status is "DONE", you can use a refined schema:
+export const updateTaskStatusWithCommentSchema = updateTaskStatusSchema.refine(
+  (data) => {
+    // If status is DONE, comment must be provided and not empty
+    if (data.status === "DONE") {
+      return data.comment && data.comment.trim().length > 0;
+    }
+    return true; // For other statuses, comment is optional
+  },
+  {
+    message: "Comment is required when marking task as done",
+    path: ["comment"], // Point to the comment field for the error
+  }
+);
 
 // We can also infer the TypeScript type from the schema if needed elsewhere
 export type UpdateTaskStatusDto = z.infer<typeof updateTaskStatusSchema>;

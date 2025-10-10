@@ -25,6 +25,7 @@ export async function PUT(
 
     // 2. Authorization: Check if this user is allowed to modify this task
     const authCheck = await canUserAccessTask(taskId, user.id);
+
     if (!authCheck.authorized) {
       const statusCode = authCheck.reason === "NOT_FOUND" ? 404 : 403;
       return NextResponse.json(
@@ -61,8 +62,10 @@ export async function PUT(
     }
 
     // 4. Core Logic: Update the task status
-    const { status } = validation.data;
-    const result = await updateTaskStatus(taskId, status);
+    const { status  , comment } = validation.data;
+
+    const result = await updateTaskStatus(taskId, status ,user?.id , comment);
+    
     const project = await db.project.findFirst({
       where: {
         tasks: {
