@@ -112,6 +112,8 @@ function ProjectPageContent( {activeWorkspaceId} : {activeWorkspaceId: string}) 
     isLoading: isProjectsLoading,
   } = useSWR(projectsApiUrl, fetcher, { keepPreviousData: true });
 
+  console.log({projectsData} , "data for user")
+
   const { data: departmentsData } = useSWR(
     `/api/departments`,
     fetcher

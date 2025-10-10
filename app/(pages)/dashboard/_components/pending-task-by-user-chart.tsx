@@ -22,17 +22,16 @@ import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
-  ChartTooltipContent,
   ChartLegend,
   ChartLegendContent,
 } from "@/components/ui/chart";
 
 // Recharts Components
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, TooltipProps } from "recharts";
 
 // --- Types ---
 interface ChartDataItem {
-  userId: string; // <-- ADDED
+  userId: string;
   user: string;
   URGENT: number;
   HIGH: number;
@@ -73,13 +72,48 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
+// --- Helper function to get first name ---
+const getFirstName = (fullName: string): string => {
+  if (!fullName) return "";
+  // Split by space or dot and take the first part
+  const firstName = fullName.split(/[\s.]+/)[0];
+  return firstName;
+};
+
+// --- Custom Tooltip Component ---
+const CustomTooltip = ({ active, payload, label }: TooltipProps<string, string>) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[200px]">
+        <p className="font-semibold text-lg mb-2">{label}</p>
+        <div className="space-y-2">
+          {payload.map((entry, index) => (
+            <div key={index} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-sm font-medium">{entry.name}</span>
+              </div>
+              <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
+                {entry.value}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 // --- Main Component ---
 export const PendingTasksChart = ({ departments }: { departments: any }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // --- FIX: Use 'ALL' as a default value to avoid empty string issues ---
   const [filters, setFilters] = useState({
     departmentId: searchParams.get("departmentId") || "ALL",
   });
@@ -87,7 +121,6 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
   useEffect(() => {
     const newSearchParams = new URLSearchParams(searchParams.toString());
 
-    // --- FIX: Handle the 'ALL' case correctly ---
     if (filters.departmentId && filters.departmentId !== "ALL") {
       newSearchParams.set("departmentId", filters.departmentId);
     } else {
@@ -107,7 +140,6 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
 
   const { data, error, isLoading } = useSWR<ChartDataItem[]>(apiUrl, fetcher);
 
-
   const handleFilterChange = (key: keyof typeof filters, value: string) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -115,7 +147,6 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
   const handleBarClick = (data: any) => {
     if (data && data.activePayload && data.activePayload[0]) {
       const clickedData = data.activePayload[0].payload as ChartDataItem;
-      // Navigate with both userId and userName
       router.push(
         `${pathname}?userId=${clickedData.userId}&userName=${encodeURIComponent(
           clickedData.user
@@ -129,86 +160,79 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            {/* --- CHANGE: Updated title and description --- */}
-            <CardTitle>Top 6 Users by Pending Tasks</CardTitle>
+            <CardTitle>Top 10 Users by Pending Tasks</CardTitle>
             <CardDescription>
-              Shows the top 6 users with the most tasks in "To Do" or "In
+              Shows the top 10 users with the most tasks in "To Do" or "In
               Progress" status.
             </CardDescription>
           </div>
-          {/* --- FIX: Improved Select component with a clear "All" option --- */}
-          {/* <Select
-            value={filters.departmentId}
-            onValueChange={(value) => handleFilterChange("departmentId", value)}
-          >
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Select a department" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Departments</SelectItem>
-              {departments.map((d: any) => (
-                <SelectItem key={d.id} value={d.id}>
-                  {d.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select> */}
         </div>
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="flex items-center justify-center h-[400px] text-destructive">
+          <div className="flex items-center justify-center h-[300px] text-destructive">
             Failed to load chart data.
           </div>
         )}
         {isLoading && (
-          <div className="flex items-center justify-center h-[400px]">
+          <div className="flex items-center justify-center h-[300px]">
             Loading chart...
           </div>
         )}
         {data && data.length > 0 && (
-          <ChartContainer config={chartConfig} className="h-[600px] w-full">
-            {/* --- CHANGE: Converted to a vertical bar chart --- */}
+          <ChartContainer config={chartConfig} className="h-[400px] w-full">
             <BarChart
               accessibilityLayer
               data={data}
-              // layout="vertical" is the default, so we remove the horizontal prop
-              margin={{ top: 20, right: 30, left: 20, bottom: 60 }} // Increased bottom margin for labels
+              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
               onClick={handleBarClick}
             >
               <CartesianGrid vertical={false} />
-              {/* --- CHANGE: Swapped X and Y axis configurations --- */}
               <XAxis
                 dataKey="user"
                 type="category"
                 tickLine={false}
                 tickMargin={10}
                 axisLine={false}
-                // Rotate labels to prevent overlap
-                angle={-40}
+                angle={-45}
                 textAnchor="end"
-                height={100}
+                height={80}
+                interval={0}
+                tick={{ fontSize: 12 }}
+                tickFormatter={(value) => getFirstName(value)}
               />
               <YAxis type="number" />
-              <ChartTooltip content={<ChartTooltipContent />} />
+              <ChartTooltip content={<CustomTooltip />} />
               <ChartLegend content={<ChartLegendContent />} />
               <Bar
                 dataKey="URGENT"
                 stackId="a"
                 fill={chartConfig.URGENT.color}
+                barSize={30}
               />
-              <Bar dataKey="HIGH" stackId="a" fill={chartConfig.HIGH.color} />
+              <Bar
+                dataKey="HIGH"
+                stackId="a"
+                fill={chartConfig.HIGH.color}
+                barSize={30}
+              />
               <Bar
                 dataKey="MEDIUM"
                 stackId="a"
                 fill={chartConfig.MEDIUM.color}
+                barSize={30}
               />
-              <Bar dataKey="LOW" stackId="a" fill={chartConfig.LOW.color} />
+              <Bar
+                dataKey="LOW"
+                stackId="a"
+                fill={chartConfig.LOW.color}
+                barSize={30}
+              />
             </BarChart>
           </ChartContainer>
         )}
         {data && data.length === 0 && (
-          <div className="flex items-center justify-center h-[400px] text-muted-foreground">
+          <div className="flex items-center justify-center h-[300px] text-muted-foreground">
             No pending tasks found for the selected criteria.
           </div>
         )}

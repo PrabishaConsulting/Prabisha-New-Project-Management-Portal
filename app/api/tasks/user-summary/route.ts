@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
     // 6. Convert the map, sort, and get the top users
     const finalData = Array.from(dataMap.values())
       .sort((a, b) => b.total - a.total)
-      .slice(0, 6); // <-- CHANGE 3: Gets the top 6 users
+      .slice(0, 11); // <-- CHANGE 3: Gets the top 6 users
 
     // 7. Return a NextResponse object
     return NextResponse.json(finalData, { status: 200 });
