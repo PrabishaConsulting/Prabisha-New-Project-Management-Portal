@@ -19,7 +19,7 @@ export function DashboardWrapper({ departments }: { departments: any[] }) {
       : "Selected User";
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto">
       {userId ? (
         <UserTaskDetailChart userId={userId} userName={userName} />
       ) : (

@@ -56,7 +56,7 @@ const formatStatus = (status: string) => {
 };
 
 export const taskColumns: ColumnDef<TaskData>[] = [
-{
+  {
     id: "pti-id",
     header: "Task ID",
     cell: ({ row }) => {
@@ -65,10 +65,10 @@ export const taskColumns: ColumnDef<TaskData>[] = [
       const { projectId } = row.original; // Get required IDs
       // Construct the URL
       const url = `/projects/${projectId}/task/${taskId}?workspaceId=cme1bv47a0002js04h223pd0s`;
-      
+
       return (
-        <Link 
-          href={url} 
+        <Link
+          href={url}
           className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
         >
           {ptiId}
@@ -80,6 +80,7 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     accessorKey: "createdAt",
     header: ({ column }) => (
       <Button
+        size={"sm"}
         variant="ghost"
         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
       >
@@ -87,16 +88,19 @@ export const taskColumns: ColumnDef<TaskData>[] = [
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
-    cell: ({ row }) => (
-      <div className="pl-4">
-        {new Date(row.original.createdAt).toLocaleDateString("en-GB", {
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        })}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const date = new Date(row.original.createdAt);
+      return (
+        <div className="pl-4 ">
+          {date.toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+          })}
+        </div>
+      );
+    },
   },
+
   {
     accessorKey: "title",
     header: ({ column }) => (
@@ -118,8 +122,7 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     accessorKey: "project.name", // Assumes your project model has a 'name' field
     header: "Project",
     cell: ({ row }) => (
-
-       <div className="truncate capitalize w-[10rem]">
+      <div className="truncate capitalize w-[10rem]">
         {row.original.project?.name ?? "-"}
       </div>
     ),
@@ -166,13 +169,19 @@ export const taskColumns: ColumnDef<TaskData>[] = [
   {
     accessorKey: "assignee.name",
     header: "Assignee",
-    cell: ({ row }) => row.original.assignee?.name ?? "Unassigned",
+    cell: ({ row }) => {
+      const name = row.original.assignee?.name ?? "Unassigned";
+      // Split by space or dot and take the first part
+      return name.split(/[ .]/)[0];
+    },
   },
-  // ADDED: Reporter column is now included
   {
     accessorKey: "reporter.name",
     header: "Reporter",
-    cell: ({ row }) => row.original.reporter?.name ?? "N/A",
+    cell: ({ row }) => {
+      const name = row.original.reporter?.name ?? "N/A";
+      return name.split(/[ .]/)[0];
+    },
   },
   // ADDED: Project column is now included
 
@@ -191,9 +200,8 @@ export const taskColumns: ColumnDef<TaskData>[] = [
       <div className="pl-4">
         {row.original.dueDate
           ? new Date(row.original.dueDate).toLocaleDateString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
+              day: "numeric",
+              month: "short",
             })
           : "-"}
       </div>

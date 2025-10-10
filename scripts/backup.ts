@@ -1,27 +1,23 @@
-// scripts/backup-database.ts
-import { config } from 'dotenv';
+// scripts/backup-database.js
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// Load environment variables
-config();
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Promisify exec for better async handling
 const execAsync = promisify(exec);
 
-// Database configuration interface
-interface DbConfig {
-  user: string;
-  password: string;
-  host: string;
-  port: string;
-  database: string;
-}
+// IMPORTANT: Update these paths to match your system
+const MYSQLDUMP_PATH = "C:\\xampp\\mysql\\bin\\mysqldump.exe"; // Path to mysqldump
 
-// Parse database URL
-function parseDbUrl(url: string): DbConfig {
+// Database configuration interface
+const parseDbUrl = (url: string) => {
   const regex = /^mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)$/;
   const match = url.match(regex);
   
@@ -36,14 +32,17 @@ function parseDbUrl(url: string): DbConfig {
     port: match[4],
     database: match[5]
   };
-}
+};
 
 // Main backup function
-async function backupDatabase() {
+const backupDatabase = async () => {
   try {
-    // Get database configurations
+    // Load environment variables
+    const dotenv = await import('dotenv');
+    dotenv.config({ path: path.join(__dirname, '../.env') });
+
+    // Get database configuration
     const prodDb = parseDbUrl(process.env.DATABASE_URL || '');
-    const backupDb = parseDbUrl(process.env.DATABASE_URL_BACKUP || '');
 
     // Create backup directory if it doesn't exist
     const backupDir = path.join(__dirname, '../backups');
@@ -56,21 +55,15 @@ async function backupDatabase() {
     const backupFile = path.join(backupDir, `backup-${timestamp}.sql`);
 
     console.log('Starting database backup...');
+    console.log('Database:', prodDb);
 
     // Step 1: Dump production database
-    const dumpCommand = `mysqldump -u ${prodDb.user} -p${prodDb.password} -h ${prodDb.host} -P ${prodDb.port} ${prodDb.database} > ${backupFile}`;
+    const dumpCommand = `"${MYSQLDUMP_PATH}" -u ${prodDb.user} -p${prodDb.password} -h ${prodDb.host} -P ${prodDb.port} ${prodDb.database} > "${backupFile}"`;
     
     console.log('Creating database dump...');
+    console.log('Command:', dumpCommand);
     await execAsync(dumpCommand);
     console.log(`Database dump created at: ${backupFile}`);
-
-    // Step 2: Import to backup database
-    const importCommand = `mysql -u ${backupDb.user} -p${backupDb.password} -h ${backupDb.host} -P ${backupDb.port} ${backupDb.database} < ${backupFile}`;
-    
-    console.log('Importing to backup database...');
-    await execAsync(importCommand);
-    console.log('Backup database updated successfully!');
-    console.log(`Backup file saved at: ${backupFile}`);
 
     // Optional: Clean up old backup files (keep only last 5)
     const files = fs.readdirSync(backupDir)
@@ -90,19 +83,15 @@ async function backupDatabase() {
     console.error('Backup failed:', error);
     throw error;
   }
-}
+};
 
-// Execute backup if this file is run directly
-if (require.main === module) {
-  backupDatabase()
-    .then(() => {
-      console.log('Backup process completed successfully');
-      process.exit(0);
-    })
-    .catch((error) => {
-      console.error('Backup process failed:', error);
-      process.exit(1);
-    });
-}
-
-export default backupDatabase;
+// Execute backup
+backupDatabase()
+  .then(() => {
+    console.log('Backup process completed successfully');
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error('Backup process failed:', error);
+    process.exit(1);
+  });
