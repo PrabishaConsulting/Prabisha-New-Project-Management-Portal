@@ -112,7 +112,7 @@ function ProjectPageContent( {activeWorkspaceId} : {activeWorkspaceId: string}) 
     isLoading: isProjectsLoading,
   } = useSWR(projectsApiUrl, fetcher, { keepPreviousData: true });
 
-  console.log({projectsData} , "data for user")
+  // console.log({projectsData} , "data for")
 
   const { data: departmentsData } = useSWR(
     `/api/departments`,
@@ -125,9 +125,9 @@ function ProjectPageContent( {activeWorkspaceId} : {activeWorkspaceId: string}) 
     const projects = projectsData?.projects || [];
     
     // Group projects by user role
-    const leadProjects = projects.filter((p: { currentUserRole: string; }) => p.currentUserRole === 'LEAD');
-    const creatorProjects = projects.filter((p: { currentUserRole: string; }) => p.currentUserRole === 'CREATOR');
-    const memberProjects = projects.filter((p: { currentUserRole: string; }) => p.currentUserRole === 'MEMBER');
+    const leadProjects = projects.filter((p: { isUseraMember: string; }) => p.isUseraMember === 'LEAD');
+    const creatorProjects = projects.filter((p: { isUseraMember: string; }) => p.isUseraMember === 'CREATOR');
+    const memberProjects = projects.filter((p: { isUseraMember: string; }) => p.isUseraMember === 'MEMBER');
     
     return {
       lead: leadProjects,

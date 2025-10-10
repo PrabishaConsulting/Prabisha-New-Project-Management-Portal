@@ -88,23 +88,23 @@ export async function GET(req: NextRequest) {
       const lead = leadMember ? leadMember.user : p.creator;
 
       // Determine the current user's role with the correct priority
-      let currentUserRole: ProjectRole | "CREATOR" | null = null;
+      let isUseraMember: ProjectRole | "CREATOR" | null = null;
       const membership = p.members.find((m) => m.userId === userId);
 
       // Priority 1: Check if the user is a LEAD.
       if (membership?.role === "LEAD") {
-        currentUserRole = "LEAD";
+        isUseraMember = "LEAD";
       }
       // Priority 2: If not a LEAD, check if they are the CREATOR.
       else if (p.createdBy === userId) {
-        currentUserRole = "CREATOR";
+        isUseraMember = "CREATOR";
       }
       // Priority 3: If neither, check for any other membership role (e.g., MEMBER).
       else if (membership) {
-        currentUserRole = membership.role;
+        isUseraMember = membership.role;
       }
 
-      return { ...p, lead, currentUserRole };
+      return { ...p, lead, isUseraMember };
     });
 
     return NextResponse.json({
