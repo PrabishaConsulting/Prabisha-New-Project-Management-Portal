@@ -180,7 +180,7 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
           </div>
         )}
         {data && data.length > 0 && (
-          <ChartContainer config={chartConfig} className="h-[400px] w-full">
+          <ChartContainer config={chartConfig} className="h-[600px] w-full">
             <BarChart
               accessibilityLayer
               data={data}
@@ -208,25 +208,25 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
                 dataKey="URGENT"
                 stackId="a"
                 fill={chartConfig.URGENT.color}
-                barSize={30}
+                barSize={40}
               />
               <Bar
                 dataKey="HIGH"
                 stackId="a"
                 fill={chartConfig.HIGH.color}
-                barSize={30}
+                barSize={40}
               />
               <Bar
                 dataKey="MEDIUM"
                 stackId="a"
                 fill={chartConfig.MEDIUM.color}
-                barSize={30}
+                barSize={40}
               />
               <Bar
                 dataKey="LOW"
                 stackId="a"
                 fill={chartConfig.LOW.color}
-                barSize={30}
+                barSize={40}
               />
             </BarChart>
           </ChartContainer>

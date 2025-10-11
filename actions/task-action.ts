@@ -2,7 +2,6 @@
 import { db } from "@/lib/db";
 import { TaskStatus } from "@prisma/client";
 
-
 export async function getTasksForDay(today: Date) {
   // 1. FIX: Define start and end of the day once to prevent bugs.
   const startOfDay = new Date(today);
@@ -49,8 +48,6 @@ export async function getTasksForDay(today: Date) {
   return rawTasks;
 }
 
-
-
 export async function getTaskStatsForDay(date: Date) {
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
@@ -69,7 +66,7 @@ export async function getTaskStatsForDay(date: Date) {
   });
 
   // todo today
-  
+
   const todo = await db.task.count({
     where: {
       createdAt: {
@@ -119,8 +116,6 @@ export async function getTaskStatsForDay(date: Date) {
   };
 }
 
-
-
 // src/actions/task-priority.ts
 
 // src/actions/task-priority.ts
@@ -128,23 +123,23 @@ export async function getTaskStatsForDay(date: Date) {
 export async function getTasksByPriority() {
   try {
     const priorityCounts = await db.task.groupBy({
-      by: ['priority'],
+      by: ["priority"],
       _count: {
         priority: true,
       },
       where: {
         status: {
-          not: 'DONE', // Exclude tasks with DONE status
+          not: "DONE", // Exclude tasks with DONE status
         },
       },
     });
 
     // Define all possible priorities
-    const priorities = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'] as const;
-    
+    const priorities = ["URGENT", "HIGH", "MEDIUM", "LOW"] as const;
+
     // Transform data to ensure all priorities are included
-    const result = priorities.map(priority => {
-      const found = priorityCounts.find(item => item.priority === priority);
+    const result = priorities.map((priority) => {
+      const found = priorityCounts.find((item) => item.priority === priority);
       return {
         priority: priority.charAt(0) + priority.slice(1).toLowerCase(), // Capitalize first letter
         count: found ? found._count.priority : 0,
@@ -158,16 +153,13 @@ export async function getTasksByPriority() {
   }
 }
 
-
-
-
 // app/actions/task-actions.ts
 
 // Define completed statuses - adjust these based on your actual TaskStatus enum
 const COMPLETED_STATUSES: TaskStatus[] = [
   TaskStatus.DONE, // Assuming DONE is one of your statuses
   // Add any other statuses that indicate a task is completed
-]
+];
 
 export async function getTaskCompletionTrendData() {
   try {
@@ -177,52 +169,57 @@ export async function getTaskCompletionTrendData() {
         id: true,
         createdAt: true,
         updatedAt: true,
+        completedAt: true, // Add this field to the selection
         status: true,
       },
       orderBy: {
-        createdAt: 'asc'
-      }
-    })
+        createdAt: "asc",
+      },
+    });
 
     // If no tasks found, return empty array
     if (tasks.length === 0) {
-      return []
+      return [];
     }
 
     // Process tasks to group by date
-    const createdTasksByDate: Record<string, number> = {}
-    const completedTasksByDate: Record<string, number> = {}
+    const createdTasksByDate: Record<string, number> = {};
+    const completedTasksByDate: Record<string, number> = {};
 
-    tasks.forEach(task => {
+    tasks.forEach((task) => {
       // Group created tasks by date
-      const createdDate = task.createdAt.toISOString().split('T')[0]
-      createdTasksByDate[createdDate] = (createdTasksByDate[createdDate] || 0) + 1
+      const createdDate = task.createdAt.toISOString().split("T")[0];
+      createdTasksByDate[createdDate] =
+        (createdTasksByDate[createdDate] || 0) + 1;
 
       // Group completed tasks by date (when status is in completed state)
       if (COMPLETED_STATUSES.includes(task.status)) {
-        const completedDate = task.updatedAt.toISOString().split('T')[0]
-        completedTasksByDate[completedDate] = (completedTasksByDate[completedDate] || 0) + 1
+        // Use completedAt if available, otherwise fall back to updatedAt
+        const completionDate = task.completedAt || task.updatedAt;
+        const completedDate = completionDate.toISOString().split("T")[0];
+        completedTasksByDate[completedDate] =
+          (completedTasksByDate[completedDate] || 0) + 1;
       }
-    })
+    });
 
     // Get all unique dates from both created and completed tasks
     const allDates = new Set([
       ...Object.keys(createdTasksByDate),
-      ...Object.keys(completedTasksByDate)
-    ])
+      ...Object.keys(completedTasksByDate),
+    ]);
 
     // Convert to sorted array and create chart data
     const chartData = Array.from(allDates)
       .sort()
-      .map(date => ({
+      .map((date) => ({
         date,
         created: createdTasksByDate[date] || 0,
         completed: completedTasksByDate[date] || 0,
-      }))
+      }));
 
-    return chartData
+    return chartData;
   } catch (error) {
-    console.error("Error fetching task completion trend data:", error)
-    return []
+    console.error("Error fetching task completion trend data:", error);
+    return [];
   }
 }
