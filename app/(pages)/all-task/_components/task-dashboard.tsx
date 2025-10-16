@@ -278,7 +278,7 @@ const handleRefresh = () => {
     toast.success("Task status updated!");
   };
   return (
-    <Table>
+    <Table className=" w-full">
       <TableHeader>
         <TableRow>
           <TableHead className="w-[60%]">Task Name</TableHead>
@@ -293,7 +293,7 @@ const handleRefresh = () => {
                 href={`/projects/${task.projectId}/task/${task.id}?workspaceId=${task.workspaceId}`}
                 className="group"
               >
-                <p className="font-medium group-hover:underline">
+                <p className="font-medium capitalize group-hover:underline truncate w-72">
                   {task.title}
                 </p>
                 <p className="text-sm text-muted-foreground group-hover:underline">
