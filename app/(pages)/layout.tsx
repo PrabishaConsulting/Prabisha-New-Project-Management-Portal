@@ -2,29 +2,32 @@
 
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import { usePathname, useRouter, useParams } from "next/navigation";
-import { ProjectContext } from '@/context/project-context';
-import Link from "next/link";
+import { useRouter, useParams } from "next/navigation";
+import { ProjectContext } from "@/context/project-context";
 import {
-  LayoutDashboard,
   Users,
   FolderOpen,
   Settings,
   Package,
   BarChart3,
-  FileText,
-  Home,
-  Building2,
-  PlusCircle,
   TabletSmartphone,
   SquaresIntersectIcon,
   Package2,
   PackageCheckIcon,
+  Building2,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar, MobileHeader, type NavigationGroup, type Workspace } from "@/components/layout-module/app-sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import {
+  AppSidebar,
+  MobileHeader,
+  type NavigationGroup,
+  type Workspace,
+} from "@/components/layout-module/app-sidebar";
 import { Header } from "@/components/layout-module/header";
 
 export default function DashboardLayout({
@@ -33,12 +36,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const { data: session, status } = useSession();
-  const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
 
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(null);
+  const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(
+    null
+  );
+
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -64,6 +69,69 @@ export default function DashboardLayout({
       fetchWorkspaces();
     }
   }, [status]);
+
+  useEffect(() => {
+    const formatTime = (seconds: number) => {
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+
+      if (hours > 0) {
+        return `${hours}:${mins.toString().padStart(2, "0")}:${secs
+          .toString()
+          .padStart(2, "0")}`;
+      }
+      return `${mins.toString().padStart(2, "0")}:${secs
+        .toString()
+        .padStart(2, "0")}`;
+    };
+
+    function updateTitleFromTimer() {
+      const stored = localStorage.getItem("taskTimers");
+      if (!stored) {
+        document.title = "Task Manager";
+        return;
+      }
+
+      try {
+        const timers = JSON.parse(stored);
+        const taskList = Object.values(timers) as any[];
+        const now = Date.now();
+
+        // Find the first running or paused task
+        const activeTask = taskList.find((t) => t.isRunning || t.isPaused);
+
+        if (activeTask) {
+          let elapsed = activeTask.totalElapsed;
+          if (activeTask.isRunning && activeTask.currentSessionStart) {
+            const sessionElapsed = Math.floor(
+              (now - activeTask.currentSessionStart) / 1000
+            );
+            elapsed += sessionElapsed;
+          }
+
+          const formatted = formatTime(elapsed);
+          document.title = `${formatted} — ${
+            activeTask.taskTitle || "Untitled Task"
+          }`;
+        } else {
+          document.title = "Task Manager";
+        }
+      } catch (err) {
+        console.error("Failed to parse timers:", err);
+        document.title = "Task Manager";
+      }
+    }
+
+    // Update immediately and every second
+    updateTitleFromTimer();
+    const interval = setInterval(updateTitleFromTimer, 1000);
+
+    return () => {
+      clearInterval(interval);
+      document.title = "Task Manager";
+    };
+  }, []);
 
   const handleSwitchWorkspace = async (workspaceId: string) => {
     const workspace = workspaces.find((w) => w.id === workspaceId);
@@ -112,8 +180,7 @@ export default function DashboardLayout({
               name: "All Tasks",
               href: "/all-task",
               icon: TabletSmartphone,
-            }
-            ,
+            },
             {
               name: "My Projects",
               href: "/my-projects",
@@ -144,7 +211,7 @@ export default function DashboardLayout({
             {
               name: "Clients",
               href: `/workspaces/clients`,
-              icon: SquaresIntersectIcon
+              icon: SquaresIntersectIcon,
             },
             // {
             //   name: "Invite Members",
@@ -162,7 +229,7 @@ export default function DashboardLayout({
           name: "Assets",
           href: "/assets",
           icon: Package,
-           children: [
+          children: [
             {
               name: "Assets",
               href: "/assets",
@@ -179,7 +246,6 @@ export default function DashboardLayout({
             //   icon: FolderOpen,
             // },
           ],
-
         },
         {
           name: "Workspaces",
@@ -188,7 +254,7 @@ export default function DashboardLayout({
         },
       ],
     },
-    { 
+    {
       label: "Analytics",
       items: [
         {
@@ -221,7 +287,6 @@ export default function DashboardLayout({
       ],
     },
   ];
-
 
   if (status === "loading") {
     return (
@@ -256,14 +321,11 @@ export default function DashboardLayout({
           <SidebarInset className="flex-1 flex flex-col min-w-0 max-w-full">
             {/* Mobile Header */}
             <MobileHeader />
-            
+
             {/* Header with laptop-optimized spacing */}
             <div className="sticky top-0">
-              <Header 
-                session={session}
-                className="" 
-              />
-              
+              <Header session={session} className="" />
+
               {/* Improved SidebarTrigger positioning for laptops */}
               <SidebarTrigger className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-9 left-[-0.85rem] z-50" />
             </div>
