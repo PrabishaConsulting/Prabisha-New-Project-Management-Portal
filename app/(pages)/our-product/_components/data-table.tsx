@@ -26,6 +26,13 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -33,6 +40,7 @@ interface DataTableProps<TData, TValue> {
   searchKey: string;
   pageCount: number;
   onSuccess: () => void;
+  categories: any; // Add categories as a prop (fetched server-side)
 }
 
 export function DataTable<TData, TValue>({
@@ -41,14 +49,20 @@ export function DataTable<TData, TValue>({
   searchKey,
   pageCount,
   onSuccess,
+  categories,
 }: DataTableProps<TData, TValue>) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const page = Number(searchParams.get("page")) || 1;
   const pageSize = 10;
+  const category = searchParams.get("category") || "";
+  const sortBy = searchParams.get("sortBy") || "";
+  const sortOrder = searchParams.get("sortOrder") || "asc";
 
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sorting, setSorting] = useState<SortingState>(
+    sortBy ? [{ id: sortBy, desc: sortOrder === "desc" }] : []
+  );
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: page - 1,
@@ -60,6 +74,7 @@ export function DataTable<TData, TValue>({
     columns,
     pageCount,
     manualPagination: true,
+    manualSorting: true, // Enable manual sorting for server-side
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -76,12 +91,30 @@ export function DataTable<TData, TValue>({
   useEffect(() => {
     const params = new URLSearchParams(searchParams);
     params.set("page", (pagination.pageIndex + 1).toString());
+    if (sorting.length > 0) {
+      params.set("sortBy", sorting[0].id);
+      params.set("sortOrder", sorting[0].desc ? "desc" : "asc");
+    } else {
+      params.delete("sortBy");
+      params.delete("sortOrder");
+    }
     router.replace(`?${params.toString()}`, { scroll: false });
-  }, [pagination, searchParams, router]);
+  }, [pagination, sorting, searchParams, router]);
+
+  const handleCategoryChange = (value: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (value && value !== "all") {
+      params.set("category", value);
+    } else {
+      params.delete("category");
+    }
+    params.set("page", "1"); // Reset to first page on filter change
+    router.replace(`?${params.toString()}`, { scroll: false });
+  };
 
   return (
     <div>
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 space-x-4">
         <Input
           placeholder={`Search by ${searchKey}...`}
           value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
@@ -90,6 +123,19 @@ export function DataTable<TData, TValue>({
           }
           className="max-w-sm"
         />
+        <Select value={category || "all"} onValueChange={handleCategoryChange}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            {categories.map((cat : any) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div className="rounded-md border">
         <Table>

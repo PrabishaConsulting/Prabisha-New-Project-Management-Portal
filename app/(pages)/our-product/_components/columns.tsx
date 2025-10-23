@@ -40,6 +40,7 @@ export const columns: ColumnDef<products>[] = [
     enableSorting: false,
   },
   { accessorKey: "title", header: "Title" },
+
   {
     accessorKey: "url",
     header: "URL",

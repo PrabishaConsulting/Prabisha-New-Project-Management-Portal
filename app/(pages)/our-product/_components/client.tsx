@@ -16,9 +16,10 @@ interface ProductClientProps {
   initialData: any;
   columns: ColumnDef<products>[];
   pageCount: number;
+  categories : any;
 }
 
-export function ProductClient({ initialData, columns, pageCount }: ProductClientProps) {
+export function ProductClient({ initialData, columns, pageCount , categories}: ProductClientProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
@@ -53,6 +54,7 @@ export function ProductClient({ initialData, columns, pageCount }: ProductClient
         </CardHeader>
         <CardContent>
           <DataTable
+          categories={categories}
             columns={columns}
             data={initialData}
             searchKey="title"

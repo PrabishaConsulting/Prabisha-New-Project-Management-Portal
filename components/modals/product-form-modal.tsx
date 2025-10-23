@@ -179,7 +179,6 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       console.log("API Success:", response.data);
       
       toast.success(toastMessage);
-      onSuccess();
       onClose();
     } catch (error) {
       console.error("Full error:", error);
