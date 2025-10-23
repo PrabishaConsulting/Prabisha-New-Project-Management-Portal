@@ -77,6 +77,7 @@ import { toast } from "sonner";
 import z from "zod";
 import { TaskType } from "@prisma/client";
 import { ScrollArea } from "../ui/scroll-area";
+import { Textarea } from "../ui/textarea";
 
 // --- Props Interface ---
 interface TaskFormDialogProps {
@@ -127,6 +128,7 @@ export function TaskFormDialog({
       startDate: new Date(), // Set to current date by default
       taskType: TaskType.TASK,
       departmentId: formContextData?.userDepartment?.id || "",
+      description: "",
     },
   });
 
@@ -280,6 +282,7 @@ export function TaskFormDialog({
 
       // --- 3. SEND METADATA TO THE TASKS API ---
       await onSubmit(parsedData); // This calls POST /api/tasks
+      // console.log(parsedData , "check")
 
       form.reset();
       setFiles([]);
@@ -314,7 +317,7 @@ export function TaskFormDialog({
     const updated = [project, ...filtered].slice(0, 5);
     localStorage.setItem("recentProjects", JSON.stringify(updated));
   };
-// In your recent-projects.ts file
+  // In your recent-projects.ts file
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -362,7 +365,6 @@ export function TaskFormDialog({
                         (p) => p.id === field.value
                       );
                       const recentProjects = getRecentProjects();
-                      
 
                       return (
                         <FormItem className="flex flex-col">
@@ -750,6 +752,26 @@ export function TaskFormDialog({
                       );
                     }}
                   />
+
+                </div>
+                  <FormField
+                    name="description"
+                    control={form.control}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Task description *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="What needs to be done?"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                <div>
+                  
                 </div>
                 {/* Attachments */}
                 <Dropzone
@@ -759,8 +781,10 @@ export function TaskFormDialog({
                   maxSize={5 * 1024 * 1024}
                   onError={(err) => toast.error(err.message)}
                 >
-                  <DropzoneContent />
-                  <DropzoneEmptyState />
+                  <div className="flex h-3 flex-col items-center justify-center space-y-2 py-6">
+                    <DropzoneContent className="text-sm text-muted-foreground" />
+                    <DropzoneEmptyState className="text-xs text-muted-foreground" />
+                  </div>
                 </Dropzone>
               </div>
 
