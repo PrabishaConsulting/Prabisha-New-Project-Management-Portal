@@ -31,8 +31,7 @@ export const taskFormSchema = z
 actualMinutes: z.coerce.number().nullable().optional(),
     estimatedMinutes: z.coerce
       .number({ message: "Must be a number." })
-      .min(0, "Minute cannot be negative.")
-      .optional(),
+      .min(0, "Minute cannot be negative."),
     // --- FIX: Use z.coerce.date() to handle string inputs ---
     startDate: z.coerce.date().optional().nullable(),
     dueDate: z.coerce.date(),

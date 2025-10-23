@@ -53,7 +53,7 @@ export async function POST(
     }
 
     // 3. The validated data now includes attachments and other new fields
-    const { dueDate, ...taskData } = validation.data;
+    const { dueDate, estimatedMinutes,...taskData  } = validation.data;
 
     const newTask = await createTask(
       {
@@ -61,6 +61,7 @@ export async function POST(
         projectId,
         reporterId: user.id,
         dueDate: dueDate,
+        estimatedMinutes : estimatedMinutes ?? 0,
       },
       user.id
     );

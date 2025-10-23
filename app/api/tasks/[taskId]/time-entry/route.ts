@@ -5,18 +5,19 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ taskId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
-    const userId = session?.user?.id
+    const userId = session?.user?.id;
     if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { taskId } =  await params;
+    const { taskId } = await params;
     const { minutes, description } = await req.json();
 
     if (!minutes || minutes <= 0) {
@@ -26,7 +27,7 @@ export async function POST(
       );
     }
 
-    // Verify task exists and user has access
+    // Verify task exists and user has access - do this outside the transaction
     const task = await db.task.findUnique({
       where: { id: taskId },
       include: {
@@ -55,7 +56,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    // Create time entry and update task's actualMinutes in a transaction
+    // Create time entry and update task's actualMinutes in a transaction with increased timeout
     const result = await db.$transaction(async (tx) => {
       // Create time entry
       const timeEntry = await tx.timeEntry.create({
@@ -68,28 +69,12 @@ export async function POST(
         },
       });
 
-      // Update task's actualMinutes
+      // Update task's actualMinutes - minimal update without includes
       const updatedTask = await tx.task.update({
         where: { id: taskId },
         data: {
           actualMinutes: {
             increment: minutes,
-          },
-        },
-        include: {
-          assignee: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          reporter: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
           },
         },
       });
@@ -99,16 +84,43 @@ export async function POST(
         data: {
           taskId,
           userId,
-          projectId : task.projectId,
+          projectId: task.projectId,
           action: "TIME_LOGGED",
           description: `Logged ${minutes} minutes of work`,
         },
       });
 
-      return { timeEntry, updatedTask };
+      return { timeEntry, taskId };
+    }, {
+      maxWait: 10000, // 10 seconds
+      timeout: 15000, // 15 seconds
     });
 
-    return NextResponse.json(result, { status: 201 });
+    // Fetch the updated task with includes after the transaction completes
+    const updatedTaskWithDetails = await db.task.findUnique({
+      where: { id: taskId },
+      include: {
+        assignee: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        reporter: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    return NextResponse.json({ 
+      timeEntry: result.timeEntry, 
+      task: updatedTaskWithDetails 
+    }, { status: 201 });
   } catch (error) {
     console.error("Error creating time entry:", error);
     return NextResponse.json(

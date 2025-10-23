@@ -67,7 +67,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Dropzone,
@@ -631,6 +630,7 @@ export function TaskFormDialog({
                           <Input
                             type="number"
                             placeholder="4"
+                            required
                             onChange={(event) =>
                               field.onChange(event.target.value)
                             }

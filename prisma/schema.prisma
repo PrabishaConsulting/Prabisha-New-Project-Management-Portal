@@ -617,3 +617,55 @@ enum ProjectType {
   FIXED_TERM
   ONGOING
 }
+
+
+
+// Enums for Mistake Learning
+enum MistakeImpact {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MistakeCategory {
+  PROCESS
+  TECHNICAL
+  HUMAN_ERROR
+}
+
+enum MistakeStatus {
+  PENDING
+  REVIEWED
+  ARCHIVED
+}
+
+// Mistake Learning Model
+model MistakeLog {
+  id                String          @id @default(cuid())
+  mistakeIdentified String          @db.VarChar(500)
+  impact            MistakeImpact
+  rootCause         String          @db.LongText
+  resolution        String          @db.LongText
+  learnings         String          @db.LongText
+  category          MistakeCategory
+  mistakeDate       DateTime
+  status            MistakeStatus   @default(PENDING)
+  attachments       Json? // array of { url, name?, type?, size? }
+
+  // Relations
+  authorId  String
+  // author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reviewerId String?
+  // reviewer   User?  @relation("ReviewedMistakes", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  // Metadata
+  reviewNotes String?       @db.LongText
+  closedAt    DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([authorId, createdAt])
+  @@index([category, impact])
+  @@index([status, mistakeDate])
+  @@index([reviewerId])
+}

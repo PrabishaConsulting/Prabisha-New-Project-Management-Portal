@@ -81,11 +81,11 @@ const formSchema = z.object({
   title: z.string().min(1, { message: "Title is required." }),
   description: z.string().optional(),
   priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]),
-  dueDate: z.date().optional(),
-  assigneeId: z.string().optional(),
-  departmentId: z.string().optional(),
-  taskType: z.nativeEnum(TaskType).optional(),
-  estimatedMinutes: z.number().min(1).optional(), // Added this field
+  dueDate: z.date(),
+  assigneeId: z.string(),
+  departmentId: z.string(),
+  taskType: z.nativeEnum(TaskType),
+  estimatedMinutes: z.number().min(1), // Added this field
 });
 
 const attachmentSchema = z.object({
