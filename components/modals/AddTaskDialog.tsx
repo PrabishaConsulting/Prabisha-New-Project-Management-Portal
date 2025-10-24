@@ -1,6 +1,12 @@
 // /components/modals/AddTaskDialog.tsx
 "use client";
-import React, { useState, useEffect } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import useSWR from "swr";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +22,8 @@ import {
   Check,
   ChevronsUpDown,
   Clock,
+  Search,
+  Plus,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -39,13 +47,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
+
 import {
   Form,
   FormControl,
@@ -78,6 +80,10 @@ import z from "zod";
 import { TaskType } from "@prisma/client";
 import { ScrollArea } from "../ui/scroll-area";
 import { Textarea } from "../ui/textarea";
+import { useVirtualizer } from "@tanstack/react-virtual";
+import { CreateProjectModal } from "./CreateProjectModal";
+import { useProject } from "@/context/project-context";
+import { getWorkspacesForCurrentUser } from "@/actions/workspaces";
 
 // --- Props Interface ---
 interface TaskFormDialogProps {
@@ -107,7 +113,9 @@ export function TaskFormDialog({
   const [files, setFiles] = useState<File[]>([]);
   const [showTaskType, setShowTaskType] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [workSpaceId, setWorkSpaceId] = useState("");
   // Fetches data only when the dialog is open
   const {
     data: formContextData,
@@ -132,13 +140,28 @@ export function TaskFormDialog({
     },
   });
 
-  const projects = formContextData?.projects || [];
   const departments = formContextData?.departments || [];
   const userDepartment = formContextData?.userDepartment || null;
   const currentUser = formContextData?.currentUser;
   const watchedProjectId = form.watch("projectId");
   const watchedDepartmentId = form.watch("departmentId");
 
+  // Filter projects based on search query
+  const projects = useMemo(
+    () => formContextData?.projects || [],
+    [formContextData?.projects]
+  );
+
+  // Compute filtered projects directly instead of using useEffect
+  const filteredProjects = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return projects;
+    }
+    const query = searchQuery.toLowerCase();
+    return projects.filter((project) =>
+      project.name.toLowerCase().includes(query)
+    );
+  }, [projects, searchQuery]);
   // Initialize form with user's department when data loads
   useEffect(() => {
     if (formContextData && userDepartment && !isInitialized) {
@@ -217,6 +240,16 @@ export function TaskFormDialog({
     userDepartment,
   ]);
 
+  useEffect(() => {
+    const workSpaceID = async () => {
+      const workspaces = await getWorkspacesForCurrentUser();
+      if (workspaces.length > 0) {
+        setWorkSpaceId(workspaces[0].id);
+      }
+    };
+    workSpaceID();
+  }, []);
+
   // Reset form when dialog closes
   useEffect(() => {
     if (!isOpen) {
@@ -229,6 +262,7 @@ export function TaskFormDialog({
       });
       setFiles([]);
       setIsInitialized(false);
+      setSearchQuery("");
     }
   }, [isOpen, form, userDepartment?.id]);
 
@@ -282,7 +316,6 @@ export function TaskFormDialog({
 
       // --- 3. SEND METADATA TO THE TASKS API ---
       await onSubmit(parsedData); // This calls POST /api/tasks
-      // console.log(parsedData , "check")
 
       form.reset();
       setFiles([]);
@@ -297,6 +330,7 @@ export function TaskFormDialog({
       setIsSubmitting(false);
     }
   };
+
   const getRecentProjects = () => {
     // This would typically come from your state management or localStorage
     if (typeof window !== "undefined") {
@@ -317,11 +351,21 @@ export function TaskFormDialog({
     const updated = [project, ...filtered].slice(0, 5);
     localStorage.setItem("recentProjects", JSON.stringify(updated));
   };
-  // In your recent-projects.ts file
+
+  // Virtual list implementation
+  const parentRef = useRef<HTMLDivElement>(null);
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredProjects.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: useCallback(() => 40, []), // Approximate height of each item
+    overscan: 5, // Number of items to render outside visible area
+  });
+  const estimatedMinutesValue = Number(form.watch("estimatedMinutes") || 0); // 👈 safely cast to number
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[65vw]">
+      <DialogContent className="sm:max-w-[60vw]">
         <DialogHeader>
           <DialogTitle>Add New Task</DialogTitle>
         </DialogHeader>
@@ -335,11 +379,11 @@ export function TaskFormDialog({
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit(handleFormSubmit)}
-              className="space-y-4 pr-2 max-h-[65vh]   overflow-y-auto z-auto"
+              className="space-y-4 pr-2 max-h-[65vh] overflow-y-auto z-auto"
             >
               <div className="space-y-4">
                 {/* Essential Fields */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex justify-normal gap-6 items-center">
                   <FormField
                     name="title"
                     control={form.control}
@@ -369,108 +413,171 @@ export function TaskFormDialog({
                       return (
                         <FormItem className="flex flex-col">
                           <FormLabel>Project *</FormLabel>
-                          <Popover open={open} onOpenChange={setOpen}>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className={cn(
-                                    "w-full justify-between",
-                                    !field.value && "text-muted-foreground"
-                                  )}
-                                >
-                                  {selectedProject
-                                    ? selectedProject.name
-                                    : "Select a project"}
-                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
+                          <div className="flex gap-2">
+                            <Popover open={open} onOpenChange={setOpen}>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className={cn(
+                                      "w-full justify-between",
+                                      !field.value && "text-muted-foreground"
+                                    )}
+                                  >
+                                    {selectedProject
+                                      ? selectedProject.name
+                                      : "Select a project"}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
 
-                            <PopoverContent className="w-full p-0">
-                              <ScrollArea className="h-[30rem] ">
-                                <Command>
-                                  <CommandInput placeholder="Search projects..." />
-                                  <CommandEmpty>
-                                    No projects found.
-                                  </CommandEmpty>
+                              <PopoverContent className="w-96 p-0">
+                                <div className="flex flex-col">
+                                  <div className="flex items-center border-b px-3">
+                                    <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+                                    <input
+                                      placeholder="Search projects..."
+                                      className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                                      value={searchQuery}
+                                      onChange={(e) =>
+                                        setSearchQuery(e.target.value)
+                                      }
+                                      onFocus={() => setIsSearchFocused(true)}
+                                      onBlur={() => setIsSearchFocused(false)}
+                                    />
+                                  </div>
 
-                                  {/* Recently Used Projects Section */}
-                                  {recentProjects.length > 0 && (
-                                    <CommandGroup heading="Recently used">
-                                      {recentProjects.map((project: any) => (
-                                        <CommandItem
-                                          value={project.name}
-                                          key={`recent-${project.id}`}
-                                          onSelect={() => {
-                                            form.setValue(
-                                              "projectId",
-                                              project.id
-                                            );
-                                            addToRecentProjects(project);
-                                            setOpen(false);
+                                  <ScrollArea className="h-[30rem]">
+                                    <div
+                                      ref={parentRef}
+                                      className="relative h-full"
+                                    >
+                                      {rowVirtualizer.getVirtualItems().length >
+                                      0 ? (
+                                        <div
+                                          style={{
+                                            height: `${rowVirtualizer.getTotalSize()}px`,
+                                            width: "100%",
+                                            position: "relative",
                                           }}
                                         >
-                                          <Check
-                                            className={cn(
-                                              "mr-2 h-4 w-4",
-                                              project.id === field.value
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                            )}
-                                          />
-                                          <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
-                                          {project.name}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  )}
+                                          {rowVirtualizer
+                                            .getVirtualItems()
+                                            .map((virtualRow) => {
+                                              const project =
+                                                filteredProjects[
+                                                  virtualRow.index
+                                                ];
+                                              return (
+                                                <div
+                                                  key={project.id}
+                                                  className={cn(
+                                                    "flex h-10 cursor-pointer items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground",
+                                                    field.value ===
+                                                      project.id &&
+                                                      "bg-accent text-accent-foreground"
+                                                  )}
+                                                  style={{
+                                                    position: "absolute",
+                                                    top: 0,
+                                                    left: 0,
+                                                    width: "100%",
+                                                    height: `${virtualRow.size}px`,
+                                                    transform: `translateY(${virtualRow.start}px)`,
+                                                  }}
+                                                  onClick={() => {
+                                                    form.setValue(
+                                                      "projectId",
+                                                      project.id
+                                                    );
+                                                    addToRecentProjects(
+                                                      project
+                                                    );
+                                                    setOpen(false);
+                                                  }}
+                                                >
+                                                  <Check
+                                                    className={cn(
+                                                      "mr-2 h-4 w-4",
+                                                      project.id === field.value
+                                                        ? "opacity-100"
+                                                        : "opacity-0"
+                                                    )}
+                                                  />
+                                                  {project.name}
+                                                </div>
+                                              );
+                                            })}
+                                        </div>
+                                      ) : (
+                                        <div className="py-6 text-center text-sm text-muted-foreground">
+                                          {searchQuery
+                                            ? "No projects found."
+                                            : "Start typing to search projects..."}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </ScrollArea>
 
-                                  {/* All Projects Section */}
-                                  <CommandGroup
-                                    heading={
-                                      recentProjects.length > 0
-                                        ? "All projects"
-                                        : undefined
-                                    }
-                                  >
-                                    {projects.map((project) => (
-                                      <CommandItem
-                                        value={project.name}
-                                        key={project.id}
-                                        onSelect={() => {
-                                          form.setValue(
-                                            "projectId",
-                                            project.id
-                                          );
-                                          addToRecentProjects(project);
-                                          setOpen(false);
-                                        }}
-                                      >
-                                        <Check
-                                          className={cn(
-                                            "mr-2 h-4 w-4",
-                                            project.id === field.value
-                                              ? "opacity-100"
-                                              : "opacity-0"
-                                          )}
-                                        />
-                                        {project.name}
-                                      </CommandItem>
-                                    ))}
-                                  </CommandGroup>
-                                </Command>
-                              </ScrollArea>
-                            </PopoverContent>
-                          </Popover>
+                                  {/* Recently Used Projects Section */}
+                                  {!searchQuery &&
+                                    recentProjects.length > 0 && (
+                                      <>
+                                        <div className="border-t px-3 py-2 text-xs font-medium text-muted-foreground">
+                                          Recently used
+                                        </div>
+                                        {recentProjects.map((project: any) => (
+                                          <div
+                                            key={`recent-${project.id}`}
+                                            className={cn(
+                                              "flex h-10 cursor-pointer items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground",
+                                              field.value === project.id &&
+                                                "bg-accent text-accent-foreground"
+                                            )}
+                                            onClick={() => {
+                                              form.setValue(
+                                                "projectId",
+                                                project.id
+                                              );
+                                              addToRecentProjects(project);
+                                              setOpen(false);
+                                            }}
+                                          >
+                                            <Check
+                                              className={cn(
+                                                "mr-2 h-4 w-4",
+                                                project.id === field.value
+                                                  ? "opacity-100"
+                                                  : "opacity-0"
+                                              )}
+                                            />
+                                            <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            {project.name}
+                                          </div>
+                                        ))}
+                                      </>
+                                    )}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                            <CreateProjectModal workspaceId={workSpaceId}>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="whitespace-nowrap"
+                              >
+                                <Plus className="h-4 w-4 mr-1" /> New Project
+                              </Button>
+                            </CreateProjectModal>
+                          </div>
                           <FormMessage />
                         </FormItem>
                       );
                     }}
                   />
                 </div>
-
                 {/* Assignment Fields */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <FormField
@@ -617,10 +724,8 @@ export function TaskFormDialog({
                     />
                   )}
                 </div>
-
-                {/* Department and Task Type */}
-
                 {/* Time Fields */}
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     name="estimatedMinutes"
@@ -631,8 +736,7 @@ export function TaskFormDialog({
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="4"
-                            required
+                            placeholder="0...."
                             onChange={(event) =>
                               field.onChange(event.target.value)
                             }
@@ -644,6 +748,11 @@ export function TaskFormDialog({
                             inputMode="numeric"
                           />
                         </FormControl>
+                        {estimatedMinutesValue > 0 && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            ≈ {(estimatedMinutesValue / 60).toFixed(2)} hours
+                          </p>
+                        )}
                         <FormMessage />
                       </FormItem>
                     )}
@@ -665,7 +774,7 @@ export function TaskFormDialog({
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value as Date, "MMM d")
+                                  format(field.value as Date, "MMM d yyyy")
                                 ) : (
                                   <span>Today</span>
                                 )}
@@ -715,7 +824,7 @@ export function TaskFormDialog({
                                   )}
                                 >
                                   {field.value ? (
-                                    format(field.value as Date, "MMM d")
+                                    format(field.value as Date, "MMM d yyyy")
                                   ) : (
                                     <span>Set date</span>
                                   )}
@@ -752,27 +861,23 @@ export function TaskFormDialog({
                       );
                     }}
                   />
-
                 </div>
-                  <FormField
-                    name="description"
-                    control={form.control}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Task description *</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="What needs to be done?"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                <div>
-                  
-                </div>
+                <FormField
+                  name="description"
+                  control={form.control}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Task description *</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="What needs to be done?"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 {/* Attachments */}
                 <Dropzone
                   src={files}

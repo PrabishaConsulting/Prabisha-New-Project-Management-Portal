@@ -13,6 +13,7 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
+  SheetTrigger,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,7 @@ interface FormData {
 interface CreateProjectModalProps {
   workspaceId: string;
   onProjectCreated?: (newProject: any) => void;
+  children?: React.ReactNode; // 👈 add this
 }
 
 // SWR fetcher function
@@ -75,6 +77,7 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 export function CreateProjectModal({
   workspaceId,
   onProjectCreated,
+  children,
 }: CreateProjectModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -86,7 +89,8 @@ export function CreateProjectModal({
   const [selectedDepartmentId, setSelectedDepartmentId] = useState("");
   const [isClientProject, setIsClientProject] = useState(false);
   const [selectedClientId, setSelectedClientId] = useState("");
-  const [selectedInternalProductId, setSelectedInternalProductId] = useState("");
+  const [selectedInternalProductId, setSelectedInternalProductId] =
+    useState("");
   const [selectedMembers, setSelectedMembers] = useState<WorkspaceMember[]>([]);
 
   // Fetch form data using SWR
@@ -107,7 +111,9 @@ export function CreateProjectModal({
 
   // Find workspace owner and current user
   const workspaceOwner = workspaceMembers.find((m) => m.role === "OWNER");
-  const currentUser = workspaceMembers.find((m) => m.user.id === session?.user?.id);
+  const currentUser = workspaceMembers.find(
+    (m) => m.user.id === session?.user?.id
+  );
 
   const resetForm = () => {
     setProjectName("");
@@ -128,7 +134,7 @@ export function CreateProjectModal({
   const handleMemberSelect = (member: WorkspaceMember) => {
     // Don't allow adding the current user since they're automatically included
     if (member.user.id === session?.user?.id) return;
-    
+
     if (!selectedMembers.some((m) => m.id === member.id)) {
       setSelectedMembers([...selectedMembers, member]);
     }
@@ -141,7 +147,7 @@ export function CreateProjectModal({
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!projectName || isLoading) return;
-    
+
     if (!selectedDepartmentId) {
       toast.error("Please select a department for this project.");
       return;
@@ -154,19 +160,21 @@ export function CreateProjectModal({
       toast.error("Please select an internal product.");
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     // Get all member IDs including:
     // 1. Current user (will be lead and creator)
     // 2. Workspace owner (if different from current user)
     // 3. Selected members
     const memberIds = [
       session?.user?.id, // Current user is always included
-      ...(workspaceOwner && workspaceOwner.user.id !== session?.user?.id ? [workspaceOwner.user.id] : []),
-      ...selectedMembers.map(m => m.user.id)
+      ...(workspaceOwner && workspaceOwner.user.id !== session?.user?.id
+        ? [workspaceOwner.user.id]
+        : []),
+      ...selectedMembers.map((m) => m.user.id),
     ].filter((id, index, self) => self.indexOf(id) === index); // Remove duplicates
-    
+
     const payload = {
       name: projectName,
       workspaceId,
@@ -176,7 +184,7 @@ export function CreateProjectModal({
       internalProductId: !isClientProject ? selectedInternalProductId : null,
       memberIds: memberIds,
     };
-    
+
     try {
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -185,20 +193,26 @@ export function CreateProjectModal({
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
         // Handle specific error messages
-        if (data.error && typeof data.error === 'string') {
+        if (data.error && typeof data.error === "string") {
           if (data.error.includes("already exists in this workspace")) {
-            toast.error("A project with this name already exists in this workspace. Please choose a different name.");
+            toast.error(
+              "A project with this name already exists in this workspace. Please choose a different name."
+            );
           } else if (data.error.includes("Transaction timeout")) {
-            toast.error("The request timed out. Please try again with fewer members.");
+            toast.error(
+              "The request timed out. Please try again with fewer members."
+            );
           } else {
             toast.error(data.error || "Failed to create project.");
           }
         } else if (data.error && Array.isArray(data.error)) {
           // Handle Zod validation errors
-          const errorMessages = data.error.map((err: any) => err.message).join(", ");
+          const errorMessages = data.error
+            .map((err: any) => err.message)
+            .join(", ");
           toast.error(`Validation failed: ${errorMessages}`);
         } else {
           toast.error("Failed to create project.");
@@ -206,10 +220,10 @@ export function CreateProjectModal({
         setIsLoading(false);
         return;
       }
-      
+
       toast.success(`Project "${data.project.name}" created successfully!`);
       handleOpenChange(false);
-      
+
       if (onProjectCreated) {
         onProjectCreated(data.project);
       } else {
@@ -225,12 +239,19 @@ export function CreateProjectModal({
 
   return (
     <>
-      <Button onClick={() => handleOpenChange(true)}>
-        <Plus className="mr-2 h-4 w-4" />
-        New Project
-      </Button>
+  
 
       <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        <SheetTrigger asChild>
+           {children ? (
+        <div>{children}</div>
+      ) : (
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          New Project
+        </Button>
+      )}
+        </SheetTrigger>
         <SheetContent className="sm:max-w-[600px] w-full px-4 overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Create a new project</SheetTitle>
@@ -286,7 +307,7 @@ export function CreateProjectModal({
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 {/* Client Project Switch */}
                 <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                   <div className="space-y-0.5">
@@ -303,7 +324,7 @@ export function CreateProjectModal({
                     onCheckedChange={setIsClientProject}
                   />
                 </div>
-                
+
                 {/* Conditional Client/Product Select */}
                 {isClientProject ? (
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -354,7 +375,7 @@ export function CreateProjectModal({
                     </div>
                   </div>
                 )}
-                
+
                 {/* Project Members Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -364,7 +385,7 @@ export function CreateProjectModal({
                       {/* +1 for current user who is always included */}
                     </span>
                   </div>
-                  
+
                   {/* Current User (always included as lead and creator) */}
                   {currentUser && (
                     <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
@@ -372,8 +393,8 @@ export function CreateProjectModal({
                         <Avatar className="h-8 w-8">
                           <AvatarImage src={currentUser.user.avatar || ""} />
                           <AvatarFallback>
-                            {currentUser.user.name?.charAt(0).toUpperCase() || 
-                             currentUser.user.email.charAt(0).toUpperCase()}
+                            {currentUser.user.name?.charAt(0).toUpperCase() ||
+                              currentUser.user.email.charAt(0).toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -388,31 +409,39 @@ export function CreateProjectModal({
                       <Badge variant="default">Lead</Badge>
                     </div>
                   )}
-                  
+
                   {/* Workspace Owner (if different from current user) */}
-                  {workspaceOwner && workspaceOwner.user.id !== session?.user?.id && (
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={workspaceOwner.user.avatar || ""} />
-                          <AvatarFallback>
-                            {workspaceOwner.user.name?.charAt(0).toUpperCase() || 
-                             workspaceOwner.user.email.charAt(0).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">
-                            {workspaceOwner.user.name || workspaceOwner.user.email}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Workspace Owner
-                          </p>
+                  {workspaceOwner &&
+                    workspaceOwner.user.id !== session?.user?.id && (
+                      <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src={workspaceOwner.user.avatar || ""}
+                            />
+                            <AvatarFallback>
+                              {workspaceOwner.user.name
+                                ?.charAt(0)
+                                .toUpperCase() ||
+                                workspaceOwner.user.email
+                                  .charAt(0)
+                                  .toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium">
+                              {workspaceOwner.user.name ||
+                                workspaceOwner.user.email}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              Workspace Owner
+                            </p>
+                          </div>
                         </div>
+                        <Badge variant="secondary">Owner</Badge>
                       </div>
-                      <Badge variant="secondary">Owner</Badge>
-                    </div>
-                  )}
-                  
+                    )}
+
                   {/* Selected Members */}
                   {selectedMembers.length > 0 && (
                     <div className="space-y-2">
@@ -450,7 +479,7 @@ export function CreateProjectModal({
                       ))}
                     </div>
                   )}
-                  
+
                   {/* Add Members */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium">Add Members</Label>

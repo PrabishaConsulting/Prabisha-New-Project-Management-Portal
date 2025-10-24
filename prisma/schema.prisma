@@ -81,6 +81,8 @@ model User {
 
   notifications NotificationRecipient[] // A user can have many notification records
   calendarItems CalendarItem[]          @relation("CalendarItemCreator")
+  ReviewedMistakes MistakeLog[] @relation("ReviewedMistakes")
+  MistakeLog MistakeLog[] 
 
   @@index([departmentId], map: "users_departmentId_fkey")
   @@map("users")
@@ -653,10 +655,10 @@ model MistakeLog {
   attachments       Json? // array of { url, name?, type?, size? }
 
   // Relations
-  authorId  String
-  // author    User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reviewerId String?
-  // reviewer   User?  @relation("ReviewedMistakes", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewer   User?  @relation("ReviewedMistakes", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   // Metadata
   reviewNotes String?       @db.LongText
