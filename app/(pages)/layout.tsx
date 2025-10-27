@@ -15,6 +15,7 @@ import {
   Package2,
   PackageCheckIcon,
   Building2,
+  GalleryVerticalEnd,
 } from "lucide-react";
 
 import {
@@ -25,9 +26,8 @@ import {
 import {
   AppSidebar,
   MobileHeader,
-  type NavigationGroup,
   type Workspace,
-} from "@/components/layout-module/app-sidebar";
+} from "@/components/layout-module/app-sidebar-better";
 import { Header } from "@/components/layout-module/header";
 
 export default function DashboardLayout({
@@ -43,7 +43,6 @@ export default function DashboardLayout({
   const [currentWorkspace, setCurrentWorkspace] = useState<Workspace | null>(
     null
   );
-
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -70,68 +69,82 @@ export default function DashboardLayout({
     }
   }, [status]);
 
-  useEffect(() => {
-    const formatTime = (seconds: number) => {
-      const hours = Math.floor(seconds / 3600);
-      const mins = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
+useEffect(() => {
+  const formatTime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hours > 0) return `${hours}:${mins}:${secs.toString().padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
-      if (hours > 0) {
-        return `${hours}:${mins.toString().padStart(2, "0")}:${secs
-          .toString()
-          .padStart(2, "0")}`;
-      }
-      return `${mins.toString().padStart(2, "0")}:${secs
-        .toString()
-        .padStart(2, "0")}`;
-    };
+  const setMetaDescription = (content: string) => {
+    let meta = document.querySelector("meta[name='description']");
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute("name", "description");
+      document.head.appendChild(meta);
+    }
+    meta.setAttribute("content", content);
+  };
 
-    function updateTitleFromTimer() {
-      const stored = localStorage.getItem("taskTimers");
-      if (!stored) {
-        document.title = "Task Manager";
-        return;
-      }
+  const updateTitle = () => {
+    const stored = localStorage.getItem("taskTimers");
+    const defaultTitle = "Task Manager";
+    const defaultDescription = "Manage and track your tasks efficiently.";
 
-      try {
-        const timers = JSON.parse(stored);
-        const taskList = Object.values(timers) as any[];
-        const now = Date.now();
-
-        // Find the first running or paused task
-        const activeTask = taskList.find((t) => t.isRunning || t.isPaused);
-
-        if (activeTask) {
-          let elapsed = activeTask.totalElapsed;
-          if (activeTask.isRunning && activeTask.currentSessionStart) {
-            const sessionElapsed = Math.floor(
-              (now - activeTask.currentSessionStart) / 1000
-            );
-            elapsed += sessionElapsed;
-          }
-
-          const formatted = formatTime(elapsed);
-          document.title = `${formatted} — ${
-            activeTask.taskTitle || "Untitled Task"
-          }`;
-        } else {
-          document.title = "Task Manager";
-        }
-      } catch (err) {
-        console.error("Failed to parse timers:", err);
-        document.title = "Task Manager";
-      }
+    if (!stored) {
+      document.title = defaultTitle;
+      setMetaDescription(defaultDescription);
+      return;
     }
 
-    // Update immediately and every second
-    updateTitleFromTimer();
-    const interval = setInterval(updateTitleFromTimer, 1000);
+    try {
+      const timers = JSON.parse(stored);
+      const tasks = Object.values(timers) as any[];
+      const now = Date.now();
 
-    return () => {
-      clearInterval(interval);
+      const runningTask = tasks.find((t) => t.isRunning);
+      const pausedTask = tasks.find((t) => t.isPaused && !t.isRunning);
+
+      if (runningTask) {
+        let elapsed = runningTask.totalElapsed;
+        if (runningTask.currentSessionStart) {
+          elapsed += Math.floor((now - runningTask.currentSessionStart) / 1000);
+        }
+        const formatted = formatTime(elapsed);
+        document.title = `${formatted} — ${runningTask.taskTitle}`;
+        setMetaDescription(`Currently running: ${runningTask.taskTitle} (${formatted})`);
+      } else if (pausedTask) {
+        const formatted = formatTime(pausedTask.totalElapsed);
+        document.title = `⏸ Paused — ${pausedTask.taskTitle}`;
+        setMetaDescription(`Paused task: ${pausedTask.taskTitle} (Elapsed ${formatted})`);
+      } else {
+        document.title = defaultTitle;
+        setMetaDescription(defaultDescription);
+      }
+    } catch (err) {
+      console.error("Failed to parse timers:", err);
       document.title = "Task Manager";
-    };
-  }, []);
+      setMetaDescription("Manage and track your tasks efficiently.");
+    }
+  };
+
+  updateTitle();
+  const interval = setInterval(updateTitle, 1000);
+
+  // 👇 Listen for localStorage updates (works across tabs or components)
+  window.addEventListener("storage", updateTitle);
+
+  return () => {
+    clearInterval(interval);
+    window.removeEventListener("storage", updateTitle);
+    document.title = "Task Manager";
+    setMetaDescription("Manage and track your tasks efficiently.");
+  };
+}, []);
+
+
 
   const handleSwitchWorkspace = async (workspaceId: string) => {
     const workspace = workspaces.find((w) => w.id === workspaceId);
@@ -167,126 +180,96 @@ export default function DashboardLayout({
     }
   };
 
-  const navigationGroups: NavigationGroup[] = [
+  // Transform workspaces to teams format
+  const teams = workspaces.map(workspace => ({
+    name: workspace.name,
+    logo: workspace.logo || GalleryVerticalEnd,
+    // plan: workspace.plan || "Free"
+  }));
+
+  // Transform navigation groups to navMain format
+  const navMain = [
     {
-      label: "Workspace",
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: FolderOpen,
       items: [
         {
-          name: "Dashboard",
-          href: "/dashboard",
-          icon: FolderOpen,
-          children: [
-            {
-              name: "All Tasks",
-              href: "/all-task",
-              icon: TabletSmartphone,
-            },
-            {
-              name: "My Projects",
-              href: "/my-projects",
-              icon: PackageCheckIcon,
-            },
-            {
-              name: "All Projects",
-              href: "/projects",
-              icon: FolderOpen,
-            },
-            // {
-            //   name: "My Task",
-            //   href: `/projects/user-work/${session?.user?.id}`,
-            //   icon: FolderOpen,
-            // },
-          ],
+          title: "All Tasks",
+          url: "/all-task",
         },
         {
-          name: "Contact",
-          href: `/workspaces/${currentWorkspace?.id}/members`,
-          icon: Users,
-          children: [
-            {
-              name: "Team",
-              href: `/workspaces/${currentWorkspace?.id}/members`,
-              icon: Users,
-            },
-            {
-              name: "Clients",
-              href: `/workspaces/clients`,
-              icon: SquaresIntersectIcon,
-            },
-            // {
-            //   name: "Invite Members",
-            //   href: `/workspaces/${currentWorkspace?.id}/members`,
-            //   icon: PlusCircle,
-            // },
-          ],
+          title: "My Projects",
+          url: "/my-projects",
+        },
+        {
+          title: "All Projects",
+          url: "/projects",
         },
       ],
     },
     {
-      label: "Management",
+      title: "Contact",
+      url: `/workspaces/${currentWorkspace?.id}/members`,
+      icon: Users,
       items: [
         {
-          name: "Assets",
-          href: "/assets",
-          icon: Package,
-          children: [
-            {
-              name: "Assets",
-              href: "/assets",
-              icon: TabletSmartphone,
-            },
-            {
-              name: "Our Products",
-              href: "/our-product",
-              icon: Package2,
-            },
-            // {
-            //   name: "My Task",
-            //   href: `/projects/user-work/${session?.user?.id}`,
-            //   icon: FolderOpen,
-            // },
-          ],
+          title: "Team",
+          url: `/workspaces/${currentWorkspace?.id}/members`,
         },
         {
-          name: "Workspaces",
-          href: "/workspaces",
-          icon: Building2,
+          title: "Clients",
+          url: `/workspaces/clients`,
         },
       ],
     },
     {
-      label: "Analytics",
+      title: "Assets",
+      url: "/assets",
+      icon: Package,
       items: [
         {
-          name: "Analytics",
-          href: "/all-user",
-          icon: BarChart3,
+          title: "Assets",
+          url: "/assets",
+        },
+        {
+          title: "Our Products",
+          url: "/our-product",
         },
       ],
     },
     {
-      label: "Account",
+      title: "Workspaces",
+      url: "/workspaces",
+      icon: Building2,
+    },
+    {
+      title: "Analytics",
+      url: "/all-user",
+      icon: BarChart3,
+    },
+    {
+      title: "Settings",
+      url: `/account/${session?.user?.id}`,
+      icon: Settings,
       items: [
         {
-          name: "Settings",
-          href: `/account/${session?.user?.id}`,
-          icon: Settings,
-          children: [
-            {
-              name: "My Projects",
-              href: `/account/${session?.user?.id}`,
-              icon: Settings,
-            },
-            {
-              name: "Security",
-              href: `/account/${session?.user?.id}/security`,
-              icon: Settings,
-            },
-          ],
+          title: "My Projects",
+          url: `/account/${session?.user?.id}`,
+        },
+        {
+          title: "Security",
+          url: `/account/${session?.user?.id}/security`,
         },
       ],
     },
   ];
+
+  // Combine into the data object
+  const data = {
+    teams,
+    navMain
+  };
 
   if (status === "loading") {
     return (
@@ -307,7 +290,13 @@ export default function DashboardLayout({
         <div className="flex min-h-screen w-full bg-background">
           {/* Sidebar with improved laptop sizing */}
           <AppSidebar
-            navigationGroups={navigationGroups}
+            user={session?.user ? { 
+              id: session.user.id, 
+              name: session.user.name || "", 
+              email: session.user.email || "", 
+              avatar: session.user.image || null,
+            } : null}
+            data={data}
             workspaces={workspaces}
             currentWorkspace={currentWorkspace}
             onWorkspaceSwitch={handleSwitchWorkspace}
@@ -323,7 +312,7 @@ export default function DashboardLayout({
             <MobileHeader />
 
             {/* Header with laptop-optimized spacing */}
-            <div className="sticky top-0">
+            <div className="sticky top-0 z-50">
               <Header session={session} className="" />
 
               {/* Improved SidebarTrigger positioning for laptops */}

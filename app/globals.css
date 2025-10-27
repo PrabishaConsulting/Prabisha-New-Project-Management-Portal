@@ -53,6 +53,7 @@ body {
     font-family: "Montserrat", sans-serif;
   }
 }
+
 /* This block allows Tailwind to understand your CSS variables for utility classes like `bg-primary` */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
@@ -86,8 +87,8 @@ body {
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--accent);
-  --color-sidebar-accent-foreground: var(--accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
@@ -115,9 +116,9 @@ body {
   --color-low: hsl(142 71% 45%);
 
   --primary: oklch(68% 0.158 44.25); /* Lighter orange for dark mode */
---primary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
---secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
---secondary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
+  --primary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
+  --secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
+  --secondary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
 
 
   --accent: oklch(
@@ -139,14 +140,14 @@ body {
   --chart-5: oklch(55% 0.22 290); /* A complementary purple */
 
   /* Sidebar Specific (Example) */
-  --sidebar: oklch(98% 0.005 240);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--accent-foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
+  --sidebar: oklch(98% 0.005 240); /* Very light gray background */
+  --sidebar-foreground: oklch(14% 0.01 240); /* Dark gray text */
+  --sidebar-primary: oklch(59.34% 0.158 44.25); /* Brand orange for active elements */
+  --sidebar-primary-foreground: oklch(98% 0 0); /* White text on active elements */
+  --sidebar-accent: oklch(94% 0.01 240); /* Light gray for hover states */
+  --sidebar-accent-foreground: oklch(14% 0.01 240); /* Dark text on hover */
+  --sidebar-border: oklch(92% 0.005 240); /* Light border color */
+  --sidebar-ring: oklch(59.34% 0.158 44.25); /* Orange focus ring */
 }
 
 /* 🎨 --- DARK MODE THEME --- */
@@ -195,15 +196,15 @@ body {
   --chart-4: oklch(72% 0.19 143.12); /* Lighter Green */
   --chart-5: oklch(65% 0.22 290); /* Lighter Purple */
 
-  /* Sidebar Specific (Example) */
-  --sidebar: oklch(15% 0.01 240);
-  --sidebar-foreground: var(--foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--accent-foreground);
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
+  /* Sidebar Specific for Dark Mode */
+  --sidebar: oklch(15% 0.01 240); /* Dark blue-gray background */
+  --sidebar-foreground: oklch(95% 0.005 240); /* Light gray text */
+  --sidebar-primary: oklch(68% 0.158 44.25); /* Lighter orange for active elements */
+  --sidebar-primary-foreground: oklch(15% 0 0); /* Dark text on active elements */
+  --sidebar-accent: oklch(30% 0.02 240); /* Medium gray for hover states */
+  --sidebar-accent-foreground: oklch(95% 0.005 240); /* Light text on hover */
+  --sidebar-border: oklch(25% 0.01 240); /* Dark border color */
+  --sidebar-ring: oklch(68% 0.158 44.25); /* Lighter orange focus ring */
 
   /* ✨ SHADCN TAB ENHANCEMENTS */
   /* These work with shadcn's existing tab components */
@@ -220,5 +221,74 @@ body {
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* --- Sidebar Styles --- */
+@layer components {
+  /* Apply theme colors to sidebar components */
+  [data-sidebar] {
+    background-color: var(--sidebar);
+    color: var(--sidebar-foreground);
+    border-color: var(--sidebar-border);
+  }
+
+  [data-sidebar] .sidebar-button {
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
+  }
+
+  [data-sidebar] .sidebar-button:hover {
+    background-color: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+  }
+
+  [data-sidebar] .sidebar-button.active {
+    background-color: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+  }
+
+  [data-sidebar] .sidebar-trigger {
+    background-color: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+  }
+
+  [data-sidebar] .sidebar-trigger:hover {
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
+  }
+
+  [data-sidebar] .sidebar-menu-item {
+    color: var(--sidebar-foreground);
+  }
+
+  [data-sidebar] .sidebar-menu-item:hover {
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
+  }
+
+  [data-sidebar] .sidebar-menu-item.active {
+    background-color: var(--sidebar-primary);
+    color: var(--sidebar-primary-foreground);
+  }
+
+  [data-sidebar] .sidebar-group-label {
+    color: var(--sidebar-foreground);
+    opacity: 0.7;
+  }
+
+  [data-sidebar] .sidebar-separator {
+    background-color: var(--sidebar-border);
+  }
+
+  [data-sidebar] .sidebar-input {
+    background-color: var(--sidebar-accent);
+    color: var(--sidebar-accent-foreground);
+    border-color: var(--sidebar-border);
+  }
+
+  [data-sidebar] .sidebar-input:focus {
+    border-color: var(--sidebar-ring);
+    box-shadow: 0 0 0 2px var(--sidebar-ring);
   }
 }

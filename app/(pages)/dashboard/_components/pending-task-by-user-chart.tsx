@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import useSWR from "swr";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { Rectangle } from "recharts";
 
 // shadcn/ui Components
 import {
@@ -27,7 +28,7 @@ import {
 } from "@/components/ui/chart";
 
 // Recharts Components
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, TooltipProps } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, TooltipProps, LabelList } from "recharts";
 
 // --- Types ---
 interface ChartDataItem {
@@ -108,6 +109,25 @@ const CustomTooltip = ({ active, payload, label }: TooltipProps<string, string>)
   return null;
 };
 
+// --- Custom Bar Shape with Hover Effect ---
+const CustomBarShape = (props: any) => {
+  const { fill, x, y, width, height, ...rest } = props;
+  
+  return (
+    <Rectangle
+      {...rest}
+      x={x}
+      y={y}
+      width={width}
+      height={height}
+      fill={fill}
+      rx="4"
+      ry="4"
+      className="transition-all duration-200 hover:opacity-80"
+    />
+  );
+};
+
 // --- Main Component ---
 export const PendingTasksChart = ({ departments }: { departments: any }) => {
   const router = useRouter();
@@ -156,7 +176,7 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
   };
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
@@ -184,7 +204,7 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
             <BarChart
               accessibilityLayer
               data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 80 }}
+              margin={{ top: 40, right: 30, left: 20, bottom: 80 }}
               onClick={handleBarClick}
             >
               <CartesianGrid vertical={false} />
@@ -209,25 +229,41 @@ export const PendingTasksChart = ({ departments }: { departments: any }) => {
                 stackId="a"
                 fill={chartConfig.URGENT.color}
                 barSize={40}
+                shape={<CustomBarShape />}
+                cursor="pointer"
               />
               <Bar
                 dataKey="HIGH"
                 stackId="a"
                 fill={chartConfig.HIGH.color}
                 barSize={40}
+                shape={<CustomBarShape />}
+                cursor="pointer"
               />
               <Bar
                 dataKey="MEDIUM"
                 stackId="a"
                 fill={chartConfig.MEDIUM.color}
                 barSize={40}
+                shape={<CustomBarShape />}
+                cursor="pointer"
               />
               <Bar
                 dataKey="LOW"
                 stackId="a"
                 fill={chartConfig.LOW.color}
                 barSize={40}
-              />
+                shape={<CustomBarShape />}
+                cursor="pointer"
+              >
+                <LabelList
+                  dataKey="total"
+                  position="top"
+                  offset={10}
+                  className="fill-foreground font-medium"
+                  fontSize={15}
+                />
+              </Bar>
             </BarChart>
           </ChartContainer>
         )}

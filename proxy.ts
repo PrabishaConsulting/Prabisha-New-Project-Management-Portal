@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   // Determine the correct cookie name based on the environment.
   // In production (HTTPS), the cookie is prefixed with `__Secure-`.
   const isProduction = process.env.NODE_ENV === 'production'
