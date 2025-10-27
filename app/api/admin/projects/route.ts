@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getUserByEmail } from "@/utils/helper-server-function"; // Assuming this is the correct path
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/client";
 // --- GET /api/projects ---
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);

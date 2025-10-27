@@ -65,7 +65,7 @@ export async function updateAccount(
 
 // actions/client-actions.ts
 
-import { UserType } from "@prisma/client";
+import { UserType } from "@/app/generated/client";
 
 interface AccountData {
   name: string;

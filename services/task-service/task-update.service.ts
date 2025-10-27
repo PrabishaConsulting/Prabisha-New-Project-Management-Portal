@@ -1,7 +1,7 @@
 // src/services/task.service.ts
 
 import { db } from "@/lib/db";
-import { Task, Priority, TaskStatus , TaskComment} from "@prisma/client";
+import { Task, Priority, TaskStatus , TaskComment} from "@/app/generated/client";
 import { logActivity } from "@/services/activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
 import {

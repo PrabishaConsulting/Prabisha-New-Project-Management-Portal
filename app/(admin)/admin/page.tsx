@@ -3,7 +3,7 @@
 import { useState, useEffect, FormEvent } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { toast } from 'sonner';
-import { User, Project, Workspace, Role, ProjectStatus, Priority, ProjectType } from '@prisma/client';
+import { User, Project, Workspace, Role, ProjectStatus, Priority, ProjectType } from '@/app/generated/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

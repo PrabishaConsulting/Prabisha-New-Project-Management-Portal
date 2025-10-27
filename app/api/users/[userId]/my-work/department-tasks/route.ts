@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@/app/generated/client';
 
 export async function GET(
   request: NextRequest, // Use NextRequest to easily access searchParams

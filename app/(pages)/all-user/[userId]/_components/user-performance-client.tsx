@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { User, Department } from "@prisma/client";
+import { User, Department } from "@/app/generated/client";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";

@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import useSWR, { mutate } from "swr";
-import type { Asset } from "@prisma/client";
+import type { Asset } from "@/app/generated/client";
 import Link from "next/link";
 import { RefreshCw, Pencil } from "lucide-react";
 import { differenceInDays, format } from "date-fns";

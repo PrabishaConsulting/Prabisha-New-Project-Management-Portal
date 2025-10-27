@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@/app/generated/client';
 import { AuthorizationError } from '@/services/task-service/auth.service';
 import { processAndValidateTaskUpdates } from '@/services/task-service/task.service';
 

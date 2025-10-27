@@ -5,14 +5,14 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Task, ProjectMember, User } from "@prisma/client";
+import { Task, ProjectMember, User } from "@/app/generated/client";
 import { SortableTaskCard } from "./sortable-task-card";
 import { NewTaskDialog } from "../modals/new-task-dialog";
 import { Button } from "../ui/button";
 import { PlusIcon } from "lucide-react";
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { type Department } from "@prisma/client";
+import { type Department } from "@/app/generated/client";
 
 
 type TaskWithAssignee = Task & {

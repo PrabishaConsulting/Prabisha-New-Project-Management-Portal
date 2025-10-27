@@ -286,5 +286,6 @@ describe("CreateProjectModal", () => {
      await waitFor(() => {
        expect(jest.requireMock("sonner").toast.error).toHaveBeenCalledWith("Please select an external client.");
     });
-  });
+  }
+);
 });

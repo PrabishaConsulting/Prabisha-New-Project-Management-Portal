@@ -99,7 +99,7 @@ export async function changePassword(
 
 // app/actions/task-action.ts
 
-import { TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@/app/generated/client";
 
 // Define completed statuses - adjust these based on your actual TaskStatus enum
 const COMPLETED_STATUSES: TaskStatus[] = [

@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role } from '@/app/generated/client';
 import { hasUserRole } from '@/services/role-services/has-user-role.service';
 
 // A custom error for clear, specific error handling in the API route

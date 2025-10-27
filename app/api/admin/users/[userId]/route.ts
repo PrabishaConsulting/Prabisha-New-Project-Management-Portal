@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { Role } from '@prisma/client';
+import { Role } from '@/app/generated/client';
 
 // ❗ Placeholder for your actual authentication/authorization logic
 async function checkAdminAuth() {

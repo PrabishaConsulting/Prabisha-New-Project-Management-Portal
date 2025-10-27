@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { ProjectRole } from "@prisma/client";
+import { ProjectRole } from "@/app/generated/client";
 
 /**
  * Checks if a user has a specific role within a project.

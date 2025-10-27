@@ -4,7 +4,7 @@ import { ProjectCreationError } from "@/utils/errors";
 import { ACTIVITY_ACTIONS } from "../activity-user/helper";
 import { getCurrentUser } from "@/utils/getcurrentUser";
 import { generateNextProjectCode } from "@/utils/project-code";
-import { ProjectRole } from "@prisma/client";
+import { ProjectRole } from "@/app/generated/client";
 
 
 export interface ProjectCreationData {

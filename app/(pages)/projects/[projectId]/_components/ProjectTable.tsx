@@ -7,7 +7,7 @@ import {
   type ProjectMember,
   type User,
   type Project,
-} from "@prisma/client";
+} from "@/app/generated/client";
 import { ProjectTable } from "@/components/kanban/project-table";
 import { toast } from "sonner";
 import { ProjectContext } from "@/context/project-context";

@@ -9,7 +9,7 @@ import {
   type ProjectMember,
   TaskStatus,
   Priority,
-} from "@prisma/client";
+} from "@/app/generated/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";

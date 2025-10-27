@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { db } from '@/lib/db';
-import { Role } from '@prisma/client';
+import { Role } from '@/app/generated/client';
 import { z } from 'zod';
 
 const createDepartmentSchema = z.object({

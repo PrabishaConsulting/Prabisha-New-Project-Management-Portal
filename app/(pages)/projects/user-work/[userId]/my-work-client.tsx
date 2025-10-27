@@ -26,7 +26,7 @@ import {
   PlusCircle,
 } from "lucide-react";
 import Link from "next/link";
-import { Task as PrismaTask } from "@prisma/client";
+import { Task as PrismaTask } from "@/app/generated/client";
 import { TaskFormDialog } from "@/components/modals/AddTaskDialog"; // --- NEW: Import the dialog ---
 import { Project, User } from "@/types"; // --- NEW: Import types for the dialog ---
 import { TaskFormData } from "@/lib/zod";

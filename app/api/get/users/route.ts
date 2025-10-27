@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { UserType } from "@prisma/client"; // Import your enum type
+import { UserType } from "@/app/generated/client"; // Import your enum type
 
 export async function GET(req: Request) {
   try {

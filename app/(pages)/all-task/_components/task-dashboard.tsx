@@ -16,7 +16,7 @@ import {
   PlusCircle,
   LucideSquareMousePointer,
 } from "lucide-react";
-import { Task as PrismaTask } from "@prisma/client";
+import { Task as PrismaTask } from "@/app/generated/client";
 import { TaskFormDialog } from "@/components/modals/AddTaskDialog";
 import { TaskFormData } from "@/lib/zod";
 import { toast } from "sonner";

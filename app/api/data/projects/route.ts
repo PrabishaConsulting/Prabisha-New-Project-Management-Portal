@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/client";
 import { getCurrentUser } from "@/utils/getcurrentUser";
 
 // --- GET /api/projects ---

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { db } from '@/lib/db';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { TaskStatus, Priority, Prisma, } from '@prisma/client';
+import { TaskStatus, Priority, Prisma, } from '@/app/generated/client';
 
 import { updateTaskService } from '@/services/task-service/task-update.service'; // <-- Import your new service
 

@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { ProjectRole } from '@prisma/client';
+import { ProjectRole } from '@/app/generated/client';
 
 export class AuthorizationError extends Error {
   constructor(message: string) {

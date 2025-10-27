@@ -1,7 +1,7 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@/app/generated/client";
 
 // The return type now uses 'department' as the key
 type DepartmentTaskCount = {

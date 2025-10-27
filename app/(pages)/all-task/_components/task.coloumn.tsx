@@ -10,7 +10,7 @@ import {
   Project,
   User,
   Department,
-} from "@prisma/client";
+} from "@/app/generated/client";
 import { generatePtiId } from "@/utils/task-utils";
 import { useProject } from "@/context/project-context";
 import Link from "next/link";

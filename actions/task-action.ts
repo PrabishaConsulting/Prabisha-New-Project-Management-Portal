@@ -1,6 +1,6 @@
 // lib/task-service.ts
 import { db } from "@/lib/db";
-import { TaskStatus } from "@prisma/client";
+import { TaskStatus } from "@/app/generated/client";
 
 export async function getTasksForDay(today: Date) {
   // 1. FIX: Define start and end of the day once to prevent bugs.

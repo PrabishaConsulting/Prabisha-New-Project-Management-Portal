@@ -2,7 +2,7 @@ import { POST } from '@/app/api/tasks/update-order/route';
 import { NextRequest } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { db } from '@/lib/db';
-import { ProjectRole, TaskStatus, User, Project, Workspace } from '@prisma/client';
+import { ProjectRole, TaskStatus, User, Project, Workspace } from '@/app/generated/client';
 
 // We ONLY mock the external dependency: next-auth's session retrieval
 jest.mock('next-auth');

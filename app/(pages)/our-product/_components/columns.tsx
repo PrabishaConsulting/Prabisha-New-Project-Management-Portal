@@ -2,7 +2,7 @@
 
 "use client";
 
-import { products } from "@prisma/client";
+import { products } from "@/app/generated/client";
 import { ColumnDef } from "@tanstack/react-table";
 import { format } from "date-fns";
 import { CellAction } from "./cell-action";

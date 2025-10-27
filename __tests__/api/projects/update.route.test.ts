@@ -4,7 +4,7 @@
 import { PATCH } from '@/app/api/data/projects/[projectId]/route';
 import { db } from '@/lib/db';
 import { NextRequest } from 'next/server';
-import { ProjectStatus, Priority, ProjectRole } from '@prisma/client';
+import { ProjectStatus, Priority, ProjectRole } from '@/app/generated/client';
 import { getServerSession } from 'next-auth';
 import { hasUserRole } from '@/services/role-services/has-user-role.service';
 import { logActivity } from '@/services/activity-user/activity-user.service';

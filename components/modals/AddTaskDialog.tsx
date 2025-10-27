@@ -77,7 +77,7 @@ import {
 } from "@/components/ui/shadcn-io/dropzone";
 import { toast } from "sonner";
 import z from "zod";
-import { TaskType } from "@prisma/client";
+import { TaskType } from "@/app/generated/client";
 import { ScrollArea } from "../ui/scroll-area";
 import { Textarea } from "../ui/textarea";
 import { useVirtualizer } from "@tanstack/react-virtual";

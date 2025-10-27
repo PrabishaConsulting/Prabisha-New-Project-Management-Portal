@@ -1,6 +1,6 @@
 import { authorizeProjectMember, AuthorizationError } from '@/services/task-service/auth.service';
 import { db } from '@/lib/db';
-import { ProjectRole } from '@prisma/client';
+import { ProjectRole } from '@/app/generated/client';
 
 // The mock setup is correct.
 jest.mock('@/lib/db', () => ({

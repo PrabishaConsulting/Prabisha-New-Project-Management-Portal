@@ -1,6 +1,6 @@
 import { updateTaskOrder } from '@/services/task-service/task.service';
 import { db } from '@/lib/db';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@/app/generated/client';
 
 jest.mock('@/lib/db', () => ({
   db: {

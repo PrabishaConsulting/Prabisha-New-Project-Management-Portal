@@ -1,7 +1,7 @@
 'use server';
 
 import { getServerSession } from 'next-auth';
-import { Workspace } from '@prisma/client';
+import { Workspace } from '@/app/generated/client';
 import { db } from '@/lib/db';
 import { authOptions } from '@/lib/auth';
 /**

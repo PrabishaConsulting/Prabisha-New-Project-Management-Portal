@@ -24,7 +24,7 @@ import {
   type User,
   type TaskStatus,
   type Department,
-} from "@prisma/client";
+} from "@/app/generated/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 

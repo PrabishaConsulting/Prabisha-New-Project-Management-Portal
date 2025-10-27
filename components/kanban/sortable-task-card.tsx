@@ -6,7 +6,7 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { cn } from '@/lib/utils';
-import { Task, Priority } from '@prisma/client';
+import { Task, Priority } from '@/app/generated/client';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { useProject } from '@/context/project-context';

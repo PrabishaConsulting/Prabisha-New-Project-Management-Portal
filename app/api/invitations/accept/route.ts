@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ProjectRole, WorkspaceRole } from '@prisma/client';
+import { ProjectRole, WorkspaceRole } from '@/app/generated/client';
 import { getServerSession } from 'next-auth';
 import { db } from '@/lib/db';
 import { authOptions } from '@/lib/auth';

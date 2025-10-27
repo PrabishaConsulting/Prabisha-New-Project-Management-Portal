@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { UserPerformanceClient } from "./_components/user-performance-client";
 import TaskTable from "@/app/(pages)/all-task/_components/task.table";
 import { notFound } from "next/navigation";
-import { Task } from "@prisma/client";
+import { Task } from "@/app/generated/client";
 import { TaskData } from "@/app/(pages)/all-task/_components/task.coloumn";
 
 // Define SafeTask for UserPerformanceClient

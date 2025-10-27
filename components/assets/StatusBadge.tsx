@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import type { AssetStatus, LiveStatus } from "@prisma/client";
+import type { AssetStatus, LiveStatus } from "@/app/generated/client";
 
 // The 'Status' type now correctly includes all possible enum values
 type Status = AssetStatus | LiveStatus;

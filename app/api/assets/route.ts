@@ -1,7 +1,7 @@
 // app/api/assets/route.ts
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { AssetStatus, LiveStatus } from '@prisma/client';
+import { AssetStatus, LiveStatus } from '@/app/generated/client';
 import whois from 'whois';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth'; // Assuming you have this

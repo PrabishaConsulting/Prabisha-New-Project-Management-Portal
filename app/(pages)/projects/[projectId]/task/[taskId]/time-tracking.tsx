@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Square, Timer } from 'lucide-react';
-import { type TimeEntry } from '@prisma/client';
+import { type TimeEntry } from '@/app/generated/client';
 import { format, formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';

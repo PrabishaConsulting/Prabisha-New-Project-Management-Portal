@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/app/generated/client";
 import { db } from "@/lib/db";
 // Define a new, more minimal type for our return data
 const minimalActivity = Prisma.validator<Prisma.ActivityLogDefaultArgs>()({

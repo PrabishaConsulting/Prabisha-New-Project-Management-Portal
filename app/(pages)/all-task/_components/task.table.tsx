@@ -33,7 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { TaskStatus, Priority } from "@prisma/client";
+import { TaskStatus, Priority } from "@/app/generated/client";
 import { Download, FileDown, Calendar as CalendarIcon, Filter } from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";

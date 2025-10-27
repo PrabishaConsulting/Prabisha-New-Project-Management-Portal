@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { ProjectRole, Task, TaskStatus } from "@prisma/client";
+import { ProjectRole, Task, TaskStatus } from "@/app/generated/client";
 import { authorizeProjectMember, AuthorizationError } from "./auth.service";
 import { TaskFormData } from "@/lib/zod"; // Assuming this type is defined elsewhere
 import { logActivity } from "../activity-user/activity-user.service";

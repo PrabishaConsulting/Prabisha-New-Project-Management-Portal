@@ -5,7 +5,7 @@ import axios from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { products, ProductStatus } from "@prisma/client";
+import { products, ProductStatus } from "@/app/generated/client";
 import { toast } from "sonner";
 import * as LucideIcons from "lucide-react";
 

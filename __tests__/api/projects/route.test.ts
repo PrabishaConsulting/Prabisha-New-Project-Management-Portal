@@ -4,7 +4,7 @@
 import { POST } from '@/app/api/projects/route';
 import { db } from '@/lib/db';
 import { NextRequest } from 'next/server';
-import { ProjectStatus, Priority } from '@prisma/client';
+import { ProjectStatus, Priority } from '@/app/generated/client';
 import { getServerSession } from 'next-auth';
 import { hasUserRole } from '@/services/role-services/has-user-role.service';
 import { getUserByEmail } from '@/utils/helper-server-function';

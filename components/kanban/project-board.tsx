@@ -8,7 +8,7 @@ import {
   type User,
   type Project,
   TaskStatus,
-} from "@prisma/client";
+} from "@/app/generated/client";
 import {
   DndContext,
   DragEndEvent,
@@ -29,7 +29,7 @@ import { Button } from "@/components/ui/button";
 // ✨ 1. ADD NEW IMPORTS
 import { LayoutGrid, List, CalendarDays } from "lucide-react";
 import { differenceInDays, isPast, isToday } from "date-fns";
-import { type Department } from "@prisma/client";
+import { type Department } from "@/app/generated/client";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProjectContext } from "@/context/project-context";

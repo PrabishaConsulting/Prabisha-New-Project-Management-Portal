@@ -1,4 +1,4 @@
-import { PrismaClient, ProductStatus } from "@prisma/client";
+import { PrismaClient, ProductStatus } from "@/app/generated/client";
 
 const prisma = new PrismaClient();
 

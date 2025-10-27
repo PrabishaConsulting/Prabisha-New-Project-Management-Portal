@@ -2,7 +2,7 @@
 
 import { z } from "zod";
 import { Priority, TaskStatus } from "@/types"; // Use your actual path
-import { TaskType } from "@prisma/client";
+import { TaskType } from "@/app/generated/client";
 export const attachmentSchema = z.object({
   filename: z.string(),
   url: z.string().url(),

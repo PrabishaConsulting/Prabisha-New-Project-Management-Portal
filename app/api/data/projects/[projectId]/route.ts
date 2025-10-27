@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { db } from "@/lib/db";
-import { Prisma, ProjectRole } from "@prisma/client";
-import { ProjectStatus, Priority, ProjectType } from '@prisma/client';
 import { hasUserRole } from "@/services/role-services/has-user-role.service";
 import { logActivity } from '@/services/activity-user/activity-user.service'; // Adjust path if needed
 import { ACTIVITY_ACTIONS } from '@/services/activity-user/helper'; // Adjust path if needed
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { projectMembership } from "@/services/role-services/has-user-project-role.service";
+import { db } from "@/lib/db";
+import { ProjectStatus , Priority, ProjectType ,  ProjectRole  , Prisma} from "@/app/generated/client";
 
 /**
  * Zod schema for validating the incoming request body for PATCH requests.

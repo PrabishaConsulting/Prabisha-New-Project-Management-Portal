@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import axios from "axios";
-import { products } from "@prisma/client";
+import { products } from "@/app/generated/client";
 import { toast } from "sonner";
 import { Edit, MoreHorizontal, Trash } from "lucide-react";
 

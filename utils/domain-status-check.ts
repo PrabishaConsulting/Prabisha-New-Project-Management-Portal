@@ -1,4 +1,4 @@
-import { LiveStatus } from '@prisma/client';
+import { LiveStatus } from '@/app/generated/client';
 
 // It checks for a basic structure like "example.com" or "sub.example.co.uk".
 const isValidDomain = (domain: string) => {

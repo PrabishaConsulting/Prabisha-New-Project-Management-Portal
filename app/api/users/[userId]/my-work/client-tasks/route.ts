@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { TaskStatus } from '@prisma/client';
+import { TaskStatus } from '@/app/generated/client';
 
 export async function GET(
   request: Request,

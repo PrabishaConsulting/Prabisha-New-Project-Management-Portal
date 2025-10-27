@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { TaskStatus, ProjectRole } from '@prisma/client';
+import { TaskStatus, ProjectRole } from '@/app/generated/client';
 
 export async function GET(
   request: Request,

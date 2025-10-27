@@ -4,7 +4,7 @@
 
 import useSWR, { mutate } from "swr";
 import { useState } from "react";
-import type { Asset } from "@prisma/client";
+import type { Asset } from "@/app/generated/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { columns, AssetData } from "./assets.coloumn";

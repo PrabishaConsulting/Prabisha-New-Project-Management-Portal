@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { getCurrentUser } from "@/utils/getcurrentUser";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { ProductStatus } from "@prisma/client";
+import { ProductStatus } from "@/app/generated/client";
 
 const productSchema = z.object({
   title: z.string().min(1, "Title is required").max(255),

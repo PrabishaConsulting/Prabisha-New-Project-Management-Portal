@@ -6,7 +6,7 @@ import { createTask } from "@/services/task-service/task.service";
 import { getCurrentUser } from "@/utils/getcurrentUser";
 import { AuthorizationError } from "@/services/task-service/auth.service";
 import { Priority, TaskStatus } from "@/types"; // Adjust this import if needed
-import { TaskType } from "@prisma/client";
+import { TaskType } from "@/app/generated/client";
 
 // 1. Define a schema for the attachment object
 const attachmentSchema = z.object({

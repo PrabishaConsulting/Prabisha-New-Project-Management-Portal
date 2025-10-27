@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { AssetType, RenewalPeriod, AssetStatus, LiveStatus } from '@prisma/client';
+import { AssetType, RenewalPeriod, AssetStatus, LiveStatus } from '@/app/generated/client';
 
 // shadcn/ui imports
 import { Button } from '@/components/ui/button';

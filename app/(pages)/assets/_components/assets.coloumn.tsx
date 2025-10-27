@@ -3,7 +3,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import type { Asset } from "@prisma/client";
+import type { Asset } from "@/app/generated/client";
 import Link from "next/link";
 import { ArrowUpDown, RefreshCw, Pencil } from "lucide-react";
 import { differenceInDays, format } from "date-fns";

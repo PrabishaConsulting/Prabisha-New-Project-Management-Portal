@@ -16,7 +16,7 @@ import {
   Priority,
   ProjectType,
   InternalProduct,
-} from "@prisma/client";
+} from "@/app/generated/client";
 import { toast } from "sonner";
 import { format, differenceInDays } from "date-fns";
 import { X, UserPlus, Calendar as CalendarIcon } from "lucide-react";

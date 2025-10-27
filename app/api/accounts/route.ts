@@ -2,7 +2,7 @@
 
 import { db } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
-import { UserType } from "@prisma/client";
+import { UserType } from "@/app/generated/client";
 import { hasUserRole } from "@/services/role-services/has-user-role.service";
 import { getCurrentUser } from "@/utils/getcurrentUser";
 

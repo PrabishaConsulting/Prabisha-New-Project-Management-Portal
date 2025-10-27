@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { WorkspaceRole, Role } from '@prisma/client';
+import { WorkspaceRole, Role } from '@/app/generated/client';
 import { getServerSession } from 'next-auth';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';

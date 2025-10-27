@@ -5,7 +5,7 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/auth";
 import { getUserByEmail } from "@/utils/helper-server-function";
-import { Prisma, ProjectRole } from "@prisma/client";
+import { Prisma, ProjectRole } from "@/app/generated/client";
 
 // --- GET /api/projects ---
 export async function GET(req: NextRequest) {

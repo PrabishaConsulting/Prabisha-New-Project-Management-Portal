@@ -1,6 +1,6 @@
 "use client";
 
-import { Task, TaskStatus, Priority } from "@prisma/client";
+import { Task, TaskStatus, Priority } from "@/app/generated/client";
 import { toast } from "sonner";
 
 import {

@@ -5,7 +5,7 @@ import bcrypt from "bcryptjs";
 
 import { db } from "@/lib/db"; // Your Prisma client instance
 import { CreateClientSchema } from "@/lib/zod";
-import { UserType } from "@prisma/client";
+import { UserType } from "@/app/generated/client";
 
 export async function POST(req: Request) {
   try {

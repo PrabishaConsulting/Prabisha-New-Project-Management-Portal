@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db'; // Assuming your prisma client is exported as 'db'
 import { z } from 'zod';
-import { AssetType, RenewalPeriod, AssetStatus, LiveStatus } from '@prisma/client';
+import { AssetType, RenewalPeriod, AssetStatus, LiveStatus } from '@/app/generated/client';
 
 // A base schema using z.nativeEnum to ensure correct TypeScript types.
 const baseAssetSchema = z.object({
