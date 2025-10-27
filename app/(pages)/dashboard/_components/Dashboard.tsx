@@ -4,6 +4,7 @@ import { DepartmentPendingTasksChart } from "./task-status-chart";
 import { DashboardWrapper } from "./task-status-wrapper";
 import { TaskCompletionTrend } from "./TaskCompletionTrend";
 import { LiveActivity } from "./User-live-activity";
+import YouTubeMarquee from "./YouTube-Marquee";
 
 export const Dashboard = ({
   TodaysActivity,
@@ -28,6 +29,9 @@ export const Dashboard = ({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="lg:col-span-2">
+        <YouTubeMarquee/>
+      </div>
       <div className="lg:col-span-1">
         <LiveActivity initialActivities={TodaysActivity || []} />
       </div>
