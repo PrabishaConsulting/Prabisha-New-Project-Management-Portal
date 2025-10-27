@@ -294,7 +294,7 @@ useEffect(() => {
               id: session.user.id, 
               name: session.user.name || "", 
               email: session.user.email || "", 
-              avatar: session.user.image || null,
+              avatar: session.user.avatar || null,
             } : null}
             data={data}
             workspaces={workspaces}
