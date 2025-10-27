@@ -5,7 +5,6 @@ import { db } from "@/lib/db";
 import { redirect } from "next/navigation";
 import { SidebarProvider } from "@/components/ui/sidebar";
 // import { AppSidebar, NavigationGroup } from "@/components/layout-module/app-sidebar";
-import AppSidebar from '@/components/layout-module/AppSidebar';
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const session = await getServerSession(authOptions);
@@ -29,7 +28,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
-      <AppSidebar siteName={  "Admin"} logoUrl={ "/prabisha-assets/logo.png"} />
+      {/* <AppSidebar siteName={  "Admin"} logoUrl={ "/prabisha-assets/logo.png"} /> */}
         <div className="flex-1 flex flex-col ">
           {/* Header using client wrapper to read session */}
           {/* <AdminHeaderClient /> */}
