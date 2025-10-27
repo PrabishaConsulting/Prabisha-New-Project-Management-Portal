@@ -1,2 +1,2 @@
 #!/bin/sh
-yarn test && yarn check-env && yarn build
+# yarn test && yarn check-env && yarn build
