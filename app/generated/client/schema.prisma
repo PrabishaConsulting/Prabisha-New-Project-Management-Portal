@@ -1,0 +1,676 @@
+generator client {
+  provider      = "prisma-client-js" // here do not use the new client (prisma-client)
+  binaryTargets = ["native", "linux-musl", "rhel-openssl-3.0.x"] // first one is for cross-platform, second one for docker, last one for serverless environment. safe to include all
+  output        = "../app/generated/client" // it is better to include the generator inside `src/` or `app/` if `src/` not available.
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId], map: "accounts_userId_fkey")
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "sessions_userId_fkey")
+  @@map("sessions")
+}
+
+model Role2 {
+  id                 String               @id @unique @default(cuid())
+  name               String               @unique
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  SidebarGroupAccess SidebarGroupAccess[]
+  SidebarItemAccess  SidebarItemAccess[]
+}
+
+model User {
+  id                   String                @id @default(cuid())
+  userCode             String?               @unique // 👈 new field, optional at first
+  email                String                @unique
+  name                 String
+  password             String?
+  avatar               String?
+  role                 Role                  @default(MEMBER)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  resetToken           String?
+  resetTokenExpiry     DateTime?
+  departmentId         String?
+  userType             UserType              @default(INTERNAL)
+  industry             String?
+  location             String?
+  accounts             Account[]
+  activityLogs         ActivityLog[]
+  projectMemberships   ProjectMember[]
+  clientProjects       Project[]             @relation("clientProjects")
+  Project              Project[]
+  sessions             Session[]
+  attachments          TaskAttachment[]
+  comments             TaskComment[]
+  assignedTasks        Task[]                @relation("TaskAssignee")
+  reportedTasks        Task[]                @relation("TaskReporter")
+  timeEntries          TimeEntry[]
+  department           Department?           @relation(fields: [departmentId], references: [id])
+  WorkspaceInvitation  WorkspaceInvitation[]
+  workspaceMemberships WorkspaceMember[]
+  ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+
+  notifications    NotificationRecipient[] // A user can have many notification records
+  calendarItems    CalendarItem[]          @relation("CalendarItemCreator")
+  ReviewedMistakes MistakeLog[]            @relation("ReviewedMistakes")
+  MistakeLog       MistakeLog[]
+
+  @@index([departmentId], map: "users_departmentId_fkey")
+  @@map("users")
+}
+
+model WorkspaceCalendar {
+  id          String   @id @default(cuid())
+  workspaceId String
+  name        String   @default("Workspace Calendar")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  events    CalendarItem[]
+
+  @@unique([workspaceId]) // One calendar per workspace
+  @@map("workspace_calendars")
+}
+
+model CalendarItem {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  startTime   DateTime
+  endTime     DateTime
+  isAllDay    Boolean  @default(false)
+
+  // What type of item is this?
+  itemType CalendarItemType @default(EVENT)
+
+  // Links to existing data
+  taskId    String? // Link to existing task
+  projectId String? // Link to project
+
+  // Who and where
+  createdById         String
+  workspaceCalendarId String
+
+  // Visual and priority
+  color    String             @default("#3B82F6")
+  priority Priority           @default(MEDIUM)
+  status   CalendarItemStatus @default(SCHEDULED)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  workspaceCalendar WorkspaceCalendar @relation(fields: [workspaceCalendarId], references: [id], onDelete: Cascade)
+  createdBy         User              @relation("CalendarItemCreator", fields: [createdById], references: [id])
+  task              Task?             @relation(fields: [taskId], references: [id])
+  project           Project?          @relation(fields: [projectId], references: [id])
+
+  @@index([workspaceCalendarId])
+  @@index([createdById])
+  @@index([taskId])
+  @@index([projectId])
+  @@index([startTime])
+  @@index([endTime])
+  @@map("calendar_items")
+}
+
+enum CalendarItemType {
+  TASK_DEADLINE // Automatic from task due dates
+  MEETING // User created meetings
+  EVENT // General events
+  BREAK // Lunch, coffee breaks
+  VACATION // Time off
+  TRAINING // Training sessions
+  CLIENT_CALL // Client meetings
+  MILESTONE // Project milestones
+}
+
+enum CalendarItemStatus {
+  SCHEDULED // Normal scheduled item
+  IN_PROGRESS // Currently happening
+  COMPLETED // Done
+  CANCELLED // Cancelled
+  POSTPONED // Moved to later
+}
+
+model Asset {
+  id              String        @id @default(cuid())
+  assetType       AssetType
+  provider        String        @default("TVMServer")
+  name            String
+  domainName      String?
+  ipAddress       String?
+  hostingPlan     String?
+  serverLocation  String?
+  purchaseDate    DateTime
+  expiryDate      DateTime
+  autoRenew       Boolean       @default(false)
+  renewalPeriod   RenewalPeriod
+  status          AssetStatus   @default(ACTIVE)
+  liveStatus      LiveStatus    @default(UNKNOWN)
+  lastChecked     DateTime?
+  controlPanelUrl String?
+  username        String?
+  password        String?
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("assets")
+}
+
+model Department {
+  id      String    @id @default(cuid())
+  name    String    @unique
+  project Project[]
+  users   User[]
+  task    Task[]
+
+  @@map("departments")
+}
+
+model Workspace {
+  id                  String                @id @default(cuid())
+  name                String
+  ownerId             String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  projects            Project[]
+  invitations         WorkspaceInvitation[]
+  members             WorkspaceMember[]
+  owner               User                  @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  WorkspaceCalendar   WorkspaceCalendar?
+  // Calendar settings for workspace
+  calendarEnabled     Boolean               @default(true)
+  defaultCalendarView String                @default("week")
+  businessHoursStart  String?               @default("09:00")
+  businessHoursEnd    String?               @default("18:00")
+  workingDays         String                @default("1,2,3,4,5") // Monday to Friday
+
+  @@index([ownerId], map: "workspaces_ownerId_fkey")
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String        @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([userId], map: "workspace_members_userId_fkey")
+  @@map("workspace_members")
+}
+
+model WorkspaceInvitation {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  email        String
+  invitedById  String
+  role         WorkspaceRole @default(MEMBER)
+  token        String        @unique
+  accepted     Boolean       @default(false)
+  expiresAt    DateTime
+  createdAt    DateTime      @default(now())
+  temppassword String?
+  invitedBy    User          @relation(fields: [invitedById], references: [id])
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, email])
+  @@index([invitedById], map: "workspace_invitations_invitedById_fkey")
+  @@map("workspace_invitations")
+}
+
+model InternalProduct {
+  id           String    @id @default(cuid())
+  name         String    @unique
+  email        String?
+  internalCode String?
+  industry     String?
+  location     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  projects     Project[]
+}
+
+model Project {
+  id                String           @id @default(cuid())
+  name              String           @unique
+  description       String?
+  workspaceId       String
+  projectCode       String?          @unique // 👈 new field, optional at first
+  status            ProjectStatus    @default(ACTIVE)
+  priority          Priority         @default(MEDIUM)
+  projectType       ProjectType      @default(FIXED_TERM) // <-- New field
+  zohoFolderLink    String?
+  startDate         DateTime?
+  dueDate           DateTime?
+  createdBy         String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  departmentId      String?
+  clientId          String?
+  isClientProject   Boolean          @default(false) // Renamed from 'isClient' for clarity
+  notes             Json? // <-- CHANGE THIS from String? @db.Text to Json?
+  activityLogs      ActivityLog[]
+  members           ProjectMember[]
+  clientUser        User?            @relation("clientProjects", fields: [clientId], references: [id])
+  creator           User             @relation(fields: [createdBy], references: [id])
+  department        Department?      @relation(fields: [departmentId], references: [id])
+  workspace         Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  internalProductId String?
+  internalProduct   InternalProduct? @relation(fields: [internalProductId], references: [id])
+  tasks             Task[]
+
+  calendarItems CalendarItem[]
+
+  @@index([createdBy], map: "projects_createdBy_fkey")
+  @@index([workspaceId], map: "projects_workspaceId_fkey")
+  @@index([clientId], map: "projects_clientId_fkey")
+  @@index([departmentId], map: "projects_departmentId_fkey")
+  @@map("projects")
+}
+
+model ProjectMember {
+  id         String      @id @default(cuid())
+  projectId  String
+  userId     String
+  role       ProjectRole @default(MEMBER)
+  assignedAt DateTime    @default(now())
+  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId], map: "project_members_userId_fkey")
+  @@map("project_members")
+}
+
+enum TaskType {
+  TASK
+  BUG
+  FEATURE
+  IMPROVEMENT
+  EPIC
+}
+
+model Task {
+  id               String           @id @default(cuid())
+  title            String
+  taskCode         String?          @unique
+  description      String?
+  projectId        String
+  assigneeId       String?
+  reporterId       String
+  position         Int
+  taskType         TaskType?        @default(TASK)
+  priority         Priority         @default(MEDIUM)
+  status           TaskStatus       @default(TO_DO)
+  estimatedMinutes Int? // Changed from estimatedHours
+  actualMinutes    Int              @default(0) // Changed from actualHours
+  startDate        DateTime?
+  dueDate          DateTime?
+  completedAt      DateTime? // New field to track when task was marked as done
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  activityLogs     ActivityLog[]
+  attachments      TaskAttachment[]
+  comments         TaskComment[]
+  assignee         User?            @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reporter         User             @relation("TaskReporter", fields: [reporterId], references: [id])
+  timeEntries      TimeEntry[]
+  calendarItems    CalendarItem[]
+  departmentId     String?
+  department       Department?      @relation(fields: [departmentId], references: [id])
+
+  @@index([assigneeId], map: "tasks_assigneeId_fkey")
+  @@index([projectId], map: "tasks_projectId_fkey")
+  @@index([reporterId], map: "tasks_reporterId_fkey")
+  @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([taskId], map: "task_comments_taskId_fkey")
+  @@index([userId], map: "task_comments_userId_fkey")
+  @@map("task_comments")
+}
+
+model TimeEntry {
+  id          String    @id @default(cuid())
+  taskId      String
+  userId      String
+  description String?
+  minutes     Int       @default(0)
+  startedAt   DateTime?
+  stoppedAt   DateTime?
+  isRunning   Boolean   @default(false)
+  date        DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([taskId], map: "time_entries_taskId_fkey")
+  @@index([userId], map: "time_entries_userId_fkey")
+  @@map("time_entries")
+}
+
+model TaskAttachment {
+  id         String   @id @default(cuid())
+  taskId     String
+  userId     String
+  filename   String
+  url        String
+  fileSize   Int?
+  mimeType   String?
+  uploadedAt DateTime @default(now())
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id])
+
+  @@index([taskId], map: "task_attachments_taskId_fkey")
+  @@index([userId], map: "task_attachments_userId_fkey")
+  @@map("task_attachments")
+}
+
+model ActivityLog {
+  id          String   @id @default(cuid())
+  userId      String
+  projectId   String
+  taskId      String?
+  action      String
+  description String?
+  metadata    String?  @db.LongText
+  createdAt   DateTime @default(now())
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task        Task?    @relation(fields: [taskId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([projectId], map: "activity_logs_projectId_fkey")
+  @@index([taskId], map: "activity_logs_taskId_fkey")
+  @@index([userId], map: "activity_logs_userId_fkey")
+  @@map("activity_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      String // e.g., 'PROJECT_CREATED', 'TASK_ASSIGNED', 'MEMBER_ADDED'
+  message   String   @db.Text
+  url       String? // A URL to redirect the user to when they click the notification
+  createdAt DateTime @default(now())
+
+  // Relation to the recipients of this notification
+  recipients NotificationRecipient[]
+}
+
+model NotificationRecipient {
+  id             String     @id @default(cuid())
+  recipientId    String // The ID of the User who should receive the notification
+  notificationId String
+  readAt         DateTime? // Timestamp for when the user read the notification
+  status         ReadStatus @default(UNREAD)
+
+  // You need a relationship back to your main User model.
+  // Prisma allows this even across "conceptual" services if they share a DB.
+  recipient    User         @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@unique([recipientId, notificationId])
+  @@index([recipientId])
+  @@index([notificationId])
+  @@map("notification_recipients")
+}
+
+model categories {
+  id          String     @id @default(cuid())
+  name        String     @unique @db.VarChar(255)
+  description String?    @db.Text
+  products    products[]
+}
+
+model products {
+  id         String        @id @default(cuid())
+  title      String        @db.VarChar(255)
+  status     ProductStatus @default(PENDING)
+  categories categories[] // Many-to-many relationship
+  url        String?       @db.VarChar(255)
+  icon       String?       @db.VarChar(255)
+  image      String?       @db.VarChar(255)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+}
+
+model SidebarGroup {
+  id        String   @id @default(cuid())
+  title     String   @unique
+  position  Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items      SidebarItem[]
+  roleAccess SidebarGroupAccess[]
+}
+
+model SidebarItem {
+  id        String   @id @default(cuid())
+  label     String
+  href      String   @unique
+  icon      String?
+  position  Int
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sidebarGroupId String
+  sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)
+
+  roleAccess SidebarItemAccess[]
+}
+
+model SidebarGroupAccess {
+  roleId         String
+  sidebarGroupId String
+  hasAccess      Boolean      @default(true)
+  sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)
+  role           Role2        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, sidebarGroupId])
+  @@index([sidebarGroupId])
+  @@index([roleId])
+}
+
+model SidebarItemAccess {
+  roleId        String
+  sidebarItemId String
+  hasAccess     Boolean     @default(true)
+  sidebarItem   SidebarItem @relation(fields: [sidebarItemId], references: [id], onDelete: Cascade)
+  role          Role2       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, sidebarItemId])
+  @@index([sidebarItemId])
+  @@index([roleId])
+}
+
+enum ProductStatus {
+  PENDING
+  ACTIVE
+  INACTIVE
+}
+
+enum ReadStatus {
+  READ
+  UNREAD
+}
+
+enum AssetType {
+  DOMAIN
+  HOSTING
+  VPS
+  SSL
+  OTHER
+}
+
+enum RenewalPeriod {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+  BIENNIAL
+  TRIENNIAL
+  CUSTOM
+}
+
+enum AssetStatus {
+  ACTIVE
+  EXPIRED
+  PENDING_RENEWAL
+}
+
+enum LiveStatus {
+  ONLINE
+  OFFLINE
+  UNKNOWN
+  SSL_ERROR
+  INVALID_DOMAIN // <-- Add this new status
+}
+
+enum UserType {
+  INTERNAL
+  CLIENT
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum ProjectRole {
+  LEAD
+  MEMBER
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+enum TaskStatus {
+  TO_DO
+  IN_PROGRESS
+  REVIEW
+  DONE
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ProjectType {
+  FIXED_TERM
+  ONGOING
+}
+
+// Enums for Mistake Learning
+enum MistakeImpact {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MistakeCategory {
+  PROCESS
+  TECHNICAL
+  HUMAN_ERROR
+}
+
+enum MistakeStatus {
+  PENDING
+  REVIEWED
+  ARCHIVED
+}
+
+// Mistake Learning Model
+model MistakeLog {
+  id                String          @id @default(cuid())
+  mistakeIdentified String          @db.VarChar(500)
+  impact            MistakeImpact
+  rootCause         String          @db.LongText
+  resolution        String          @db.LongText
+  learnings         String          @db.LongText
+  category          MistakeCategory
+  mistakeDate       DateTime
+  status            MistakeStatus   @default(PENDING)
+  attachments       Json? // array of { url, name?, type?, size? }
+
+  // Relations
+  authorId   String?
+  author     User?   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reviewerId String?
+  reviewer   User?   @relation("ReviewedMistakes", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  // Metadata
+  reviewNotes String?   @db.LongText
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorId, createdAt])
+  @@index([category, impact])
+  @@index([status, mistakeDate])
+  @@index([reviewerId])
+}

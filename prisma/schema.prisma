@@ -1,6 +1,7 @@
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+  provider      = "prisma-client-js" // here do not use the new client (prisma-client)
+  binaryTargets = ["native", "linux-musl", "rhel-openssl-3.0.x"]  // first one is for cross-platform, second one for docker, last one for serverless environment. safe to include all
+  output        = "../app/generated/client" // it is better to include the generator inside `src/` or `app/` if `src/` not available.
 }
 
 datasource db {
@@ -80,10 +81,10 @@ model User {
   workspaceMemberships WorkspaceMember[]
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
 
-  notifications    NotificationRecipient[] // A user can have many notification records
-  calendarItems    CalendarItem[]          @relation("CalendarItemCreator")
-  ReviewedMistakes MistakeLog[]            @relation("ReviewedMistakes")
-  MistakeLog       MistakeLog[]
+  notifications NotificationRecipient[] // A user can have many notification records
+  calendarItems CalendarItem[]          @relation("CalendarItemCreator")
+  ReviewedMistakes MistakeLog[] @relation("ReviewedMistakes")
+  MistakeLog MistakeLog[] 
 
   @@index([departmentId], map: "users_departmentId_fkey")
   @@map("users")
@@ -379,19 +380,19 @@ model TaskComment {
 }
 
 model TimeEntry {
-  id          String    @id @default(cuid())
+ id          String   @id @default(cuid())
   taskId      String
   userId      String
   description String?
-  minutes     Int       @default(0)
+  minutes     Int      @default(0)
   startedAt   DateTime?
   stoppedAt   DateTime?
-  isRunning   Boolean   @default(false)
-  date        DateTime  @default(now())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id])
+  isRunning   Boolean  @default(false)
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id])
 
   @@index([taskId], map: "time_entries_taskId_fkey")
   @@index([userId], map: "time_entries_userId_fkey")
@@ -464,22 +465,22 @@ model NotificationRecipient {
 }
 
 model categories {
-  id          String     @id @default(cuid())
-  name        String     @unique @db.VarChar(255)
-  description String?    @db.Text
+  id          String   @id @default(cuid())
+  name        String   @unique @db.VarChar(255)
+  description String?  @db.Text
   products    products[]
 }
 
 model products {
-  id         String        @id @default(cuid())
-  title      String        @db.VarChar(255)
-  status     ProductStatus @default(PENDING)
-  categories categories[] // Many-to-many relationship
-  url        String?       @db.VarChar(255)
-  icon       String?       @db.VarChar(255)
-  image      String?       @db.VarChar(255)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  id          String        @id @default(cuid())
+  title       String        @db.VarChar(255)
+  status      ProductStatus @default(PENDING)
+  categories  categories[]  // Many-to-many relationship
+  url         String?       @db.VarChar(255)
+  icon        String?       @db.VarChar(255)
+  image       String?       @db.VarChar(255)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 }
 
 model SidebarGroup {
@@ -624,6 +625,8 @@ enum ProjectType {
   ONGOING
 }
 
+
+
 // Enums for Mistake Learning
 enum MistakeImpact {
   LOW
@@ -657,16 +660,16 @@ model MistakeLog {
   attachments       Json? // array of { url, name?, type?, size? }
 
   // Relations
-  authorId   String?
-  author     User?   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String?
+  author    User?   @relation(fields: [authorId], references: [id], onDelete: Cascade)
   reviewerId String?
-  reviewer   User?   @relation("ReviewedMistakes", fields: [reviewerId], references: [id], onDelete: SetNull)
+  reviewer   User?  @relation("ReviewedMistakes", fields: [reviewerId], references: [id], onDelete: SetNull)
 
   // Metadata
-  reviewNotes String?   @db.LongText
+  reviewNotes String?       @db.LongText
   closedAt    DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
   @@index([authorId, createdAt])
   @@index([category, impact])
