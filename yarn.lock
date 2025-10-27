@@ -8650,12 +8650,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lucide-react@npm:^0.544.0":
-  version: 0.544.0
-  resolution: "lucide-react@npm:0.544.0"
+"lucide-react@npm:^0.548.0":
+  version: 0.548.0
+  resolution: "lucide-react@npm:0.548.0"
   peerDependencies:
     react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
-  checksum: d823339cb0d0bd4c038fef6223ffa9d81e337a86d09833e6b6ff54f936fc7a5e2e8e672e8c1fae55e6a835ddcf620f7fe4e1f564b4de31d12ae8895e3ab52ed3
+  checksum: fc13fd26d0074bbe79ad660a9a5ed16008d7ed824e8cc6a7bc8dc7b6c107be0c276a3358431c75b6015256ec84099b794b97d9f87cfb5cd6f04a364d4d1fd62c
   languageName: node
   linkType: hard
 
@@ -10125,7 +10125,7 @@ __metadata:
     jsonwebtoken: ^9.0.2
     jspdf: ^3.0.3
     jspdf-autotable: ^5.0.2
-    lucide-react: ^0.544.0
+    lucide-react: ^0.548.0
     motion: ^12.23.12
     next: latest
     next-auth: ^4.24.11

@@ -82,7 +82,6 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Textarea } from "../ui/textarea";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { CreateProjectModal } from "./CreateProjectModal";
-import { useProject } from "@/context/project-context";
 import { getWorkspacesForCurrentUser } from "@/actions/workspaces";
 
 // --- Props Interface ---
@@ -116,6 +115,8 @@ export function TaskFormDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [workSpaceId, setWorkSpaceId] = useState("");
+  const [previews, setPreviews] = useState<string[]>([]);
+
   // Fetches data only when the dialog is open
   const {
     data: formContextData,
@@ -250,21 +251,50 @@ export function TaskFormDialog({
     workSpaceID();
   }, []);
 
-  // Reset form when dialog closes
+  useEffect(() => {
+    // Generate preview URLs when files change
+    if (files.length > 0) {
+      const newPreviews = files.map((file) => URL.createObjectURL(file));
+      setPreviews(newPreviews);
+    } else {
+      setPreviews([]);
+    }
+
+    // Cleanup function to revoke object URLs when component unmounts or files change
+    return () => {
+      previews.forEach((preview) => URL.revokeObjectURL(preview));
+    };
+  }, [files]);
+
+  //Update your cleanup when dialog closes
+
   useEffect(() => {
     if (!isOpen) {
       form.reset({
         priority: Priority.MEDIUM,
         status: TaskStatus.TO_DO,
-        startDate: new Date(), // Reset to current date
+        startDate: new Date(),
         taskType: TaskType.TASK,
         departmentId: userDepartment?.id || "",
       });
       setFiles([]);
+      setPreviews([]); // Clear previews
       setIsInitialized(false);
       setSearchQuery("");
     }
   }, [isOpen, form, userDepartment?.id]);
+
+  const removeFile = (index: number) => {
+    const newFiles = [...files];
+    newFiles.splice(index, 1);
+    setFiles(newFiles);
+
+    // Also remove the corresponding preview
+    const newPreviews = [...previews];
+    URL.revokeObjectURL(newPreviews[index]); // Clean up the URL
+    newPreviews.splice(index, 1);
+    setPreviews(newPreviews);
+  };
 
   const handleFormSubmit = async (data: TaskFormInput) => {
     setIsSubmitting(true);
@@ -880,17 +910,82 @@ export function TaskFormDialog({
                 />
                 {/* Attachments */}
                 <Dropzone
+                className=" h-32"
                   src={files}
                   onDrop={(acceptedFiles) => setFiles(acceptedFiles)}
                   maxFiles={5}
                   maxSize={5 * 1024 * 1024}
                   onError={(err) => toast.error(err.message)}
                 >
-                  <div className="flex h-3 flex-col items-center justify-center space-y-2 py-6">
-                    <DropzoneContent className="text-sm text-muted-foreground" />
-                    <DropzoneEmptyState className="text-xs text-muted-foreground" />
+                  <div className="flex flex-col items-center justify-center space-y-4 py-6">
+                    {/* Image Previews */}
+                  
+
+                    {/* Dropzone Content (shown when no files or always) */}
+                    <div className="flex flex-col items-center justify-center space-y-2">
+                      <DropzoneContent className="text-sm text-muted-foreground" />
+                      <DropzoneEmptyState className="text-xs text-muted-foreground" />
+                    </div>
                   </div>
                 </Dropzone>
+                  {files.length > 0 && (
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 w-full px-4">
+                        {files.map((file, index) => (
+                          <div key={index} className="relative group">
+                            {/* Preview Image */}
+                            <div className="aspect-square rounded-lg border-2 border-dashed border-gray-300 overflow-hidden bg-gray-50">
+                              {file.type.startsWith("image/") ? (
+                                <img
+                                  src={previews[index]}
+                                  alt={`Preview ${file.name}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <div className="text-center">
+                                    <div className="text-2xl mb-1">📄</div>
+                                    <div className="text-xs text-gray-500 truncate px-2">
+                                      {file.name}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Remove Button */}
+                            <button
+                              type="button"
+                              onClick={() => removeFile(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                            >
+                              <svg
+                                className="w-3 h-3"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth="2"
+                                  d="M6 18L18 6M6 6l12 12"
+                                />
+                              </svg>
+                            </button>
+
+                            {/* File Name */}
+                            <div className="mt-2 text-xs text-gray-600 truncate">
+                              {file.name}
+                            </div>
+
+                            {/* File Size */}
+                            <div className="text-xs text-gray-400">
+                              {(file.size / 1024 / 1024).toFixed(2)} MB
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
               </div>
 
               <DialogFooter className="pt-4">
