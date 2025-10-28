@@ -1,5 +1,5 @@
 // app/projects/[projectId]/edit/page.tsx
-import { getProjectForEdit, getAllUsers , getAllDepartments , getAllInternalClient , getAllExternalClient} from '@/lib/data';
+import { getProjectForEdit, getInternalUsers , getAllDepartments , getAllInternalClient , getAllExternalClient} from '@/lib/data';
 import { ProjectEditForm } from '@/components/project-module/project-edit-form';
 
 export default async function ProjectEditPage({ params }: { params: Promise<{ projectId: string }> }) {
@@ -7,7 +7,7 @@ export default async function ProjectEditPage({ params }: { params: Promise<{ pr
   // Fetch data in parallel on the server
   const [project, users , departments , internalClients , allClients] = await Promise.all([
     getProjectForEdit(projectId),
-    getAllUsers(),
+    getInternalUsers(),
     getAllDepartments(),
     getAllInternalClient(),
     getAllExternalClient()

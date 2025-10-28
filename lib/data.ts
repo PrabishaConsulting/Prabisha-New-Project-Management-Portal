@@ -1,6 +1,6 @@
 // lib/data.ts
-import { notFound } from 'next/navigation';
-import { db } from './db';
+import { notFound } from "next/navigation";
+import { db } from "./db";
 export async function getProjectForEdit(projectId: string) {
   const project = await db.project.findUnique({
     where: { id: projectId },
@@ -19,8 +19,11 @@ export async function getProjectForEdit(projectId: string) {
   return project;
 }
 
-export async function getAllUsers() {
+export async function getInternalUsers() {
   return await db.user.findMany({
+    where: {
+      userType: "INTERNAL",
+    },
     select: {
       id: true,
       name: true,
@@ -28,7 +31,6 @@ export async function getAllUsers() {
     },
   });
 }
-
 
 export async function getAllDepartments() {
   return await db.department.findMany({
@@ -39,22 +41,19 @@ export async function getAllDepartments() {
   });
 }
 
-
 export async function getAllInternalClient() {
-   return await db.internalProduct.findMany({
+  return await db.internalProduct.findMany({
     select: {
       id: true,
       name: true,
     },
   });
-  
 }
-
 
 export async function getAllExternalClient() {
   return await db.user.findMany({
     where: {
-      userType: "CLIENT"
+      userType: "CLIENT",
     },
     select: {
       id: true,
