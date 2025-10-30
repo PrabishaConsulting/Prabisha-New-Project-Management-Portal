@@ -14,6 +14,7 @@ import {
 import { generatePtiId } from "@/utils/task-utils";
 import { useProject } from "@/context/project-context";
 import Link from "next/link";
+
 export type TaskData = Omit<
   PrismaTask,
   | "estimatedMinutes"
@@ -58,7 +59,16 @@ const formatStatus = (status: string) => {
 export const taskColumns: ColumnDef<TaskData>[] = [
   {
     id: "pti-id",
-    header: "Task ID",
+    header: ({ column }) => (
+      <Button
+        size={"sm"}
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Task ID
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     cell: ({ row }) => {
       const taskId = row.original.id;
       const ptiId = generatePtiId(taskId);
@@ -119,8 +129,21 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     ),
   },
   {
+    id: "project.name", // Explicitly set the ID to match the accessorKey
     accessorKey: "project.name", // Assumes your project model has a 'name' field
-    header: "Project",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Project
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      return row.original.project?.name === value;
+    },
     cell: ({ row }) => (
       <div className="truncate capitalize w-[10rem]">
         {row.original.project?.name ?? "-"}
@@ -130,7 +153,15 @@ export const taskColumns: ColumnDef<TaskData>[] = [
 
   {
     accessorKey: "status",
-    header: "Status",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Status
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
     cell: ({ row }) => {
       const status = row.original.status;
@@ -148,7 +179,15 @@ export const taskColumns: ColumnDef<TaskData>[] = [
   },
   {
     accessorKey: "priority",
-    header: "Priority",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Priority
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
     cell: ({ row }) => {
       const priority = row.original.priority;
@@ -167,8 +206,21 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     },
   },
   {
+    id: "assignee.name", // Explicitly set the ID to match the accessorKey
     accessorKey: "assignee.name",
-    header: "Assignee",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Assignee
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      return row.original.assignee?.name === value;
+    },
     cell: ({ row }) => {
       const name = row.original.assignee?.name ?? "Unassigned";
       // Split by space or dot and take the first part
@@ -176,15 +228,26 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     },
   },
   {
+    id: "reporter.name", // Explicitly set the ID to match the accessorKey
     accessorKey: "reporter.name",
-    header: "Reporter",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Reporter
+        <ArrowUpDown className="ml-2 h-4 w-4" />
+      </Button>
+    ),
+    filterFn: (row, id, value) => {
+      if (!value) return true;
+      return row.original.reporter?.name === value;
+    },
     cell: ({ row }) => {
       const name = row.original.reporter?.name ?? "N/A";
       return name.split(/[ .]/)[0];
     },
   },
-  // ADDED: Project column is now included
-
   {
     accessorKey: "dueDate",
     header: ({ column }) => (

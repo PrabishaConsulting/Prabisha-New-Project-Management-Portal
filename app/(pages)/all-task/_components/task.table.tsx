@@ -32,21 +32,40 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { TaskStatus, Priority } from "@/app/generated/client";
-import { Download, FileDown, Calendar as CalendarIcon, Filter } from "lucide-react";
+import {
+  Download,
+  FileDown,
+  Calendar as CalendarIcon,
+  Filter,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { format, subDays, startOfDay, startOfWeek, startOfMonth, isWithinInterval, endOfDay, endOfWeek, endOfMonth } from "date-fns";
+import {
+  format,
+  subDays,
+  startOfDay,
+  startOfWeek,
+  startOfMonth,
+  isWithinInterval,
+  endOfDay,
+  endOfWeek,
+  endOfMonth,
+} from "date-fns";
 import { cn } from "@/lib/utils";
 import { type DateRange } from "react-day-picker";
 
 // Date Range Picker Component
-const DateRangePicker = ({ 
-  onApply, 
-  onCancel 
-}: { 
+const DateRangePicker = ({
+  onApply,
+  onCancel,
+}: {
   onApply: (range: DateRange) => void;
   onCancel: () => void;
 }) => {
@@ -72,14 +91,14 @@ const DateRangePicker = ({
         className="rounded-lg border shadow-sm"
       />
       <div className="flex justify-end space-x-2 p-3 border-t">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={onCancel}
           className="px-3 py-1 h-8 text-sm"
         >
           Cancel
         </Button>
-        <Button 
+        <Button
           onClick={handleApply}
           disabled={!dateRange?.from}
           className="px-3 py-1 h-8 text-sm"
@@ -96,17 +115,45 @@ interface TaskTableProps {
   showDateFilter?: boolean;
 }
 
-export default function TaskTable({ data, showDateFilter = false }: TaskTableProps) {
+export default function TaskTable({
+  data,
+  showDateFilter = false,
+}: TaskTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
   const [dateFilter, setDateFilter] = useState<string>("all");
-  const [customDateRange, setCustomDateRange] = useState<{ start: Date | null; end: Date | null }>({
-    start: new  Date(),
-    end: null
+  const [customDateRange, setCustomDateRange] = useState<{
+    start: Date | null;
+    end: Date | null;
+  }>({
+    start: new Date(),
+    end: null,
   });
   const [showCustomDateRange, setShowCustomDateRange] = useState(false);
   const popoverRef = useRef<HTMLButtonElement>(null);
+
+  // Get unique values for filters
+  const uniqueProjects = useMemo(() => {
+    const projects = data
+      .map((task) => task.project?.name)
+      .filter(Boolean) as string[];
+    return Array.from(new Set(projects));
+  }, [data]);
+
+  const uniqueAssignees = useMemo(() => {
+    const assignees = data
+      .map((task) => task.assignee?.name)
+      .filter(Boolean) as string[];
+    return Array.from(new Set(assignees));
+  }, [data]);
+
+  const uniqueReporters = useMemo(() => {
+    const reporters = data
+      .map((task) => task.reporter?.name)
+      .filter(Boolean) as string[];
+    return Array.from(new Set(reporters));
+  }, [data]);
 
   // Filter data based on date selection
   const filteredData = useMemo(() => {
@@ -117,7 +164,6 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
     let endDate: Date;
 
     switch (dateFilter) {
-
       case "custom":
         if (!customDateRange.start || !customDateRange.end) return data;
         startDate = customDateRange.start;
@@ -127,7 +173,7 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
         return data;
     }
 
-    return data.filter(task => {
+    return data.filter((task) => {
       const taskDate = new Date(task.createdAt);
       return isWithinInterval(taskDate, { start: startDate, end: endDate });
     });
@@ -207,9 +253,9 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
   };
 
   const handleCustomDateApply = (range: DateRange) => {
-    setCustomDateRange({ 
-      start: range.from || null, 
-      end: range.to || null 
+    setCustomDateRange({
+      start: range.from || null,
+      end: range.to || null,
     });
     setDateFilter("custom");
     setShowCustomDateRange(false);
@@ -233,55 +279,56 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
   return (
     <div className="space-y-4">
       {/* Filters and Actions */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto">
+      <div className="flex flex-col md:flex-row  justify-between gap-4">
+        <div className="flex flex-col sm:flex-row  gap-4 w-full md:w-auto">
           <Input
             placeholder="Search all columns..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
             className="max-w-xs"
           />
-          
+
           {/* Conditionally render date filter based on prop */}
           {showDateFilter && (
-           
-              
-
-              <Popover open={showCustomDateRange} onOpenChange={setShowCustomDateRange}>
-                <PopoverTrigger asChild>
-                  <Button 
-                    
-                    variant="outline" 
-                    className={cn(
-                      "w-[260px] justify-start text-left font-normal",
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {customDateRange.start ? (
-                      customDateRange.end ? (
-                        <>
-                          {format(customDateRange.start, "LLL dd, y")} -{" "}
-                          {format(customDateRange.end, "LLL dd, y")}
-                        </>
-                      ) : (
-                        format(customDateRange.start, "LLL dd, y")
-                      )
+            <Popover
+              open={showCustomDateRange}
+              onOpenChange={setShowCustomDateRange}
+            >
+              <PopoverTrigger asChild>
+                <Button
+                  ref={popoverRef}
+                  variant="outline"
+                  className={cn(
+                    "w-[260px] justify-start text-left font-normal"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customDateRange.start ? (
+                    customDateRange.end ? (
+                      <>
+                        {format(customDateRange.start, "LLL dd, y")} -{" "}
+                        {format(customDateRange.end, "LLL dd, y")}
+                      </>
                     ) : (
-                      <span>Pick a date range</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <DateRangePicker 
-                    onApply={handleCustomDateApply}
-                    onCancel={handleCustomDateCancel}
-                  />
-                </PopoverContent>
-              </Popover>
+                      format(customDateRange.start, "LLL dd, y")
+                    )
+                  ) : (
+                    <span>Pick a date range</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <DateRangePicker
+                  onApply={handleCustomDateApply}
+                  onCancel={handleCustomDateCancel}
+                />
+              </PopoverContent>
+            </Popover>
           )}
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full">
+          {/* Status Filter */}
           <Select
             onValueChange={(value) => {
               const isClearValue = value === "all";
@@ -290,7 +337,7 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
                 ?.setFilterValue(isClearValue ? undefined : [value]);
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by Status" />
             </SelectTrigger>
             <SelectContent className="capitalize">
@@ -299,13 +346,15 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
                 const formattedText = status.replace(/_/g, " ").toLowerCase();
                 return (
                   <SelectItem key={status} value={status}>
-                    {formattedText.charAt(0).toUpperCase() + formattedText.slice(1)}
+                    {formattedText.charAt(0).toUpperCase() +
+                      formattedText.slice(1)}
                   </SelectItem>
                 );
               })}
             </SelectContent>
           </Select>
 
+          {/* Priority Filter */}
           <Select
             onValueChange={(value) => {
               const isClearValue = value === "all";
@@ -314,7 +363,7 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
                 ?.setFilterValue(isClearValue ? undefined : [value]);
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Filter by Priority" />
             </SelectTrigger>
             <SelectContent>
@@ -327,11 +376,83 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
             </SelectContent>
           </Select>
 
-          <div className="flex gap-2">
-            <Button onClick={handleExportToExcel} variant="outline">
+          {/* Project Filter */}
+          <Select
+            onValueChange={(value) => {
+              table
+                .getColumn("project.name")
+                ?.setFilterValue(value === "all" ? undefined : value);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Project" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Projects</SelectItem>
+              {uniqueProjects.map((project) => (
+                <SelectItem key={project} value={project}>
+                  {project}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Assignee Filter */}
+          <Select
+            onValueChange={(value) => {
+              table
+                .getColumn("assignee.name")
+                ?.setFilterValue(value === "all" ? undefined : value);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Assignee" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Assignees</SelectItem>
+              {uniqueAssignees.map((assignee) => (
+                <SelectItem key={assignee} value={assignee}>
+                  {assignee}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Reporter Filter */}
+          <Select
+            onValueChange={(value) => {
+              table
+                .getColumn("reporter.name")
+                ?.setFilterValue(value === "all" ? undefined : value);
+            }}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Filter by Reporter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Reporters</SelectItem>
+              {uniqueReporters.map((reporter) => (
+                <SelectItem key={reporter} value={reporter}>
+                  {reporter}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Export Buttons - Span full width on small screens */}
+          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-5 flex justify-end gap-2 mt-2">
+            <Button
+              onClick={handleExportToExcel}
+              variant="outline"
+              className="flex-1 sm:flex-none"
+            >
               <FileDown className="mr-2 h-4 w-4" /> Excel
             </Button>
-            <Button onClick={handleExportToPDF} variant="outline">
+            <Button
+              onClick={handleExportToPDF}
+              variant="outline"
+              className="flex-1 sm:flex-none"
+            >
               <Download className="mr-2 h-4 w-4" /> PDF
             </Button>
           </div>
@@ -344,9 +465,11 @@ export default function TaskTable({ data, showDateFilter = false }: TaskTablePro
           {dateFilter !== "all" && (
             <div className="flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
               <Filter className="h-3 w-3 mr-1" />
-              {dateFilter === "custom" && customDateRange.start && customDateRange.end ? (
+              {dateFilter === "custom" &&
+              customDateRange.start &&
+              customDateRange.end ? (
                 <span>
-                  {format(customDateRange.start, "MMM d")} - {" "}
+                  {format(customDateRange.start, "MMM d")} -{" "}
                   {format(customDateRange.end, "MMM d, yyyy")}
                 </span>
               ) : (

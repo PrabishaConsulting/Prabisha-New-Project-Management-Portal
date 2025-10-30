@@ -7,7 +7,6 @@ import { NextRequest } from 'next/server';
 import { ProjectStatus, Priority, ProjectRole } from '@/app/generated/client';
 import { getServerSession } from 'next-auth';
 import { hasUserRole } from '@/services/role-services/has-user-role.service';
-import { logActivity } from '@/services/activity-user/activity-user.service';
 import { projectMembership } from '@/services/role-services/has-user-project-role.service';
 
 // --- MOCKS ---
@@ -158,4 +157,13 @@ describe('PATCH /api/data/projects/[projectId]', () => {
       create: { projectId: mockProjectId, userId: 'clwqcac2a0007356v98765432', role: ProjectRole.MEMBER },
     });
   });
+
+  it('should return 500 on unexpected error', async () => {
+  mockedProjectFindUnique.mockRejectedValueOnce(new Error('DB failure'));
+  const req = createMockRequest({ name: 'Will fail' });
+  const response = await PATCH(req, mockParams);
+  expect(response.status).toBe(500);
 });
+
+});
+
