@@ -160,6 +160,33 @@ export enum TaskStatus {
   DONE = "DONE",
 }
 
+
+export interface Activity {
+  id: string;
+  type: 'comment' | 'status_changed' | 'task_created';
+  date: string;
+  userId: string;
+  user: User;
+  projectId: string;
+  taskId?: string | null;
+  description: string;
+  details: Record<string, any>;
+}
+
+export interface TimelineFilters {
+  type: 'all' | 'comment' | 'status_changed' | 'task_created';
+  user: 'all' | string;
+  dateFrom: string;
+  dateTo: string;
+}
+
+export interface Stats {
+  totalTasks: number;
+  totalComments: number;
+  statusChanges: number;
+  teamMembers: number;
+}
+
 export type ProjectStatus = "ACTIVE" | "COMPLETED" | "ARCHIVED";
 export type Role = "ADMIN" | "MANAGER" | "MEMBER";
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";

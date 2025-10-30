@@ -53,6 +53,11 @@ export default async function ProjectLayout({
       icon: 'File',
     },
     {
+      label: 'TimeLine',
+      href: `/projects/${projectId}/project-timeline?workspaceId=${workspaceId}`,
+      icon: 'LineChart',
+    },
+    {
       label: 'Notes',
       href: `/projects/${projectId}/notes?workspaceId=${workspaceId}`,
       icon: 'NotebookTabs',

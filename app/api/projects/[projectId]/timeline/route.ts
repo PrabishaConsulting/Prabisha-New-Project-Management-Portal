@@ -1,19 +1,79 @@
+// app/api/projects/[projectId]/timeline/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getProjectTimeline } from '@/services/timeline-services/timeline.service';
+
+
+// Default pagination values
+const DEFAULT_LIMIT = 20;
+const MAX_LIMIT = 100;
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
-  const {projectId} = await params
-  if(projectId == undefined) {
-    return NextResponse.json({error : "projectId must be valid"})
-  }
   try {
-    const timeline = await getProjectTimeline(projectId);
+    // Extract projectId from params
+    const { projectId } = await params;
+    
+    if (!projectId) {
+      return NextResponse.json(
+        { error: 'Project ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Extract query parameters for pagination and filtering
+    const { searchParams } = new URL(request.url);
+    const limit = Math.min(
+      Math.max(Number(searchParams.get('limit')) || DEFAULT_LIMIT, 1),
+      MAX_LIMIT
+    );
+    const cursor = searchParams.get('cursor') || undefined;
+    const type = searchParams.get('type') || undefined;
+    const userId = searchParams.get('userId') || undefined;
+    const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
+    const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
+
+    // Prepare filters object
+    const filters = {
+      ...(type && { type }),
+      ...(userId && { userId }),
+      ...(dateFrom && { dateFrom }),
+      ...(dateTo && { dateTo }),
+    };
+
+    // Prepare pagination options
+    const pagination = {
+      cursor,
+      limit,
+    };
+
+    // Fetch timeline data with pagination
+    const timeline = await getProjectTimeline(projectId, filters, pagination);
+
+    // Return response with pagination metadata
     return NextResponse.json(timeline);
   } catch (error) {
     console.error('Error fetching project timeline:', error);
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.message.includes('not found')) {
+        return NextResponse.json(
+          { error: 'Project not found' },
+          { status: 404 }
+        );
+      }
+      
+      if (error.message.includes('Invalid cursor')) {
+        return NextResponse.json(
+          { error: 'Invalid pagination cursor' },
+          { status: 400 }
+        );
+      }
+    }
+    
+    // Generic server error
     return NextResponse.json(
       { error: 'Failed to fetch timeline' },
       { status: 500 }

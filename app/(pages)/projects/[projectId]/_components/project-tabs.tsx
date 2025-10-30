@@ -7,7 +7,8 @@ import {
   KanbanSquare,
   Calendar,
   File,
-  NotebookTabs
+  NotebookTabs,
+  LineChart
 } from "lucide-react"; // 1. Import all possible icons
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -19,7 +20,9 @@ const iconMap: { [key: string]: LucideIcon } = {
   KanbanSquare,
   Calendar,
   File,
-  NotebookTabs
+  NotebookTabs,
+  LineChart  // Add this line
+
 };
 
 // Update the Tab interface here as well
