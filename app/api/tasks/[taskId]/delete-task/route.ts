@@ -5,7 +5,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { logActivity } from "@/services/activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
-import { id } from "date-fns/locale";
 
 export async function DELETE(
   request: Request,

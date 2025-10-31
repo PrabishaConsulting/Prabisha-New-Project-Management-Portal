@@ -70,8 +70,9 @@ export default function YouTubeCarousel() {
                   <div className="videoSection h-full">
                     <div className="videoThumbnail pt-3 pb-3 flex items-center justify-center h-full">
                       <iframe
-                        width="600"
-                        height="380"
+                      className=" object-contain"
+                        width="800"
+                        height="400"
                         src={`https://www.youtube.com/embed/${video.id.videoId}`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen

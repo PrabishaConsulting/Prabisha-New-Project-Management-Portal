@@ -1,4 +1,4 @@
-import { PrismaClient, ActivityLog } from '@/app/generated/client';
+import {  ActivityLog } from '@/app/generated/client';
 import { ActivityAction } from './helper';
 import { Prisma } from "@/app/generated/client"; // Make sure Prisma is imported
 

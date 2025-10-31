@@ -2,10 +2,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getProjectTimeline } from '@/services/timeline-services/timeline.service';
 
-
 // Default pagination values
-const DEFAULT_LIMIT = 20;
-const MAX_LIMIT = 100;
+const DEFAULT_LIMIT = 5;
+const MAX_LIMIT = 50;
 
 export async function GET(
   request: NextRequest,
@@ -29,17 +28,19 @@ export async function GET(
       MAX_LIMIT
     );
     const cursor = searchParams.get('cursor') || undefined;
-    const type = searchParams.get('type') || undefined;
     const userId = searchParams.get('userId') || undefined;
     const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
     const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
+    const status = searchParams.get('status') || undefined;
+    const assigneeId = searchParams.get('assigneeId') || undefined;
 
     // Prepare filters object
     const filters = {
-      ...(type && { type }),
       ...(userId && { userId }),
       ...(dateFrom && { dateFrom }),
       ...(dateTo && { dateTo }),
+      ...(status && { status }),
+      ...(assigneeId && { assigneeId }),
     };
 
     // Prepare pagination options

@@ -1,9 +1,17 @@
 // src/services/task.service.ts
 
 import { db } from "@/lib/db";
-import { Task, Priority, TaskStatus , TaskComment} from "@/app/generated/client";
+import {
+  Task,
+  Priority,
+  TaskStatus,
+  TaskComment,
+} from "@/app/generated/client";
 import { logActivity } from "@/services/activity-user/activity-user.service";
-import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
+import {
+  ACTIVITY_ACTIONS,
+  ActivityAction,
+} from "@/services/activity-user/helper";
 import {
   sendTaskAssignmentEmail,
   sendTaskForReviewEmail,
@@ -16,8 +24,8 @@ type UpdateTaskPayload = {
   priority?: Priority;
   dueDate?: string | null;
   assigneeId?: string | null;
-  estimatedMinutes?: number | null; // Added estimated time in minutes
-  actualMinutes?: number | null;    // Added actual time in minutes
+  estimatedMinutes?: number | null;
+  actualMinutes?: number | null;
 };
 
 export const updateTaskService = async (
@@ -30,7 +38,7 @@ export const updateTaskService = async (
     where: { id: taskId },
     include: {
       assignee: { select: { name: true } },
-      project: true, // <-- FIX: Include the full project object
+      project: true,
     },
   });
 
@@ -56,19 +64,19 @@ export const updateTaskService = async (
   let updatedTask: Task;
 
   // Check if status is changing to DONE
-  const isMarkingAsDone = status === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
-  
+  const isMarkingAsDone =
+    status === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
+
   // Check if status is changing from DONE to something else
-  const isReopeningFromDone = originalTask.status === TaskStatus.DONE && status !== TaskStatus.DONE;
-  
+  const isReopeningFromDone =
+    originalTask.status === TaskStatus.DONE && status !== TaskStatus.DONE;
+
   // Prepare additional data for the update
   const additionalData: any = {};
-  
+
   if (isMarkingAsDone) {
-    // Set completedAt timestamp when marking as done
     additionalData.completedAt = new Date();
   } else if (isReopeningFromDone) {
-    // Clear completedAt timestamp when reopening from done
     additionalData.completedAt = null;
   }
 
@@ -80,11 +88,11 @@ export const updateTaskService = async (
       });
       return tx.task.update({
         where: { id: taskId },
-        data: { 
-          ...otherData, 
-          status, 
+        data: {
+          ...otherData,
+          status,
           position: newPosition,
-          ...additionalData
+          ...additionalData,
         },
       });
     });
@@ -92,15 +100,23 @@ export const updateTaskService = async (
     // Standard update for all other fields
     updatedTask = await db.task.update({
       where: { id: taskId },
-      data: { 
+      data: {
         ...otherData,
-        ...additionalData
+        ...additionalData,
       },
     });
   }
 
-  // 4. Handle side-effect: Activity Logging
-  await _logTaskChanges(originalTask, { ...updateData, status }, actorId);
+  // 4. Log ALL changes in a single activity log with proper action
+  await _logTaskChanges(
+    originalTask,
+    updateData,
+    actorId,
+    isMarkingAsDone,
+    isReopeningFromDone
+  );
+
+  // 5. Handle side-effects like notifications
   await handlePostUpdateActions(originalTask, updatedTask, actorId);
 
   return { data: updatedTask };
@@ -115,7 +131,7 @@ async function handlePostUpdateActions(
     const taskUrl = `${process.env.NEXT_PUBLIC_APP_URL}/all-task`;
     const actor = await db.user.findUnique({ where: { id: actorId } });
 
-    if (!actor) return "Deva";
+    if (!actor) return;
 
     // Notification for new assignee
     if (
@@ -160,110 +176,287 @@ async function handlePostUpdateActions(
     }
   } catch (emailError) {
     console.error("Failed to send notification email:", emailError);
-    // Do not block the API response if email fails
   }
 }
 
 async function _logTaskChanges(
   originalTask: any,
   updateData: UpdateTaskPayload,
-  actorId: string
+  actorId: string,
+  isMarkingAsDone: boolean,
+  isReopeningFromDone: boolean
 ) {
-  // Determine if a loggable change occurred (status, priority, assignee, or time estimates).
-  const hasLoggableChanges =
-    (updateData.status && updateData.status !== originalTask.status) ||
-    (updateData.priority && updateData.priority !== originalTask.priority) ||
-    (updateData.assigneeId !== undefined &&
-      updateData.assigneeId !== originalTask.assigneeId) ||
-    (updateData.estimatedMinutes !== undefined &&
-      updateData.estimatedMinutes !== originalTask.estimatedMinutes) ||
-    (updateData.actualMinutes !== undefined &&
-      updateData.actualMinutes !== originalTask.actualMinutes);
+  // Track all changes
+  const changes: Record<string, { from: any; to: any }> = {};
+  const changedFields: string[] = [];
 
-  // Only log if one of the specified fields has changed.
-  if (hasLoggableChanges) {
-    const actor = await db.user.findUnique({
-      where: { id: actorId },
-      select: { name: true },
-    });
-    const actorName = actor?.name || "A user";
+  // Determine the primary action based on what changed
+  let primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK as ActivityAction;
 
-    // Create a single, simple description.
-    const description = `${actorName} updated the task "${originalTask.title}".`;
+  // Check each field for changes
+  if (
+    updateData.status !== undefined &&
+    updateData.status !== originalTask.status
+  ) {
+    changes.status = { from: originalTask.status, to: updateData.status };
+    changedFields.push("status");
 
-    await logActivity(db, {
-      userId: actorId,
-      projectId: originalTask.projectId,
-      taskId: originalTask.id,
-      action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
-      description: description,
-    });
+    // Set more specific action for status changes
+    if (isMarkingAsDone) {
+      primaryAction = ACTIVITY_ACTIONS.COMPLETE_TASK;
+    } else if (isReopeningFromDone) {
+      primaryAction = ACTIVITY_ACTIONS.REOPEN_TASK;
+    } else {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS;
+    }
   }
+
+  if (
+    updateData.priority !== undefined &&
+    updateData.priority !== originalTask.priority
+  ) {
+    changes.priority = { from: originalTask.priority, to: updateData.priority };
+    changedFields.push("priority");
+
+    // If only priority changed, use specific action
+    if (changedFields.length === 1) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_PRIORITY;
+    }
+  }
+
+  if (
+    updateData.assigneeId !== undefined &&
+    updateData.assigneeId !== originalTask.assigneeId
+  ) {
+    changes.assigneeId = {
+      from: originalTask.assigneeId,
+      to: updateData.assigneeId,
+    };
+    changedFields.push("assignee");
+
+    // If only assignee changed, use specific action
+    if (changedFields.length === 1) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_ASSIGNEE;
+    }
+  }
+
+  if (
+    updateData.title !== undefined &&
+    updateData.title !== originalTask.title
+  ) {
+    changes.title = { from: originalTask.title, to: updateData.title };
+    changedFields.push("title");
+
+    // If only title changed, use specific action
+    if (changedFields.length === 1) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_NAME;
+    }
+  }
+
+  if (
+    updateData.description !== undefined &&
+    updateData.description !== originalTask.description
+  ) {
+    changes.description = {
+      from: originalTask.description,
+      to: updateData.description,
+    };
+    changedFields.push("description");
+
+    // If only description changed, use specific action
+    if (changedFields.length === 1) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_DESCRIPTION;
+    }
+  }
+
+  if (
+    updateData.dueDate !== undefined &&
+    updateData.dueDate !== originalTask.dueDate?.toISOString()
+  ) {
+    changes.dueDate = {
+      from: originalTask.dueDate?.toISOString(),
+      to: updateData.dueDate,
+    };
+    changedFields.push("due date");
+
+    // If only due date changed, use specific action
+    if (changedFields.length === 1) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_DUE_DATE;
+    }
+  }
+
+  if (
+    updateData.estimatedMinutes !== undefined &&
+    updateData.estimatedMinutes !== originalTask.estimatedMinutes
+  ) {
+    changes.estimatedMinutes = {
+      from: originalTask.estimatedMinutes,
+      to: updateData.estimatedMinutes,
+    };
+    changedFields.push("estimated time");
+
+    // If only time estimate changed, use specific action
+    if (
+      changedFields.length === 1 ||
+      (changedFields.length === 2 && changedFields.includes("actual time"))
+    ) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_TIME_ESTIMATE;
+    }
+  }
+
+  if (
+    updateData.actualMinutes !== undefined &&
+    updateData.actualMinutes !== originalTask.actualMinutes
+  ) {
+    changes.actualMinutes = {
+      from: originalTask.actualMinutes,
+      to: updateData.actualMinutes,
+    };
+    changedFields.push("actual time");
+
+    // If only actual time changed, use specific action
+    if (changedFields.length === 1) {
+      primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_TIME_ESTIMATE;
+    }
+  }
+
+  // Only log if there are actual changes
+  if (Object.keys(changes).length === 0) {
+    return;
+  }
+
+  // Fetch actor name
+  const actor = await db.user.findUnique({
+    where: { id: actorId },
+    select: { name: true },
+  });
+  const actorName = actor?.name || "A user";
+
+  // Create a human-readable description based on primary action
+  let description: string;
+
+  if (primaryAction === ACTIVITY_ACTIONS.COMPLETE_TASK) {
+    description = `${actorName} completed task "${originalTask.title}"`;
+  } else if (primaryAction === ACTIVITY_ACTIONS.REOPEN_TASK) {
+    description = `${actorName} reopened task "${originalTask.title}"`;
+  } else if (changedFields.length === 1) {
+    description = `${actorName} updated ${changedFields[0]} for task "${originalTask.title}"`;
+  } else {
+    description = `${actorName} updated ${changedFields.join(", ")} for task "${
+      originalTask.title
+    }"`;
+  }
+
+  // Log a single activity with all changes in metadata
+  await logActivity(db, {
+    userId: actorId,
+    projectId: originalTask.projectId,
+    taskId: originalTask.id,
+    action: primaryAction,
+    description: description,
+    metadata: changes,
+  });
 }
 
 export const updateTaskStatus = async (
   taskId: string,
   newStatus: TaskStatus,
   actorId: string,
-  comment?: string
+  comment?: string,
+  actualMinutes?: number // ✅ Add this param
 ): Promise<{ task: Task | null; error: string | null }> => {
   try {
-    // 1. Find the original task to check current status
     const originalTask = await db.task.findUnique({
       where: { id: taskId },
+      include: {
+        project: { select: { id: true } },
+      },
     });
 
     if (!originalTask) {
       return { task: null, error: `Task with ID '${taskId}' not found.` };
     }
 
-    // 2. Check if status is changing to DONE
-    const isMarkingAsDone = newStatus === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
-    
-    // 3. Check if status is changing from DONE to something else
-    const isReopeningFromDone = originalTask.status === TaskStatus.DONE && newStatus !== TaskStatus.DONE;
-    
-    // 4. Prepare additional data for the update
+    const isMarkingAsDone =
+      newStatus === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
+    const isReopeningFromDone =
+      originalTask.status === TaskStatus.DONE && newStatus !== TaskStatus.DONE;
+
     const additionalData: any = {};
-    
+
     if (isMarkingAsDone) {
-      // Set completedAt timestamp when marking as done
       additionalData.completedAt = new Date();
+      if (typeof actualMinutes === "number") {
+        additionalData.actualMinutes = actualMinutes;
+      }
     } else if (isReopeningFromDone) {
-      // Clear completedAt timestamp when reopening from done
       additionalData.completedAt = null;
+      additionalData.actualMinutes = null;
     }
 
-    // 5. Update the task with the new status and any additional data
     const updatedTask = await db.task.update({
       where: { id: taskId },
       data: {
         status: newStatus,
-        ...additionalData
+        ...additionalData,
       },
     });
 
-    // 6. If task is marked as done and comment is provided, add the comment
+    // Log the status change with appropriate action
+    if (originalTask.status !== newStatus) {
+      const actor = await db.user.findUnique({
+        where: { id: actorId },
+        select: { name: true },
+      });
+      const actorName = actor?.name || "A user";
+
+      // Determine the correct action
+      let action = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS as ActivityAction;
+      let description = `${actorName} changed status to ${newStatus} for task "${originalTask.title}"`;
+
+      if (isMarkingAsDone) {
+        action = ACTIVITY_ACTIONS.COMPLETE_TASK;
+        description = `${actorName} completed task "${originalTask.title}"`;
+      } else if (isReopeningFromDone) {
+        action = ACTIVITY_ACTIONS.REOPEN_TASK;
+        description = `${actorName} reopened task "${originalTask.title}"`;
+      }
+
+      await logActivity(db, {
+        userId: actorId,
+        projectId: originalTask.projectId,
+        taskId: originalTask.id,
+        action: action,
+        description: description,
+        metadata: {
+          status: { from: originalTask.status, to: newStatus },
+        },
+      });
+    }
+
+    // Add comment if task is marked as done
     if (isMarkingAsDone && comment && comment.trim() !== "") {
-      const commentResult = await addTaskCommentService(taskId, actorId, comment);
+      const commentResult = await addTaskCommentService(
+        taskId,
+        actorId,
+        comment
+      );
       if (commentResult.error) {
-        console.error(`Failed to add comment for task ${taskId}:`, commentResult.error);
-        // We don't fail the status update if comment fails, but we log it
+        console.error(
+          `Failed to add comment for task ${taskId}:`,
+          commentResult.error
+        );
       }
     }
 
-    // 7. If successful, return the updated task and a null error
     return { task: updatedTask, error: null };
   } catch (error: any) {
-    // 8. Handle potential errors
     console.error(`Failed to update status for task ${taskId}:`, error);
 
-    // Prisma throws a specific error code 'P2025' if the record to update is not found
     if (error.code === "P2025") {
       return { task: null, error: `Task with ID '${taskId}' not found.` };
     }
 
-    // For all other errors, return a generic error message
     return {
       task: null,
       error: "An unexpected error occurred while updating the task.",
@@ -271,45 +464,70 @@ export const updateTaskStatus = async (
   }
 };
 
-
-/**
- * Updates the time estimates for a specific task.
- * @param {string} taskId - The ID of the task to update.
- * @param {number} estimatedMinutes - The estimated time in minutes.
- * @param {number} actualMinutes - The actual time spent in minutes.
- * @returns {Promise<{ task: Task | null; error: string | null }>} - An object containing the updated task on success, or an error message on failure.
- */
 export const updateTaskTime = async (
   taskId: string,
   estimatedMinutes?: number | null,
   actualMinutes?: number | null
 ): Promise<{ task: Task | null; error: string | null }> => {
   try {
-    // Prepare update data
-    const updateData: any = {};
-    if (estimatedMinutes !== undefined) updateData.estimatedMinutes = estimatedMinutes;
-    if (actualMinutes !== undefined) updateData.actualMinutes = actualMinutes;
-    
-    // Update the task with the new time estimates
-    const updatedTask = await db.task.update({
-      where: {
-        id: taskId,
+    const originalTask = await db.task.findUnique({
+      where: { id: taskId },
+      select: {
+        id: true,
+        title: true,
+        projectId: true,
+        estimatedMinutes: true,
+        actualMinutes: true,
       },
+    });
+
+    if (!originalTask) {
+      return { task: null, error: `Task with ID '${taskId}' not found.` };
+    }
+
+    const updateData: any = {};
+    const changes: Record<string, { from: any; to: any }> = {};
+
+    if (estimatedMinutes !== undefined) {
+      updateData.estimatedMinutes = estimatedMinutes;
+      changes.estimatedMinutes = {
+        from: originalTask.estimatedMinutes,
+        to: estimatedMinutes,
+      };
+    }
+    if (actualMinutes !== undefined) {
+      updateData.actualMinutes = actualMinutes;
+      changes.actualMinutes = {
+        from: originalTask.actualMinutes,
+        to: actualMinutes,
+      };
+    }
+
+    const updatedTask = await db.task.update({
+      where: { id: taskId },
       data: updateData,
     });
 
-    // If successful, return the updated task and a null error
+    // Log time estimate changes
+    if (Object.keys(changes).length > 0) {
+      await logActivity(db, {
+        userId: originalTask.id, // You may want to pass userId as parameter
+        projectId: originalTask.projectId,
+        taskId: originalTask.id,
+        action: ACTIVITY_ACTIONS.UPDATE_TASK_TIME_ESTIMATE,
+        description: `Time estimates updated for task "${originalTask.title}"`,
+        metadata: changes,
+      });
+    }
+
     return { task: updatedTask, error: null };
   } catch (error: any) {
-    // Handle potential errors
     console.error(`Failed to update time for task ${taskId}:`, error);
 
-    // Prisma throws a specific error code 'P2025' if the record to update is not found
     if (error.code === "P2025") {
       return { task: null, error: `Task with ID '${taskId}' not found.` };
     }
 
-    // For all other errors, return a generic error message
     return {
       task: null,
       error: "An unexpected error occurred while updating the task time.",
@@ -317,14 +535,6 @@ export const updateTaskTime = async (
   }
 };
 
-/**
- * Checks if a user is authorized to access a task.
- * Authorization is granted if the user is the task's assignee or its reporter.
- * @param {string} taskId - The ID of the task to check.
- * @param {string} userId - The ID of the user requesting access.
- * @returns {Promise<{ authorized: boolean; error: string | null; reason?: 'NOT_FOUND' | 'FORBIDDEN' | 'INTERNAL_SERVER_ERROR' }>}
- * An object indicating if the user is authorized and providing an error message if not.
- */
 export const canUserAccessTask = async (
   taskId: string,
   userId: string
@@ -334,18 +544,14 @@ export const canUserAccessTask = async (
   reason?: "NOT_FOUND" | "FORBIDDEN" | "INTERNAL_SERVER_ERROR";
 }> => {
   try {
-    // 1. Fetch only the necessary IDs for the authorization check
     const task = await db.task.findUnique({
-      where: {
-        id: taskId,
-      },
+      where: { id: taskId },
       select: {
         assigneeId: true,
         reporterId: true,
       },
     });
 
-    // 2. Handle case where the task does not exist
     if (!task) {
       return {
         authorized: false,
@@ -354,15 +560,12 @@ export const canUserAccessTask = async (
       };
     }
 
-    // 3. Perform the authorization check
     const isAssignee = task.assigneeId === userId;
     const isReporter = task.reporterId === userId;
 
     if (isAssignee || isReporter) {
-      // 4. User is authorized, return success
       return { authorized: true, error: null };
     } else {
-      // 5. User is not the assignee or reporter, return forbidden
       return {
         authorized: false,
         error: "User is not authorized to access this task.",
@@ -382,13 +585,22 @@ export const canUserAccessTask = async (
   }
 };
 
-
 export const addTaskCommentService = async (
   taskId: string,
   userId: string,
   content: string
 ): Promise<{ comment: TaskComment | null; error: string | null }> => {
   try {
+    // Get task details for logging
+    const task = await db.task.findUnique({
+      where: { id: taskId },
+      select: { id: true, title: true, projectId: true },
+    });
+
+    if (!task) {
+      return { comment: null, error: "Task not found." };
+    }
+
     const comment = await db.taskComment.create({
       data: {
         taskId,
@@ -396,6 +608,27 @@ export const addTaskCommentService = async (
         content,
       },
     });
+
+    // Log comment addition
+    const user = await db.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+
+    await logActivity(db, {
+      userId,
+      projectId: task.projectId,
+      taskId: task.id,
+      action: ACTIVITY_ACTIONS.ADD_TASK_COMMENT,
+      description: `${user?.name || "A user"} added a comment to task "${
+        task.title
+      }"`,
+      metadata: {
+        commentId: comment.id,
+        commentLength: content.length,
+      },
+    });
+
     return { comment, error: null };
   } catch (error: any) {
     console.error(`Failed to add comment for task ${taskId}:`, error);

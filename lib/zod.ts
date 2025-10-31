@@ -28,7 +28,7 @@ export const taskFormSchema = z
 
     priority: z.nativeEnum(Priority).default(Priority.MEDIUM),
     status: z.nativeEnum(TaskStatus).default(TaskStatus.TO_DO),
-actualMinutes: z.coerce.number().nullable().optional(),
+    actualMinutes: z.coerce.number().nullable().optional(),
     estimatedMinutes: z.coerce
       .number({ message: "Must be a number." })
       .min(0, "Minute cannot be negative."),
@@ -94,6 +94,7 @@ const taskStatusEnum = z.enum(["TO_DO", "IN_PROGRESS", "REVIEW", "DONE"]);
 export const updateTaskStatusSchema = z.object({
   status: taskStatusEnum,
   comment: z.string().optional(), // Add the comment field as optional
+  actualTime: z.number().optional(), // 👈 Add this line
 });
 
 // If you want to make the comment required when status is "DONE", you can use a refined schema:

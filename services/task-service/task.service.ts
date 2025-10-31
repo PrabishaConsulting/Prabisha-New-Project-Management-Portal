@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { ProjectRole, Task, TaskStatus } from "@/app/generated/client";
 import { authorizeProjectMember, AuthorizationError } from "./auth.service";
-import { TaskFormData } from "@/lib/zod"; // Assuming this type is defined elsewhere
+import { TaskFormData } from "@/lib/zod";
 import { logActivity } from "../activity-user/activity-user.service";
 import { ACTIVITY_ACTIONS } from "../activity-user/helper";
 import { ProjectCreationError } from "@/utils/errors";
@@ -16,8 +16,10 @@ type TaskUpdateData = {
   status: TaskStatus;
   completedAt?: Date | null;
 };
+
 /**
- * Processes task updates, validates permissions, and logs status changes only.
+ * Processes task updates, validates permissions, and logs changes with metadata.
+ * Only ONE log per task that actually changes.
  */
 export async function processAndValidateTaskUpdates(
   userId: string,
@@ -38,6 +40,13 @@ export async function processAndValidateTaskUpdates(
   const tasksThatChanged: TaskUpdateData[] = [];
   const logEntries = [];
 
+  // Get user name for logging
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+  const userName = user?.name || "A user";
+
   for (const task of tasksToUpdate) {
     const existingTask = existingTasksMap.get(task.id);
     if (!existingTask) continue;
@@ -53,26 +62,67 @@ export async function processAndValidateTaskUpdates(
       existingTask.status === "DONE" &&
       task.status !== "DONE";
 
-    // ✅ Only log status changes
+    // Authorization check for status changes
     if (statusHasChanged) {
       if (!isProjectLead && existingTask.assigneeId !== userId) {
         throw new AuthorizationError(
           `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
         );
       }
+    }
 
+    // Track changes in metadata if anything changed
+    if (statusHasChanged || positionHasChanged) {
+      const changes: Record<string, { from: any; to: any }> = {};
+      const changedFields: string[] = [];
+      
+      // Determine the primary action
+      let primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK as string;
+      let description = "";
+
+      if (statusHasChanged) {
+        changes.status = { from: existingTask.status, to: task.status };
+        changedFields.push("status");
+        
+        // Set specific action for status changes
+        if (isMarkedAsDone) {
+          primaryAction = ACTIVITY_ACTIONS.COMPLETE_TASK;
+          description = `${userName} completed task "${existingTask.title}"`;
+        } else if (isMovedFromDone) {
+          primaryAction = ACTIVITY_ACTIONS.REOPEN_TASK;
+          description = `${userName} reopened task "${existingTask.title}"`;
+        } else {
+          primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS;
+          description = `${userName} changed status from ${existingTask.status} to ${task.status} for task "${existingTask.title}"`;
+        }
+      }
+
+      if (positionHasChanged) {
+        changes.position = { from: existingTask.position, to: task.position };
+        changedFields.push("position");
+        
+        // If only position changed (reordering)
+        if (!statusHasChanged) {
+          primaryAction = ACTIVITY_ACTIONS.REORDER_TASK;
+          description = `${userName} reordered task "${existingTask.title}"`;
+        }
+      }
+
+      // If both changed, update description
+      if (statusHasChanged && positionHasChanged) {
+        description = `${userName} updated ${changedFields.join(" and ")} for task "${existingTask.title}"`;
+      }
+
+      // Create a single log entry per task with all changes
       logEntries.push({
         userId,
         projectId,
         taskId: existingTask.id,
-        action: ACTIVITY_ACTIONS.UPDATE_TASK_STATUS,
-        description: `Task "${existingTask.title}" status changed from ${existingTask.status} to ${task.status}.`,
-        metadata: { from: existingTask.status, to: task.status },
+        action: primaryAction,
+        description: description,
+        metadata: changes,
       });
-    }
 
-    // ✅ Update DB if either status OR position changed
-    if (statusHasChanged || positionHasChanged) {
       // Add completedAt information if needed
       const taskWithCompletedAt = {
         ...task,
@@ -89,7 +139,7 @@ export async function processAndValidateTaskUpdates(
   if (tasksThatChanged.length > 0) {
     await updateTaskOrder(tasksThatChanged);
 
-    // ✅ Bulk insert logs (only for status changes)
+    // Bulk insert logs - one log per task with all changes
     if (logEntries.length > 0) {
       await db.activityLog.createMany({
         data: logEntries.map((log) => ({
@@ -111,19 +161,16 @@ export async function processAndValidateTaskUpdates(
 export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
   if (tasks.length === 0) return;
 
-  // Process updates in batches for better performance
   const batchSize = 100;
   for (let i = 0; i < tasks.length; i += batchSize) {
     const batch = tasks.slice(i, i + batchSize);
 
-    // Create update operations for each task in the batch
     const updatePromises = batch.map((task) =>
       db.task.update({
         where: { id: task.id },
         data: {
           position: task.position,
           status: task.status,
-          // Only include completedAt if it's defined
           ...(task.completedAt !== undefined && {
             completedAt: task.completedAt,
           }),
@@ -131,17 +178,15 @@ export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
       })
     );
 
-    // Execute all updates in the batch concurrently
     await Promise.all(updatePromises);
   }
 }
+
 /**
  * Handles sending notifications after a new task has been created.
- * This function now fetches the user and project details it needs.
  */
 async function handlePostCreationActions(newTask: Task) {
   try {
-    // 1. Fetch all required details in parallel for efficiency
     const [reporter, assignee, project] = await Promise.all([
       db.user.findUnique({ where: { id: newTask.reporterId } }),
       newTask.assigneeId
@@ -150,16 +195,13 @@ async function handlePostCreationActions(newTask: Task) {
       db.project.findUnique({ where: { id: newTask.projectId } }),
     ]);
 
-    // Guard against missing critical data
     if (!reporter || !project) {
       console.error("Could not find reporter or project for the new task.");
       return;
     }
 
-    ("/projects/cmfp2xoy30003l504pb87fdt3/task/cmftlx3o0000lwg7c9vm033w3?workspaceId=cme1bv47a0002js04h223pd0s");
-
     const taskUrl = `${process.env.NEXT_PUBLIC_APP_URL}/projects/${project.id}/task/${newTask.id}?workspaceId=cme1bv47a0002js04h223pd0s`;
-    const iso = newTask.dueDate?.toISOString(); // string | undefined
+    const iso = newTask.dueDate?.toISOString();
 
     const dateOnlyUTC = iso
       ? new Date(iso).toLocaleDateString("en-GB", {
@@ -168,11 +210,9 @@ async function handlePostCreationActions(newTask: Task) {
           day: "2-digit",
           timeZone: "UTC",
         })
-      : ""; // or 'TBD' / undefined depending on needs
+      : "";
 
-    // "24 Sep 2025"
-
-    // 2. Notify the Reporter (the person who created the task)
+    // Notify the Reporter
     if (reporter.email && assignee?.email) {
       await sendTaskForReviewEmail({
         reviewerName: reporter.name!,
@@ -180,18 +220,18 @@ async function handlePostCreationActions(newTask: Task) {
         taskTitle: newTask.title,
         projectName: project.name,
         taskUrl,
-        assignerName: assignee.name!, // The creator is the one assigning
+        assignerName: assignee.name!,
         dueDate: dateOnlyUTC ? dateOnlyUTC : undefined,
       });
     }
 
-    // 3. Notify the Assignee (if one was set on creation)
+    // Notify the Assignee
     if (assignee && assignee.email) {
       await sendTaskAssignmentEmail({
         assigneeName: assignee.name!,
         assigneeEmail: assignee.email,
         taskTitle: newTask.title,
-        assignedBy: reporter.name!, // The creator is the one assigning
+        assignedBy: reporter.name!,
         taskUrl,
       });
     }
@@ -223,7 +263,6 @@ export async function createTask(data: TaskFormData, userId: string) {
   }
 
   const newTask = await db.$transaction(async (tx) => {
-    // Determine the position for the new task
     const taskCount = await tx.task.count({
       where: { projectId: taskData.projectId, status: taskData.status },
     });
@@ -232,7 +271,6 @@ export async function createTask(data: TaskFormData, userId: string) {
       data: {
         ...taskData,
         position: taskCount,
-        // Set defaults if not provided
         reporterId: taskData.reporterId || userId,
         assigneeId: taskData.assigneeId || undefined,
         status: taskData.status || "TO_DO",
@@ -257,34 +295,49 @@ export async function createTask(data: TaskFormData, userId: string) {
     return createdTask;
   });
 
-  // --- MODIFICATION START ---
-
-  // Fetch user and project names for a more descriptive activity log
+  // Fetch user and project names for activity log
   const [user, project] = await Promise.all([
     db.user.findUnique({
       where: { id: userId },
-      select: { name: true }, // Select only the necessary field
+      select: { name: true },
     }),
     db.project.findUnique({
       where: { id: newTask.projectId },
-      select: { name: true }, // Select only the necessary field
+      select: { name: true },
     }),
   ]);
 
-  // Use fallback names in case they are not found
   const userName = user?.name || "A user";
   const projectName = project?.name || "the project";
 
-  // Log the activity with the enhanced description
+  // Fetch assignee name if exists
+  let assigneeName: string | null = null;
+  if (newTask.assigneeId) {
+    const assignee = await db.user.findUnique({
+      where: { id: newTask.assigneeId },
+      select: { name: true },
+    });
+    assigneeName = assignee?.name || null;
+  }
+
+  // Single activity log for task creation with comprehensive metadata
   await logActivity(db, {
     userId: userId,
     projectId: newTask.projectId,
     taskId: newTask.id,
     action: ACTIVITY_ACTIONS.CREATE_TASK,
-    description: `${userName} created task "${newTask.title}" in ${projectName}`,
+    description: `${userName} created task "${newTask.title}" in ${projectName}${assigneeName ? ` and assigned to ${assigneeName}` : ''}`,
+    metadata: {
+      status: newTask.status,
+      priority: newTask.priority,
+      assigneeId: newTask.assigneeId,
+      assigneeName: assigneeName,
+      dueDate: newTask.dueDate?.toISOString(),
+      estimatedMinutes: newTask.estimatedMinutes,
+      hasAttachments: attachments && attachments.length > 0,
+      attachmentCount: attachments?.length || 0,
+    },
   });
-
-  // --- MODIFICATION END ---
 
   await handlePostCreationActions(newTask);
 
@@ -296,4 +349,56 @@ export async function createTask(data: TaskFormData, userId: string) {
   });
 
   return taskWithAttachments;
+}
+
+/**
+ * Deletes a task and logs the deletion.
+ */
+export async function deleteTask(taskId: string, userId: string) {
+  const task = await db.task.findUnique({
+    where: { id: taskId },
+    include: {
+      project: { select: { id: true, name: true } },
+    },
+  });
+
+  if (!task) {
+    throw new ProjectCreationError("Task not found.", "NOT_FOUND");
+  }
+
+  // Check authorization
+  const userRole = await authorizeProjectMember(userId, task.projectId);
+  const isProjectLead = userRole === ProjectRole.LEAD;
+
+  if (!isProjectLead && task.reporterId !== userId) {
+    throw new AuthorizationError(
+      "You are not authorized to delete this task."
+    );
+  }
+
+  // Delete the task
+  await db.task.delete({
+    where: { id: taskId },
+  });
+
+  // Log the deletion
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { name: true },
+  });
+
+  await logActivity(db, {
+    userId,
+    projectId: task.projectId,
+    action: ACTIVITY_ACTIONS.DELETE_TASK,
+    description: `${user?.name || "A user"} deleted task "${task.title}" from ${task.project?.name || "the project"}`,
+    metadata: {
+      taskId: taskId,
+      taskTitle: task.title,
+      taskStatus: task.status,
+      taskPriority: task.priority,
+    },
+  });
+
+  return { success: true };
 }

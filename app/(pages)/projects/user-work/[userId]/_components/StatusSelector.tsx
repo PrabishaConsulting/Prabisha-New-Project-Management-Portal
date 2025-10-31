@@ -29,8 +29,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { useTaskTimer } from "@/hooks/useTaskTimer";
 import { toast } from "sonner";
+import { useTaskTimer } from "@/hooks/useTaskTimer";
 
 type PrismaTask = {
   id: string;
@@ -82,127 +82,64 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [comment, setComment] = useState("");
+  const [actualTime, setActualTime] = useState<number>(0);
   const [pendingStatus, setPendingStatus] = useState<PrismaTask["status"] | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
-  
-  const { 
-    startTimer, 
-    stopTimer, 
-    hasActiveTimer, 
-    getTimerForTask,
-    pauseTimer,
-    resumeTimer 
-  } = useTaskTimer();
-  
-  const statuses: PrismaTask["status"][] = [
-    "TO_DO",
-    "IN_PROGRESS",
-    "REVIEW",
-    "DONE",
-  ];
+
+  const { getTimerForTask } = useTaskTimer();
+
+  const statuses: PrismaTask["status"][] = ["TO_DO", "IN_PROGRESS", "REVIEW", "DONE"];
   const currentStatusDetails = getStatusDetails(task.status);
 
   const handleStatusChange = (newStatus: PrismaTask["status"]) => {
     if (newStatus === task.status) return;
-    
-    // If status is being changed to DONE, open comment dialog
-    if (newStatus === "DONE") {
-      setPendingStatus(newStatus);
-      setIsCommentDialogOpen(true);
-      setIsOpen(false);
-      return;
-    }
-    
-    // For other statuses, update immediately
-    updateTaskStatus(newStatus);
+
+    // Get elapsed time from localStorage (if timer exists)
+    const timer = getTimerForTask(task.id);
+    const elapsedMinutes = timer ? Math.round(timer.totalElapsed / 60) : 0;
+
+    setActualTime(elapsedMinutes);
+    setPendingStatus(newStatus);
+    setIsCommentDialogOpen(true);
+    setIsOpen(false);
   };
 
-  const updateTaskStatus = async (newStatus: PrismaTask["status"], commentText?: string) => {
-    const oldStatus = task.status;
+  const updateTaskStatus = async (
+    newStatus: PrismaTask["status"],
+    commentText?: string,
+    timeSpent?: number
+  ) => {
     setIsUpdating(true);
-    
     try {
       const response = await fetch(`/api/tasks/${task.id}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           status: newStatus,
-          comment: commentText || ""
+          comment: commentText || "",
+          actualTime: timeSpent || 0,
         }),
       });
 
       if (!response.ok) throw new Error("Failed to update status");
-      
-      // Handle timer based on status change
-      switch (newStatus) {
-        case "IN_PROGRESS":
-          if (oldStatus !== "IN_PROGRESS") {
-            if (hasActiveTimer(task.id)) {
-              const timer = getTimerForTask(task.id);
-              if (timer?.isPaused) {
-                resumeTimer(task.id);
-                toast.success("Status updated & Timer resumed", {
-                  description: `Resumed tracking: ${task.title}`,
-                });
-              } else {
-                toast.success("Status updated to In Progress");
-              }
-            } else {
-              startTimer(task.id, task.title);
-              toast.success("Status updated & Timer started", {
-                description: `Now tracking: ${task.title}`,
-              });
-            }
-          } else {
-            toast.success("Status updated to In Progress");
-          }
-          break;
-          
-        case "REVIEW":
-          if (oldStatus === "IN_PROGRESS") {
-            if (hasActiveTimer(task.id)) {
-              pauseTimer(task.id);
-              toast.success("Status updated & Timer paused", {
-                description: `Timer paused for: ${task.title}`,
-              });
-            } else {
-              toast.success("Status updated to In Review");
-            }
-          } else {
-            toast.success("Status updated to In Review");
-          }
-          break;
-          
-        case "DONE":
-          if (hasActiveTimer(task.id)) {
-            const elapsed = await stopTimer(task.id);
-            const minutes = Math.round(elapsed / 60);
-            toast.success("Status updated & Timer stopped", {
-              description: `Logged ${minutes} minute${minutes !== 1 ? 's' : ''} to task`,
-            });
-          } else {
-            toast.success("Status updated to Completed");
-          }
-          break;
-          
-        case "TO_DO":
-          if (hasActiveTimer(task.id)) {
-            const elapsed = await stopTimer(task.id);
-            const minutes = Math.round(elapsed / 60);
-            toast.info("Timer stopped", {
-              description: `Logged ${minutes} minute${minutes !== 1 ? 's' : ''}`,
-            });
-          }
-          toast.success("Status updated to To Do");
-          break;
+
+      // Toast messages based on status
+      if (newStatus === "IN_PROGRESS") {
+        toast.info("Task moved to In Progress", {
+          description: "Start the timer manually when you begin working.",
+        });
+      } else if (newStatus === "DONE") {
+        toast.success("Task marked as Completed", {
+          description: `Logged ${timeSpent || 0} minute${timeSpent !== 1 ? "s" : ""}`,
+        });
+      } else {
+        toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
       }
-      
+
       onUpdate();
     } catch (error) {
       console.error("Error updating task status:", error);
-      toast.error("Failed to update status", {
-        description: "Please try again",
-      });
+      toast.error("Failed to update status");
     } finally {
       setIsUpdating(false);
     }
@@ -210,7 +147,7 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
 
   const handleCommentSubmit = () => {
     if (pendingStatus) {
-      updateTaskStatus(pendingStatus, comment);
+      updateTaskStatus(pendingStatus, comment, pendingStatus === "DONE" ? actualTime : undefined);
       setIsCommentDialogOpen(false);
       setComment("");
       setPendingStatus(null);
@@ -225,9 +162,13 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
 
   return (
     <>
-      <DropdownMenu open={isOpen} onOpenChange={(open) => {
-        if (!isUpdating) setIsOpen(open);
-      }}>
+      {/* Status Dropdown */}
+      <DropdownMenu
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!isUpdating) setIsOpen(open);
+        }}
+      >
         <DropdownMenuTrigger asChild>
           <Badge
             className={`${currentStatusDetails.className} cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 px-3 py-1 border`}
@@ -258,7 +199,7 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
                 {statuses.map((status, index) => {
                   const details = getStatusDetails(status);
                   const isActive = task.status === status;
-                  
+
                   return (
                     <Fragment key={status}>
                       <DropdownMenuItem
@@ -270,9 +211,7 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
                           {details.icon}
                           <span className="text-sm">{details.text}</span>
                         </div>
-                        {isActive && (
-                          <Check className="h-4 w-4 text-primary" />
-                        )}
+                        {isActive && <Check className="h-4 w-4 text-primary" />}
                       </DropdownMenuItem>
 
                       {index < statuses.length - 1 && <DropdownMenuSeparator />}
@@ -286,26 +225,30 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
       </DropdownMenu>
 
       {/* Comment Dialog */}
-      <Dialog open={isCommentDialogOpen} onOpenChange={(open) => {
-        if (!isUpdating) setIsCommentDialogOpen(open);
-      }}>
+      <Dialog
+        open={isCommentDialogOpen}
+        onOpenChange={(open) => {
+          if (!isUpdating) setIsCommentDialogOpen(open);
+        }}
+      >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle className="text-xl">Task Completion</DialogTitle>
+            <DialogTitle className="text-xl">Update Task Status</DialogTitle>
             <DialogDescription className="text-base">
-              Add a comment about the completion of this task. This helps maintain project records and team communication.
+              Add a comment about this status change to keep the team informed.
             </DialogDescription>
           </DialogHeader>
+
           <div className="py-4">
             <Label htmlFor="comment" className="text-sm font-medium mb-2 block">
-              Completion Comment *
+              Comment *
             </Label>
             <Textarea
               id="comment"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               className="min-h-[120px] resize-none"
-              placeholder="Describe what was accomplished, any challenges faced, or next steps..."
+              placeholder="Describe the change, progress, or completion details..."
               disabled={isUpdating}
               autoFocus
             />
@@ -313,16 +256,35 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
               {comment.length} characters
             </p>
           </div>
-          <DialogFooter className="gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleCommentCancel} 
-              disabled={isUpdating}
-            >
+
+          {/* Actual Time field only if status = DONE */}
+          {pendingStatus === "DONE" && (
+            <div className="mt-4">
+              <Label htmlFor="actualTime" className="text-sm font-medium mb-2 block">
+                Actual Time (minutes)
+              </Label>
+              <input
+                type="number"
+                id="actualTime"
+                value={actualTime}
+                onChange={(e) => setActualTime(Number(e.target.value))}
+                className="w-full border border-input rounded-md px-3 py-2 text-sm"
+                min={0}
+                disabled={isUpdating}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Elapsed from timer:{" "}
+                {Math.round((getTimerForTask(task.id)?.totalElapsed || 0) / 60)} min
+              </p>
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 mt-4">
+            <Button variant="outline" onClick={handleCommentCancel} disabled={isUpdating}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleCommentSubmit} 
+            <Button
+              onClick={handleCommentSubmit}
               disabled={!comment.trim() || isUpdating}
               className="min-w-[100px]"
             >
@@ -332,7 +294,7 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
                   Saving...
                 </>
               ) : (
-                "Complete Task"
+                "Save"
               )}
             </Button>
           </DialogFooter>

@@ -1,9 +1,9 @@
-// services/timelineService.ts
+// services/timeline-services/timeline.service.ts
 import { db } from "@/lib/db";
 
-export interface TimelineEvent {
+export interface TaskActivity {
   id: string;
-  type: 'project_created' | 'task_created' | 'status_changed' | 'comment' | 'time_entry' | 'task_assigned';
+  type: 'activity' | 'comment' | 'time_entry';
   date: Date;
   userId: string;
   user: {
@@ -11,261 +11,271 @@ export interface TimelineEvent {
     name: string;
     avatar: string | null;
   };
-  projectId: string;
-  taskId?: string;
+  action: string; // The actual action from ActivityLog
   description: string;
-  details?: {
-    action?: string;
-    oldStatus?: string;
-    newStatus?: string;
-    content?: string;
-    minutes?: number;
-    timeDescription?: string;
-    assignee?: string;
+  metadata?: any; // Parsed metadata
+}
+
+export interface TaskTimeline {
+  task: {
+    id: string;
+    title: string;
+    description?: string;
+    status: string;
+    priority: string;
+    taskType?: string;
+    estimatedMinutes?: number;
+    actualMinutes: number;
+    startDate: Date | null;
+    dueDate: Date | null;
+    completedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    reporter: {
+      id: string;
+      name: string;
+      avatar: string | null;
+    };
+    assignee?: {
+      id: string;
+      name: string;
+      avatar: string | null;
+    };
   };
+  activities: TaskActivity[];
 }
 
 export interface TimelineFilters {
-  type?: string;
   userId?: string;
   dateFrom?: Date;
   dateTo?: Date;
+  status?: string;
+  assigneeId?: string;
+  action?: string; // Filter by specific action
 }
 
 export interface TimelinePaginationOptions {
-  cursor?: string; // ISO date string for cursor-based pagination
+  cursor?: string;
   limit?: number;
 }
 
 export interface TimelineResult {
-  events: any[];
-  nextCursor?: string; // ISO date string for next page
+  tasks: TaskTimeline[];
+  nextCursor?: string;
   hasMore: boolean;
 }
 
-// Get project timeline with pagination and filtering
+// Get project timeline with all activities grouped by task
 export async function getProjectTimeline(
   projectId: string,
   filters: TimelineFilters = {},
   pagination: TimelinePaginationOptions = {}
 ): Promise<TimelineResult> {
   const { cursor, limit = 20 } = pagination;
-  const { type, userId, dateFrom, dateTo } = filters;
+  const { userId, dateFrom, dateTo, status, assigneeId, action } = filters;
 
-  // Build base query conditions
-  const whereConditions: any = { projectId };
+  // Build activity log query conditions
+  const activityWhere: any = { projectId };
   
-  if (type) whereConditions.type = type;
-  if (userId) whereConditions.userId = userId;
+  if (userId) activityWhere.userId = userId;
+  if (action) activityWhere.action = action;
   if (dateFrom || dateTo) {
-    whereConditions.date = {};
-    if (dateFrom) whereConditions.date.gte = dateFrom;
-    if (dateTo) whereConditions.date.lte = dateTo;
+    activityWhere.createdAt = {};
+    if (dateFrom) activityWhere.createdAt.gte = dateFrom;
+    if (dateTo) activityWhere.createdAt.lte = dateTo;
   }
-
-  // Add cursor condition if provided
   if (cursor) {
     const cursorDate = new Date(cursor);
-    if (!whereConditions.date) whereConditions.date = {};
-    whereConditions.date.lt = cursorDate;
+    if (!activityWhere.createdAt) activityWhere.createdAt = {};
+    activityWhere.createdAt.lt = cursorDate;
   }
 
-  // Fetch all activity logs for the project with pagination
-  const activityLogs = await db.activityLog.findMany({
-    where: whereConditions,
+  // Fetch all activity logs for the project
+  const allActivities = await db.activityLog.findMany({
+    where: activityWhere,
     include: { 
       user: { select: { id: true, name: true, avatar: true } },
-      task: { select: { id: true, title: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1, // Take one extra to check if there are more
-  });
-
-  // Fetch tasks with pagination and filtering
-  const tasksWhere: any = { projectId };
-  if (dateFrom || dateTo) {
-    tasksWhere.createdAt = {};
-    if (dateFrom) tasksWhere.createdAt.gte = dateFrom;
-    if (dateTo) tasksWhere.createdAt.lte = dateTo;
-  }
-  
-  const tasks = await db.task.findMany({
-    where: tasksWhere,
-    include: { 
-      reporter: { select: { id: true, name: true, avatar: true } },
-      assignee: { select: { id: true, name: true, avatar: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-  });
-
-  const taskIds = tasks.map(task => task.id);
-
-  // Fetch comments with pagination and filtering
-  const commentsWhere: any = { taskId: { in: taskIds } };
-  if (userId) commentsWhere.userId = userId;
-  if (dateFrom || dateTo) {
-    commentsWhere.createdAt = {};
-    if (dateFrom) commentsWhere.createdAt.gte = dateFrom;
-    if (dateTo) commentsWhere.createdAt.lte = dateTo;
-  }
-
-  const comments = await db.taskComment.findMany({
-    where: commentsWhere,
-    include: { 
-      user: { select: { id: true, name: true, avatar: true } },
-      task: { select: { id: true, title: true } }
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1,
-  });
-
-  // Fetch time entries with pagination and filtering
-  const timeEntriesWhere: any = { taskId: { in: taskIds } };
-  if (userId) timeEntriesWhere.userId = userId;
-  if (dateFrom || dateTo) {
-    timeEntriesWhere.date = {};
-    if (dateFrom) timeEntriesWhere.date.gte = dateFrom;
-    if (dateTo) timeEntriesWhere.date.lte = dateTo;
-  }
-
-  const timeEntries = await db.timeEntry.findMany({
-    where: timeEntriesWhere,
-    include: { 
-      user: { select: { id: true, name: true, avatar: true } },
-      task: { select: { id: true, title: true } }
-    },
-    orderBy: { date: 'desc' },
-    take: limit + 1,
-  });
-
-  // Convert activity logs to timeline events
-  const activityEvents: any[] = activityLogs.map(log => {
-    let details: any = {};
-    let eventType: any['type'] = 'status_changed';
-    
-    try {
-      if (log.metadata) {
-        const parsed = JSON.parse(log.metadata);
-        details = {
-          action: log.action,
-          oldStatus: parsed.oldStatus,
-          newStatus: parsed.newStatus,
-          comment: parsed.comment,
-          assignee: parsed.assignee
-        };
-        
-        // Determine event type based on action
-        if (log.action === 'PROJECT_CREATED') {
-          eventType = 'project_created';
-        } else if (log.action === 'TASK_CREATED') {
-          eventType = 'task_created';
-        } else if (log.action === 'TASK_ASSIGNED') {
-          eventType = 'task_assigned';
+      task: {
+        include: {
+          reporter: { select: { id: true, name: true, avatar: true } },
+          assignee: { select: { id: true, name: true, avatar: true } }
         }
       }
-    } catch (e) {
-      console.error('Failed to parse activity log metadata', e);
-    }
-
-    return {
-      id: `activity-${log.id}`,
-      type: eventType,
-      date: log.createdAt,
-      userId: log.userId,
-      user: log.user,
-      projectId: log.projectId,
-      taskId: log.taskId,
-      description: log.description || `${log.action} ${log.task ? `on task "${log.task.title}"` : ''}`,
-      details
-    };
+    },
+    orderBy: { createdAt: 'desc' },
   });
 
-  // Convert task creation events (if not already captured in activity logs)
-  const taskCreationEvents: any[] = tasks.map(task => ({
-    id: `task-created-${task.id}`,
-    type: 'task_created' as const,
-    date: task.createdAt,
-    userId: task.reporterId,
-    user: task.reporter,
-    projectId,
-    taskId: task.id,
-    description: `Created task "${task.title}"`
-  }));
-
-  // Convert comments to timeline events
-  const commentEvents: any[] = comments.map(comment => ({
-    id: `comment-${comment.id}`,
-    type: 'comment' as const,
-    date: comment.createdAt,
-    userId: comment.userId,
-    user: comment.user,
-    projectId,
-    taskId: comment.taskId,
-    description: `Commented on task "${comment.task.title}"`,
-    details: {
-      content: comment.content
+  // Group activities by taskId
+  const activitiesByTask = new Map<string, typeof allActivities>();
+  
+  for (const activity of allActivities) {
+    if (activity.taskId && activity.task) {
+      if (!activitiesByTask.has(activity.taskId)) {
+        activitiesByTask.set(activity.taskId, []);
+      }
+      activitiesByTask.get(activity.taskId)!.push(activity);
     }
-  }));
+  }
 
-  // Convert time entries to timeline events
-  const timeEvents: any[] = timeEntries.map(entry => ({
-    id: `time-${entry.id}`,
-    type: 'time_entry' as const,
-    date: entry.date,
-    userId: entry.userId,
-    user: entry.user,
-    projectId,
-    taskId: entry.taskId,
-    description: `Logged ${entry.minutes} minutes on task "${entry.task.title}"`,
-    details: {
-      minutes: entry.minutes,
-      timeDescription: entry.description
+  // Get unique task IDs and filter by status/assignee if needed
+  let taskIds = Array.from(activitiesByTask.keys());
+  
+  if (status || assigneeId) {
+    const taskFilter: any = { id: { in: taskIds } };
+    if (status) taskFilter.status = status;
+    if (assigneeId) taskFilter.assigneeId = assigneeId;
+    
+    const filteredTasks = await db.task.findMany({
+      where: taskFilter,
+      select: { id: true }
+    });
+    
+    taskIds = filteredTasks.map(t => t.id);
+  }
+
+  // Apply pagination to task list
+  const paginatedTaskIds = taskIds.slice(0, limit + 1);
+  const hasMore = paginatedTaskIds.length > limit;
+  const finalTaskIds = hasMore ? paginatedTaskIds.slice(0, limit) : paginatedTaskIds;
+
+  // Build timeline for each task
+  const taskTimelines: TaskTimeline[] = await Promise.all(
+    finalTaskIds.map(async (taskId) => {
+      const taskActivities = activitiesByTask.get(taskId) || [];
+      const task = taskActivities[0]?.task;
+
+      if (!task) {
+        // Fallback: fetch task if not in activities
+        const fetchedTask = await db.task.findUnique({
+          where: { id: taskId },
+          include: {
+            reporter: { select: { id: true, name: true, avatar: true } },
+            assignee: { select: { id: true, name: true, avatar: true } }
+          }
+        });
+        
+        if (!fetchedTask) throw new Error(`Task ${taskId} not found`);
+        
+        return {
+          task: mapTaskData(fetchedTask),
+          activities: []
+        };
+      }
+
+      // Fetch comments for this task
+      const comments = await db.taskComment.findMany({
+        where: { 
+          taskId,
+          ...(userId && { userId })
+        },
+        include: { 
+          user: { select: { id: true, name: true, avatar: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+
+      // Fetch time entries for this task
+      const timeEntries = await db.timeEntry.findMany({
+        where: { 
+          taskId,
+          ...(userId && { userId })
+        },
+        include: { 
+          user: { select: { id: true, name: true, avatar: true } }
+        },
+        orderBy: { date: 'desc' }
+      });
+
+      // Convert activity logs to task activities
+      const activityActivities: TaskActivity[] = taskActivities.map(log => {
+        let parsedMetadata: any = {};
+        
+        try {
+          if (log.metadata) {
+            parsedMetadata = JSON.parse(log.metadata);
+          }
+        } catch (e) {
+          console.error('Failed to parse activity log metadata:', e);
+        }
+
+        return {
+          id: `activity-${log.id}`,
+          type: 'activity' as const,
+          date: log.createdAt,
+          userId: log.userId,
+          user: log.user,
+          action: log.action,
+          description: log.description || log.action,
+          metadata: parsedMetadata
+        };
+      });
+
+      // Convert comments to task activities
+      const commentActivities: TaskActivity[] = comments.map(comment => ({
+        id: `comment-${comment.id}`,
+        type: 'comment' as const,
+        date: comment.createdAt,
+        userId: comment.userId,
+        user: comment.user,
+        action: 'COMMENTED',
+        description: `Commented on task`,
+        metadata: {
+          content: comment.content,
+          commentId: comment.id
+        }
+      }));
+
+      // Convert time entries to task activities
+      const timeActivities: TaskActivity[] = timeEntries.map(entry => ({
+        id: `time-${entry.id}`,
+        type: 'time_entry' as const,
+        date: entry.date,
+        userId: entry.userId,
+        user: entry.user,
+        action: 'TIME_LOGGED',
+        description: `Logged ${entry.minutes} minutes`,
+        metadata: {
+          minutes: entry.minutes,
+          description: entry.description,
+          timeEntryId: entry.id
+        }
+      }));
+
+      // Combine all activities and sort by date (newest first)
+      const activities = [...activityActivities, ...commentActivities, ...timeActivities]
+        .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+      return {
+        task: mapTaskData(task),
+        activities
+      };
+    })
+  );
+
+  // Get next cursor from the last activity of the last task
+  let nextCursor: string | undefined;
+  if (hasMore && taskTimelines.length > 0) {
+    const lastTask = taskTimelines[taskTimelines.length - 1];
+    if (lastTask.activities.length > 0) {
+      nextCursor = lastTask.activities[0].date.toISOString();
     }
-  }));
-
-  // Combine all events
-  const allEvents = [...activityEvents, ...taskCreationEvents, ...commentEvents, ...timeEvents];
-  
-  // Apply filters if they weren't applied at the database level
-  let filteredEvents = allEvents;
-  if (type) {
-    filteredEvents = filteredEvents.filter(event => event.type === type);
   }
-  if (userId) {
-    filteredEvents = filteredEvents.filter(event => event.userId === userId);
-  }
-  
-  // Sort by date (newest first)
-  filteredEvents.sort((a, b) => b.date.getTime() - a.date.getTime());
-  
-  // Apply pagination
-  const startIndex = cursor ? filteredEvents.findIndex(event => event.date < new Date(cursor)) : 0;
-  const paginatedEvents = filteredEvents.slice(startIndex, startIndex + limit + 1);
-  
-  // Check if there are more items
-  const hasMore = paginatedEvents.length > limit;
-  const events = hasMore ? paginatedEvents.slice(0, limit) : paginatedEvents;
-  
-  // Get the cursor for the next page
-  const nextCursor = hasMore ? events[events.length - 1].date.toISOString() : undefined;
 
   return {
-    events,
+    tasks: taskTimelines,
     nextCursor,
     hasMore
   };
 }
 
-// Get task timeline with all activities, comments, and time entries for a specific task
-export async function getTaskTimeline(taskId: string): Promise<any[]> {
-  // Fetch the task to get projectId
+// Get task timeline with all activities for a specific task
+export async function getTaskTimeline(taskId: string): Promise<TaskTimeline> {
+  // Fetch the task
   const task = await db.task.findUnique({
     where: { id: taskId },
     include: { 
       reporter: { select: { id: true, name: true, avatar: true } },
-      assignee: { select: { id: true, name: true, avatar: true } },
-      project: { select: { id: true } }
+      assignee: { select: { id: true, name: true, avatar: true } }
     }
   });
 
@@ -273,7 +283,7 @@ export async function getTaskTimeline(taskId: string): Promise<any[]> {
     throw new Error('Task not found');
   }
 
-  // Fetch all activity logs for this task
+  // Fetch ALL activity logs for this task (no filtering by action type)
   const activityLogs = await db.activityLog.findMany({
     where: { taskId },
     include: { 
@@ -282,7 +292,7 @@ export async function getTaskTimeline(taskId: string): Promise<any[]> {
     orderBy: { createdAt: 'desc' }
   });
 
-  // Fetch all comments for this task
+  // Fetch comments for this task
   const comments = await db.taskComment.findMany({
     where: { taskId },
     include: { 
@@ -291,7 +301,7 @@ export async function getTaskTimeline(taskId: string): Promise<any[]> {
     orderBy: { createdAt: 'desc' }
   });
 
-  // Fetch all time entries for this task
+  // Fetch time entries for this task
   const timeEntries = await db.timeEntry.findMany({
     where: { taskId },
     include: { 
@@ -300,88 +310,88 @@ export async function getTaskTimeline(taskId: string): Promise<any[]> {
     orderBy: { date: 'desc' }
   });
 
-  // Convert task creation event
-  const taskCreationEvent: any = {
-    id: `task-created-${task.id}`,
-    type: 'task_created',
-    date: task.createdAt,
-    userId: task.reporterId,
-    user: task.reporter,
-    projectId: task.projectId,
-    taskId: task.id,
-    description: `Created task "${task.title}"`
-  };
-
-  // Convert activity logs to timeline events
-  const activityEvents: any[] = activityLogs.map(log => {
-    let details: any = {};
-    let eventType: any['type'] = 'status_changed';
+  // Convert activity logs to task activities
+  const activityActivities: TaskActivity[] = activityLogs.map(log => {
+    let parsedMetadata: any = {};
     
     try {
       if (log.metadata) {
-        const parsed = JSON.parse(log.metadata);
-        details = {
-          action: log.action,
-          oldStatus: parsed.oldStatus,
-          newStatus: parsed.newStatus,
-          comment: parsed.comment,
-          assignee: parsed.assignee
-        };
-        
-        // Determine event type based on action
-        if (log.action === 'TASK_ASSIGNED') {
-          eventType = 'task_assigned';
-        }
+        parsedMetadata = JSON.parse(log.metadata);
       }
     } catch (e) {
-      console.error('Failed to parse activity log metadata', e);
+      console.error('Failed to parse activity log metadata:', e);
     }
 
     return {
       id: `activity-${log.id}`,
-      type: eventType,
+      type: 'activity' as const,
       date: log.createdAt,
       userId: log.userId,
       user: log.user,
-      projectId: task.projectId,
-      taskId: task.id,
-      description: log.description || `${log.action} on task "${task.title}"`,
-      details
+      action: log.action,
+      description: log.description || log.action,
+      metadata: parsedMetadata
     };
   });
 
-  // Convert comments to timeline events
-  const commentEvents: any[] = comments.map(comment => ({
+  // Convert comments to task activities
+  const commentActivities: TaskActivity[] = comments.map(comment => ({
     id: `comment-${comment.id}`,
     type: 'comment' as const,
     date: comment.createdAt,
     userId: comment.userId,
     user: comment.user,
-    projectId: task.projectId,
-    taskId: task.id,
-    description: `Commented on task "${task.title}"`,
-    details: {
-      content: comment.content
+    action: 'COMMENTED',
+    description: `Commented on task`,
+    metadata: {
+      content: comment.content,
+      commentId: comment.id
     }
   }));
 
-  // Convert time entries to timeline events
-  const timeEvents: any[] = timeEntries.map(entry => ({
+  // Convert time entries to task activities
+  const timeActivities: TaskActivity[] = timeEntries.map(entry => ({
     id: `time-${entry.id}`,
     type: 'time_entry' as const,
     date: entry.date,
     userId: entry.userId,
     user: entry.user,
-    projectId: task.projectId,
-    taskId: task.id,
-    description: `Logged ${entry.minutes} minutes on task "${task.title}"`,
-    details: {
+    action: 'TIME_LOGGED',
+    description: `Logged ${entry.minutes} minutes`,
+    metadata: {
       minutes: entry.minutes,
-      timeDescription: entry.description
+      description: entry.description,
+      timeEntryId: entry.id
     }
   }));
 
-  // Combine all events and sort by date (newest first)
-  return [taskCreationEvent, ...activityEvents, ...commentEvents, ...timeEvents]
+  // Combine all activities and sort by date (newest first)
+  const activities = [...activityActivities, ...commentActivities, ...timeActivities]
     .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  return {
+    task: mapTaskData(task),
+    activities
+  };
+}
+
+// Helper function to map task data consistently
+function mapTaskData(task: any) {
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description || "",
+    status: task.status,
+    priority: task.priority,
+    taskType: task.taskType || "",
+    estimatedMinutes: task.estimatedMinutes || undefined,
+    actualMinutes: task.actualMinutes,
+    startDate: task.startDate ?? null,
+    dueDate: task.dueDate ?? null,
+    completedAt: task.completedAt ?? null,
+    createdAt: task.createdAt,
+    updatedAt: task.updatedAt,
+    reporter: task.reporter,
+    assignee: task.assignee || undefined
+  };
 }
