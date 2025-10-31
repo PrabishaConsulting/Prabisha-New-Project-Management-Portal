@@ -7,24 +7,12 @@ import TaskDashboard from "./_components/task-dashboard";
 import StatusCard from "./_components/task.stats";
 import { TaskData } from "./_components/task.coloumn";
 import { StatusCardSkeleton, TaskDashboardSkeleton, TaskTableSkeleton } from "./_components/skeletons";
-import { db } from "@/lib/db";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AllTaskPage() {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const getRolebyId = async() => {
-    const role = await db.user.findUnique({
-      where: {
-        id: user.id,
-      },
-      select: {
-        role: true,
-      },
-    });
-    return role;
-  }
 
   const today = new Date();
 

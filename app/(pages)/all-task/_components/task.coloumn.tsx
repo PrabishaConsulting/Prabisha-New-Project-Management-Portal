@@ -224,7 +224,15 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     cell: ({ row }) => {
       const name = row.original.assignee?.name ?? "Unassigned";
       // Split by space or dot and take the first part
-      return name.split(/[ .]/)[0];
+      const firstName = name.split(/[ .]/)[0];
+      const capitalized =
+        firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+
+      return (
+        <span className="capitalize  font-medium">
+          {capitalized}
+        </span>
+      )
     },
   },
   {
@@ -245,7 +253,15 @@ export const taskColumns: ColumnDef<TaskData>[] = [
     },
     cell: ({ row }) => {
       const name = row.original.reporter?.name ?? "N/A";
-      return name.split(/[ .]/)[0];
+      const firstName = name.split(/[ .]/)[0];
+      const capitalized =
+        firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+
+      return (
+        <span className="capitalize  font-medium">
+          {capitalized}
+        </span>
+      );
     },
   },
   {
