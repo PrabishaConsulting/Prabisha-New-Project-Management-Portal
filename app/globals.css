@@ -91,7 +91,62 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --animate-marquee: marquee 5s linear infinite;
+--animate-marquee2: marquee2 5s linear infinite;
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
 }
+
+@keyframes marquee2 {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0%);
+  }
+}
+
+--animate-marquee-vertical: marquee-vertical var(--duration) linear infinite
+
+;
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee {
+  from {
+    transform: translateX(0);
+    }
+  to {
+    transform: translateX(calc(-100% - var(--gap)));
+    }
+  }
+  @keyframes marquee-vertical {
+  from {
+    transform: translateY(0);
+    }
+  to {
+    transform: translateY(calc(-100% - var(--gap)));
+    }
+  }}
 
 /* 🎨 --- LIGHT MODE THEME --- */
 :root {
@@ -119,7 +174,6 @@ body {
   --primary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
   --secondary: oklch(36.19% 0.196 265.51); /* #2832B1 - Brand Blue */
   --secondary-foreground: oklch(98% 0 0); /* #FAFAFA - White text */
-
 
   --accent: oklch(
     94% 0.01 240

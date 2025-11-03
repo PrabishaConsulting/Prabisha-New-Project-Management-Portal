@@ -10147,6 +10147,7 @@ __metadata:
     react-day-picker: latest
     react-dom: latest
     react-dropzone: ^14.3.8
+    react-fast-marquee: ^1.6.5
     react-hook-form: ^7.62.0
     react-intersection-observer: ^10.0.0
     react-resizable-panels: ^3.0.4
@@ -10605,6 +10606,16 @@ __metadata:
   peerDependencies:
     react: ">= 16.8 || 18.0.0"
   checksum: c80ef459fe478f79aa48878f41404f43718602b2ade8416ff824914259cdd6ce1eb9ae8f02fa9769215c49ce98b8ab2c89cf6b0a00c0a7937aa3888471d67d98
+  languageName: node
+  linkType: hard
+
+"react-fast-marquee@npm:^1.6.5":
+  version: 1.6.5
+  resolution: "react-fast-marquee@npm:1.6.5"
+  peerDependencies:
+    react: ">= 16.8.0 || ^18.0.0"
+    react-dom: ">= 16.8.0 || ^18.0.0"
+  checksum: 5213b10983f47a2dc27c3206144f96b37dad2f08457b19ecb9e393e4bd3c8db8c9cccf1758ceb5c4ca6d697e3715f3f90c5d806e4cb62bbbad9ece7f0e7b3caf
   languageName: node
   linkType: hard
 

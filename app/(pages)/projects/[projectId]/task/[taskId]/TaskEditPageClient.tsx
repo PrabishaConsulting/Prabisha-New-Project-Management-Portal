@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import useSWR, { mutate } from "swr";
 import {
   type Task,
   type TaskComment,
@@ -36,7 +37,7 @@ import { TimeTracking } from "./time-tracking";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useDebounce } from "use-debounce";
-
+import StatusSelector from "../../../user-work/[userId]/_components/StatusSelector";
 
 // A type for project members that includes the nested user object
 type MemberWithUser = ProjectMember & {
@@ -100,13 +101,27 @@ const formatMinutes = (minutes: number | null) => {
   return `${mins}m`;
 };
 
+// SWR fetcher function
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 export function TaskEditPageClient({
   initialTask,
   projectMembers,
   currentUserId,
 }: TaskEditPageClientProps) {
   const router = useRouter();
-  const [task, setTask] = useState<ClientTask>(initialTask);
+  
+  // Use SWR to manage task data with initial data as fallback
+  const { data: task, error, mutate: mutateTask } = useSWR<ClientTask>(
+    `/api/tasks/${initialTask.id}`,
+    fetcher,
+    {
+      fallbackData: initialTask,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+  
   const [comment, setComment] = useState("");
   const [isSubmittingComment, setIsSubmittingComment] = useState(false);
   const [isDeletingTask, setIsDeletingTask] = useState(false);
@@ -151,15 +166,19 @@ export function TaskEditPageClient({
 
   // Sync local states when task updates from external sources
   useEffect(() => {
-    setLocalTitle(task.title);
-    setLocalDescription(task.description || "");
-    setLocalEstimatedMinutes(task.estimatedMinutes);
-  }, [task.title, task.description, task.estimatedMinutes]);
+    if (task) {
+      setLocalTitle(task.title);
+      setLocalDescription(task.description || "");
+      setLocalEstimatedMinutes(task.estimatedMinutes);
+    }
+  }, [task?.title, task?.description, task?.estimatedMinutes]);
 
   // UPDATED: Function to queue updates - now batches multiple changes
   const handleTaskUpdate = (updates: Partial<ClientTask>) => {
     // Update local state immediately for responsive UI
-    setTask((prev) => ({ ...prev, ...updates }));
+    if (task) {
+      mutateTask({ ...task, ...updates }, false);
+    }
     
     // NEW: Merge with existing pending updates instead of replacing
     setPendingUpdates((prev) => ({ ...prev, ...updates }));
@@ -170,7 +189,7 @@ export function TaskEditPageClient({
     try {
       console.log('🚀 Making API call with batched updates:', updates);
       
-      const response = await fetch(`/api/tasks/${task.id}`, {
+      const response = await fetch(`/api/tasks/${task?.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
@@ -179,22 +198,12 @@ export function TaskEditPageClient({
 
       // The server API will return a non-serialized object, so we must re-serialize it for our state.
       const updatedTaskFromServer = await response.json();
-      setTask((prev) => ({
-        ...prev,
-        ...updatedTaskFromServer,
-        actualMinutes: Number(updatedTaskFromServer.actualMinutes),
-        estimatedMinutes: updatedTaskFromServer.estimatedMinutes
-          ? Number(updatedTaskFromServer.estimatedMinutes)
-          : null,
-        dueDate: updatedTaskFromServer.dueDate
-          ? new Date(updatedTaskFromServer.dueDate).toISOString()
-          : null,
-      }));
+      mutateTask(updatedTaskFromServer, false);
       toast.success("Task updated successfully.");
     } catch (error) {
       toast.error("Update Failed", { description: (error as Error).message });
       // Revert to initial task state on error
-      setTask(initialTask);
+      mutateTask(initialTask, false);
       setPendingUpdates({});
       // Also revert local states
       setLocalTitle(initialTask.title);
@@ -207,7 +216,7 @@ export function TaskEditPageClient({
 
   const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!comment.trim()) return;
+    if (!comment.trim() || !task) return;
     setIsSubmittingComment(true);
     try {
       const response = await fetch(`/api/tasks/${task.id}/comments`, {
@@ -217,10 +226,13 @@ export function TaskEditPageClient({
       });
       if (!response.ok) throw new Error("Failed to post comment.");
       const newComment: ClientComment = await response.json();
-      setTask((prev) => ({
-        ...prev,
-        comments: [newComment, ...prev.comments],
-      }));
+      
+      // Optimistically update the task with the new comment
+      mutateTask({
+        ...task,
+        comments: [newComment, ...task.comments]
+      }, false);
+      
       setComment("");
     } catch (error) {
       toast.error("Comment Failed", { description: (error as Error).message });
@@ -233,11 +245,13 @@ export function TaskEditPageClient({
     newEntry: ClientTimeEntry,
     newTotalMinutes: number
   ) => {
-    setTask((prev) => ({
-      ...prev,
-      actualMinutes: newTotalMinutes,
-      timeEntries: [newEntry, ...prev.timeEntries],
-    }));
+    if (task) {
+      mutateTask({
+        ...task,
+        actualMinutes: newTotalMinutes,
+        timeEntries: [newEntry, ...task.timeEntries]
+      }, false);
+    }
   };
 
   const statusOrder = [
@@ -320,6 +334,53 @@ export function TaskEditPageClient({
     toast.success("Task name copied to clipboard");
   };
 
+  // Function to refresh the task data using SWR mutate
+  const refreshTask = (): void => {
+    mutateTask();
+  };
+
+  // Function to update task status using SWR mutate
+  const updateTaskStatus = async (newStatus: TaskStatus) => {
+    if (!task) return;
+    
+    // Optimistically update the UI
+    mutateTask({ ...task, status: newStatus }, false);
+    
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      if (!response.ok) throw new Error("Failed to update status");
+      
+      const updatedTask = await response.json();
+      mutateTask(updatedTask, false);
+      toast.success(`Status updated to ${formatStatus(newStatus)}`);
+    } catch (error) {
+      // Revert on error
+      mutateTask(task, false);
+      toast.error("Failed to update status", { description: (error as Error).message });
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="flex h-full items-center justify-center text-destructive">
+        Failed to load task data.
+      </div>
+    );
+  }
+
+  if (!task) {
+    return (
+      <div className="flex h-full items-center justify-center text-foreground">
+        Loading task...
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-full p-4 md:p-6 text-foreground bg-background">
       {/* Left Column: Main Content */}
@@ -392,23 +453,10 @@ export function TaskEditPageClient({
           <label className="text-xs font-medium text-muted-foreground">
             Status
           </label>
-          <Select
-            value={task.status}
-            onValueChange={(val) =>
-              handleTaskUpdate({ status: val as TaskStatus })
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {statusOrder.map((s) => (
-                <SelectItem key={s} value={s}>
-                  {formatStatus(s)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <StatusSelector 
+            task={task} 
+            onUpdate={refreshTask} 
+          />
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground">

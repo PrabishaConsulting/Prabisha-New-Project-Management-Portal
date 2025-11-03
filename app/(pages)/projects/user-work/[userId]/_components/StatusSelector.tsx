@@ -7,7 +7,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -17,6 +17,8 @@ import {
   ShieldCheck,
   Milestone,
   Loader2,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import {
   Dialog,
@@ -43,25 +45,29 @@ const getStatusDetails = (status: PrismaTask["status"]) => {
     case "IN_PROGRESS":
       return {
         text: "In Progress",
-        className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+        className:
+          "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
         icon: <CircleDotDashed className="h-4 w-4 text-blue-500" />,
       };
     case "DONE":
       return {
         text: "Completed",
-        className: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 hover:bg-green-500/20",
+        className:
+          "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20 hover:bg-green-500/20",
         icon: <ShieldCheck className="h-4 w-4 text-green-500" />,
       };
     case "TO_DO":
       return {
         text: "To Do",
-        className: "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20",
+        className:
+          "bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 border-yellow-500/20 hover:bg-yellow-500/20",
         icon: <Circle className="h-4 w-4 text-yellow-500" />,
       };
     case "REVIEW":
       return {
         text: "In Review",
-        className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20",
+        className:
+          "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20",
         icon: <Milestone className="h-4 w-4 text-purple-500" />,
       };
     default:
@@ -83,12 +89,19 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   const [isCommentDialogOpen, setIsCommentDialogOpen] = useState(false);
   const [comment, setComment] = useState("");
   const [actualTime, setActualTime] = useState<number>(0);
-  const [pendingStatus, setPendingStatus] = useState<PrismaTask["status"] | null>(null);
+  const [pendingStatus, setPendingStatus] = useState<
+    PrismaTask["status"] | null
+  >(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const { getTimerForTask } = useTaskTimer();
 
-  const statuses: PrismaTask["status"][] = ["TO_DO", "IN_PROGRESS", "REVIEW", "DONE"];
+  const statuses: PrismaTask["status"][] = [
+    "TO_DO",
+    "IN_PROGRESS",
+    "REVIEW",
+    "DONE",
+  ];
   const currentStatusDetails = getStatusDetails(task.status);
 
   const handleStatusChange = (newStatus: PrismaTask["status"]) => {
@@ -111,7 +124,7 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   ) => {
     setIsUpdating(true);
 
-    console.log(commentText , newStatus , actualTime , "debug" )
+    console.log(commentText, newStatus, actualTime, "debug");
     try {
       const response = await fetch(`/api/tasks/${task.id}/status`, {
         method: "PUT",
@@ -125,8 +138,8 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
 
       if (!response.ok) throw new Error("Failed to update status");
 
-      const data  = await response.json()
-      console.log(data , "debug finally done")
+      const data = await response.json();
+      console.log(data, "debug finally done");
 
       // Toast messages based on status
       if (newStatus === "IN_PROGRESS") {
@@ -135,7 +148,9 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
         });
       } else if (newStatus === "DONE") {
         toast.success("Task marked as Completed", {
-          description: `Logged ${timeSpent || 0} minute${timeSpent !== 1 ? "s" : ""}`,
+          description: `Logged ${timeSpent || 0} minute${
+            timeSpent !== 1 ? "s" : ""
+          }`,
         });
       } else {
         toast.success(`Status updated to ${newStatus.replace("_", " ")}`);
@@ -152,7 +167,11 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
 
   const handleCommentSubmit = () => {
     if (pendingStatus) {
-      updateTaskStatus(pendingStatus, comment, pendingStatus === "DONE" ? actualTime : undefined);
+      updateTaskStatus(
+        pendingStatus,
+        comment,
+        pendingStatus === "DONE" ? actualTime : undefined
+      );
       setIsCommentDialogOpen(false);
       setComment("");
       setPendingStatus(null);
@@ -168,66 +187,85 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
   return (
     <>
       {/* Status Dropdown */}
-      <DropdownMenu
-        open={isOpen}
-        onOpenChange={(open) => {
-          if (!isUpdating) setIsOpen(open);
-        }}
-      >
-        <DropdownMenuTrigger asChild>
-          <Badge
-            className={`${currentStatusDetails.className} cursor-pointer transition-all duration-200 hover:scale-105 active:scale-95 flex items-center gap-1.5 px-3 py-1 border`}
-          >
-            {isUpdating ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                <span className="text-xs font-medium">Updating...</span>
-              </>
-            ) : (
-              <>
-                {currentStatusDetails.icon}
-                <span className="text-xs font-medium">{currentStatusDetails.text}</span>
-              </>
-            )}
-          </Badge>
-        </DropdownMenuTrigger>
+    <DropdownMenu
+      open={isOpen}
+      onOpenChange={(open) => !isUpdating && setIsOpen(open)}
+    >
+      {/* --- Dropdown Trigger --- */}
+      <DropdownMenuTrigger asChild>
+        <Badge
+          className={`
+            ${currentStatusDetails.className}
+            cursor-pointer flex items-center gap-2 border px-3 py-1.5 rounded-md
+            transition-all duration-200
+            hover:scale-[1.03] active:scale-95
+          `}
+        >
+          {isUpdating ? (
+            <>
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <span className="text-xs font-medium">Updating...</span>
+            </>
+          ) : (
+            <>
+              <span>{currentStatusDetails.icon}</span>
+              <span className="text-xs font-medium">
+                {currentStatusDetails.text}
+              </span>
 
-        <AnimatePresence>
-          {isOpen && (
-            <DropdownMenuContent asChild forceMount align="start" className="w-48">
-              <motion.div
-                initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                transition={{ duration: 0.15, ease: "easeInOut" }}
-              >
-                {statuses.map((status, index) => {
-                  const details = getStatusDetails(status);
-                  const isActive = task.status === status;
-
-                  return (
-                    <Fragment key={status}>
-                      <DropdownMenuItem
-                        onClick={() => handleStatusChange(status)}
-                        className="flex items-center gap-2 cursor-pointer"
-                        disabled={isUpdating}
-                      >
-                        <div className="flex items-center gap-2 flex-1">
-                          {details.icon}
-                          <span className="text-sm">{details.text}</span>
-                        </div>
-                        {isActive && <Check className="h-4 w-4 text-primary" />}
-                      </DropdownMenuItem>
-
-                      {index < statuses.length - 1 && <DropdownMenuSeparator />}
-                    </Fragment>
-                  );
-                })}
-              </motion.div>
-            </DropdownMenuContent>
+              {/* Dropdown arrow indicator */}
+              {isOpen ? (
+                <ChevronUp className="h-3 w-3 text-muted-foreground ml-1" />
+              ) : (
+                <ChevronDown className="h-3 w-3 text-muted-foreground ml-1" />
+              )}
+            </>
           )}
-        </AnimatePresence>
-      </DropdownMenu>
+        </Badge>
+      </DropdownMenuTrigger>
+
+      {/* --- Dropdown Content --- */}
+      <AnimatePresence>
+        {isOpen && (
+          <DropdownMenuContent
+            asChild
+            align="start"
+            forceMount
+            className="w-48 rounded-md shadow-md border bg-popover p-1"
+          >
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              transition={{ duration: 0.15, ease: "easeInOut" }}
+            >
+              {statuses.map((status, index) => {
+                const details = getStatusDetails(status);
+                const isActive = task.status === status;
+
+                return (
+                  <Fragment key={status}>
+                    <DropdownMenuItem
+                      disabled={isUpdating}
+                      onClick={() => handleStatusChange(status)}
+                      className="flex items-center justify-between px-3 py-2 cursor-pointer rounded-sm hover:bg-accent/80 focus:bg-accent/80"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span>{details.icon}</span>
+                        <span className="text-sm">{details.text}</span>
+                      </div>
+                      {isActive && <Check className="h-4 w-4 text-primary" />}
+                    </DropdownMenuItem>
+
+                    {index < statuses.length - 1 && <DropdownMenuSeparator />}
+                  </Fragment>
+                );
+              })}
+            </motion.div>
+          </DropdownMenuContent>
+        )}
+      </AnimatePresence>
+    </DropdownMenu>
 
       {/* Comment Dialog */}
       <Dialog
@@ -265,7 +303,10 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
           {/* Actual Time field only if status = DONE */}
           {pendingStatus === "DONE" && (
             <div className="mt-4">
-              <Label htmlFor="actualTime" className="text-sm font-medium mb-2 block">
+              <Label
+                htmlFor="actualTime"
+                className="text-sm font-medium mb-2 block"
+              >
                 Actual Time (minutes)
               </Label>
               <input
@@ -279,13 +320,18 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Elapsed from timer:{" "}
-                {Math.round((getTimerForTask(task.id)?.totalElapsed || 0) / 60)} min
+                {Math.round((getTimerForTask(task.id)?.totalElapsed || 0) / 60)}{" "}
+                min
               </p>
             </div>
           )}
 
           <DialogFooter className="gap-2 mt-4">
-            <Button variant="outline" onClick={handleCommentCancel} disabled={isUpdating}>
+            <Button
+              variant="outline"
+              onClick={handleCommentCancel}
+              disabled={isUpdating}
+            >
               Cancel
             </Button>
             <Button

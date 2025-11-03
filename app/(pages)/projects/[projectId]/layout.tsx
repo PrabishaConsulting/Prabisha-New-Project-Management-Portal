@@ -34,7 +34,7 @@ export default async function ProjectLayout({
   const projectNavItems: Tab[] = [
     {
       label: 'List',
-      href: `/projects/${projectId}/list?workspaceId=${workspaceId}`,
+      href: `/projects/${projectId}/list?workspaceId=${workspaceId}&page=1`,
       icon: 'LayoutList',
     },
     {

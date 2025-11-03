@@ -15,6 +15,10 @@ import {
   LogOut,
   Search,
   Calendar,
+  Megaphone,
+  Star,
+  TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -44,9 +48,9 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Marquee } from "../ui/marquee";
 
-// Import SidebarTrigger component
-
+// Import Marquee component
 type UserMenuItem =
   | {
       type: "link";
@@ -90,13 +94,44 @@ const userMenuItems: UserMenuItem[] = [
   },
 ];
 
-export function Header({ session, className }: { session: any; className: string }) {
+// Announcement items for the marquee
+const announcements = [
+  {
+    icon: Megaphone,
+    text: "New feature: Task time tracking now available!",
+    color: "text-blue-600 dark:text-blue-400",
+  },
+  {
+    icon: Star,
+    text: "Welcome to the new dashboard experience",
+    color: "text-purple-600 dark:text-purple-400",
+  },
+  {
+    icon: TrendingUp,
+    text: "Team productivity increased by 25% this month",
+    color: "text-green-600 dark:text-green-400",
+  },
+  {
+    icon: Sparkles,
+    text: "Check out our new project templates",
+    color: "text-amber-600 dark:text-amber-400 ",
+  },
+];
+
+export function Header({
+  session,
+  className,
+}: {
+  session: any;
+  className: string;
+}) {
   const router = useRouter();
 
   const user = session?.user;
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [open, setOpen] = useState(false); // State for the command dialog
+  const [open, setOpen] = useState(false);
+  const [showMarquee, setShowMarquee] = useState(true); // Control marquee visibility
 
   useEffect(() => {
     setMounted(true);
@@ -123,107 +158,136 @@ export function Header({ session, className }: { session: any; className: string
 
   return (
     <>
-      <header className={`sticky top-0 left-0 right-0 flex items-center justify-between h-[4rem] px-4 md:px-6 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}>
-        {/* Left Section: Logo and App Name */}
-        <div className="flex items-center gap-4 overflow-hidden">
-          <Button
-            variant="outline"
-            className="w-md h-9 justify-between text-muted-foreground hover:text-foreground text-sm font-normal"
-            onClick={() => setOpen(true)}
-          >
-            <div className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Search...
-            </div>
-            <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
-              <span className="text-xs">⌘</span>K
-            </kbd>
-          </Button>
-        </div>
-        {/* Center Section: Search Trigger */}
-
-        {/* Right Section: Actions */}
-        <div className="flex items-center gap-4">
-          {/* Theme Toggle Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="rounded-full"
-          >
-            {mounted && theme === "dark" ? (
-              <Sun className="size-[18px]" />
-            ) : (
-              <Moon className="size-[18px]" />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          <WorldClockTooltip />
-          <NotificationPopover />
-          <FeedbackDialog>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5" />
-              <span className="hidden sm:inline">Help</span>
-            </Button>
-          </FeedbackDialog>
-          {/* User Avatar with Dropdown */}
-          <DropdownMenu >
-            <DropdownMenuTrigger asChild>
-              <Avatar className="h-9 w-9 cursor-pointer capitalize">
-                <AvatarImage
-                  src={user?.avatar || ""}
-                  alt={user?.name || "@user"}
-                />
-                <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 z-999">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <span className="font-medium truncate">{user?.name}</span>
-                  <span className="text-xs text-muted-foreground truncate">
-                    {user?.email}
-                  </span>
-                </div>
-              </DropdownMenuLabel>
-              <Separator />
-              {userMenuItems.map((item, index) => {
-                if (item.type === "separator") {
-                  return <DropdownMenuSeparator key={`separator-${index}`} />;
-                }
-                if (item.type === "button") {
-                  return (
-                    <DropdownMenuItem
-                      key={item.label}
-                      onClick={item.onClick}
-                      className={
-                        item.isDestructive
-                          ? "text-destructive focus:text-destructive cursor-pointer"
-                          : "cursor-pointer"
-                      }
+      <header
+        className={`sticky top-0 left-0 right-0 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}
+      >
+        {/* Marquee Announcement Bar */}
+        {/* Marquee Announcement Bar */}
+        {showMarquee && (
+          <div className="relative flex w-full items-center justify-center overflow-hidden border-b border-border/50 bg-muted/40 dark:bg-muted/10">
+            <Marquee pauseOnHover className="[--duration:22s] py-2">
+              {announcements.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 px-6">
+                  <div className="flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 shadow-sm ring-1 ring-border backdrop-blur-md">
+                    <item.icon className={`h-4 w-4 ${item.color}`} />
+                    <span
+                      className={`text-sm font-medium tracking-tight ${item.color}`}
                     >
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {item.label}
-                    </DropdownMenuItem>
-                  );
-                }
-                if (item.type === "link") {
-                  return (
-                    <DropdownMenuItem key={item.label} asChild>
-                      <Link
-                        href={item.href(user.id)}
-                        className="flex items-center cursor-pointer"
+                      {item.text}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </Marquee>
+
+            {/* fade edges for smooth entry/exit */}
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-1/6 bg-gradient-to-r from-background to-transparent"></div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-1/6 bg-gradient-to-l from-background to-transparent"></div>
+          </div>
+        )}
+
+        {/* Main Header Content */}
+        <div className="flex items-center justify-between h-[4rem] px-4 md:px-6">
+          {/* Left Section: Search Button */}
+          <div className="flex items-center gap-4 overflow-hidden">
+            <Button
+              variant="outline"
+              className="w-md h-9 justify-between text-muted-foreground hover:text-foreground text-sm font-normal"
+              onClick={() => setOpen(true)}
+            >
+              <div className="flex items-center gap-2">
+                <Search className="h-4 w-4" />
+                Search...
+              </div>
+              <kbd className="pointer-events-none hidden h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium opacity-100 sm:flex">
+                <span className="text-xs">⌘</span>K
+              </kbd>
+            </Button>
+          </div>
+
+          {/* Right Section: Actions */}
+          <div className="flex items-center gap-4">
+            {/* Theme Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="rounded-full"
+            >
+              {mounted && theme === "dark" ? (
+                <Sun className="size-[18px]" />
+              ) : (
+                <Moon className="size-[18px]" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+            <WorldClockTooltip />
+            <NotificationPopover />
+            <FeedbackDialog>
+              <Button variant="ghost" className="flex items-center gap-2">
+                <HelpCircle className="h-5 w-5" />
+                <span className="hidden sm:inline">Help</span>
+              </Button>
+            </FeedbackDialog>
+            {/* User Avatar with Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="h-9 w-9 cursor-pointer capitalize">
+                  <AvatarImage
+                    src={user?.avatar || ""}
+                    alt={user?.name || "@user"}
+                  />
+                  <AvatarFallback>{user?.name?.[0] ?? "U"}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 z-999">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <span className="font-medium truncate">{user?.name}</span>
+                    <span className="text-xs text-muted-foreground truncate">
+                      {user?.email}
+                    </span>
+                  </div>
+                </DropdownMenuLabel>
+                <Separator />
+                {userMenuItems.map((item, index) => {
+                  if (item.type === "separator") {
+                    return <DropdownMenuSeparator key={`separator-${index}`} />;
+                  }
+                  if (item.type === "button") {
+                    return (
+                      <DropdownMenuItem
+                        key={item.label}
+                        onClick={item.onClick}
+                        className={
+                          item.isDestructive
+                            ? "text-destructive focus:text-destructive cursor-pointer"
+                            : "cursor-pointer"
+                        }
                       >
                         <item.icon className="mr-2 h-4 w-4" />
                         {item.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                }
-                return null;
-              })}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                      </DropdownMenuItem>
+                    );
+                  }
+                  if (item.type === "link") {
+                    return (
+                      <DropdownMenuItem key={item.label} asChild>
+                        <Link
+                          href={item.href(user.id)}
+                          className="flex items-center cursor-pointer"
+                        >
+                          <item.icon className="mr-2 h-4 w-4" />
+                          {item.label}
+                        </Link>
+                      </DropdownMenuItem>
+                    );
+                  }
+                  return null;
+                })}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </header>
 
@@ -233,11 +297,10 @@ export function Header({ session, className }: { session: any; className: string
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Suggestions">
-            {/* 3. Use onSelect for navigation */}
             <CommandItem
               onSelect={() => {
                 router.push(`/projects/user-work/${user.id}`);
-                setOpen(false); // Closes the dialog after navigating
+                setOpen(false);
               }}
             >
               <Calendar className="mr-2 h-4 w-4" />
@@ -246,7 +309,7 @@ export function Header({ session, className }: { session: any; className: string
 
             <CommandItem
               onSelect={() => {
-                router.push(`/account/${user.id}`); // Example link
+                router.push(`/account/${user.id}`);
                 setOpen(false);
               }}
             >
@@ -256,7 +319,7 @@ export function Header({ session, className }: { session: any; className: string
 
             <CommandItem
               onSelect={() => {
-                router.push(`/account/${user.id}/settings`); // Example link
+                router.push(`/account/${user.id}/settings`);
                 setOpen(false);
               }}
             >

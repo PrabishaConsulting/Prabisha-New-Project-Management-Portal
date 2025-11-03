@@ -1,29 +1,27 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@/lib/db";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   try {
-    // --- FIX: Await the params object before accessing its properties ---
     const { projectId } = await params;
 
-    // It's good practice to ensure the projectId was resolved.
     if (!projectId) {
-        return new NextResponse("Project ID is missing in request.", { status: 400 });
+      return new NextResponse("Project ID is missing in request.", { status: 400 });
     }
 
-    const projectData = await db.project.findUnique({
+    // ✅ Extract pagination params from query
+    const { searchParams } = new URL(request.url);
+    const page = Number(searchParams.get("page")) || 1;
+    const limit = Number(searchParams.get("limit")) || 10;
+    const skip = (page - 1) * limit;
+
+    // ✅ Fetch project (excluding tasks)
+    const project = await db.project.findUnique({
       where: { id: projectId },
       include: {
-        // We fetch tasks directly now, not nested under columns
-        tasks: {
-          orderBy: { position: 'asc' },
-          include: {
-            assignee: { select: { id: true, name: true, avatar: true } },
-          },
-        },
         members: {
           include: {
             user: { select: { id: true, name: true, avatar: true } },
@@ -32,13 +30,40 @@ export async function GET(
       },
     });
 
-    if (!projectData) {
-      return new NextResponse('Project not found', { status: 404 });
+    if (!project) {
+      return new NextResponse("Project not found", { status: 404 });
     }
 
-    return NextResponse.json(projectData);
+    // ✅ Fetch paginated tasks separately
+    const [tasks, totalTasks] = await Promise.all([
+      db.task.findMany({
+        where: { projectId },
+        orderBy: { position: "asc" },
+        skip,
+        take: limit,
+        include: {
+          assignee: { select: { id: true, name: true, avatar: true } },
+        },
+      }),
+      db.task.count({ where: { projectId } }),
+    ]);
+
+    const totalPages = Math.ceil(totalTasks / limit);
+
+    return NextResponse.json({
+      project,
+      tasks,
+      pagination: {
+        page,
+        limit,
+        totalTasks,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1,
+      },
+    });
   } catch (error) {
-    console.error('[BOARD_DATA_GET]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error("[BOARD_DATA_GET_PAGINATED]", error);
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import {
   canUserAccessTask,
   updateTaskStatus,
 } from "@/services/task-service/task-update.service";
+import { revalidatePath, revalidateTag } from "next/cache";
 
 // PUT /api/tasks/[taskId]/status
 export async function PUT(
@@ -47,8 +48,6 @@ export async function PUT(
     // Extract validated data
     const { status, comment, actualTime } = validation.data;
 
-    console.log(status, comment , actualTime ,"debug value ")
-
     // 4. Core Logic
     // Pass actualTime to the service (only if status is DONE)
     const result = await updateTaskStatus(
@@ -59,11 +58,14 @@ export async function PUT(
       status === "DONE" ? actualTime : 0
     );
 
-    console.log(result , "debug done")
-
     if (result.error) {
       return NextResponse.json({ message: result.error }, { status: 404 });
     }
+    revalidatePath(`/projects/${authCheck.projectId}/list`);
+    revalidatePath(`/projects/${authCheck.projectId}/task/${taskId}`);
+    
+    revalidateTag("tasks", { expire: 0 });
+    revalidateTag(`task-${taskId}`, { expire: 0 });
 
     // 5. Success Response
     return NextResponse.json(result.task, { status: 200 });

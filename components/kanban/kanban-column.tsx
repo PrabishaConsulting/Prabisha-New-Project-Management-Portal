@@ -14,7 +14,6 @@ import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { type Department } from "@/app/generated/client";
 
-
 type TaskWithAssignee = Task & {
   assignee: { id: string; name: string | null; avatar: string | null } | null;
 };
@@ -26,6 +25,7 @@ interface KanbanColumnProps {
     status: Task["status"];
   };
   tasks: TaskWithAssignee[];
+  taskCount?: number; // ✅ total count from backend
   projectId: string;
   currentUserId: string;
   members: MemberWithUser[];
@@ -36,6 +36,7 @@ interface KanbanColumnProps {
 export function KanbanColumn({
   column,
   tasks,
+  taskCount = 0,
   projectId,
   currentUserId,
   members,
@@ -51,12 +52,16 @@ export function KanbanColumn({
 
   return (
     <div className="flex flex-col h-full md:w-full">
+      {/* --- Column Header --- */}
       <div className="flex items-center gap-2 mb-3 px-2 flex-shrink-0">
-        <h2 className="font-semibold text-foreground">{column.title}</h2>
+        <h2 className="font-semibold text-foreground capitalize">{column.title}</h2>
         <span className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-          {tasks.length}
+          {/* ✅ Show total task count instead of current page tasks */}
+          {taskCount ?? tasks.length}
         </span>
       </div>
+
+      {/* --- Add Task Button --- */}
       <div className="p-2 border-t border-border/50 flex-shrink-0">
         <NewTaskDialog
           projectId={projectId}
@@ -74,6 +79,8 @@ export function KanbanColumn({
           </Button>
         </NewTaskDialog>
       </div>
+
+      {/* --- Task List --- */}
       <div
         ref={setNodeRef}
         className={cn(
@@ -82,15 +89,13 @@ export function KanbanColumn({
         )}
       >
         <div className="flex-1 p-2 overflow-y-auto space-y-2 scrollbar-thin scrollbar-thumb-muted-foreground/50 scrollbar-track-transparent">
-          <SortableContext
-            items={taskIds}
-            strategy={verticalListSortingStrategy}
-          >
+          <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
             {tasks.map((task) => (
               <SortableTaskCard key={task.id} task={task} />
             ))}
           </SortableContext>
 
+          {/* Empty State */}
           {tasks.length === 0 && !isOver && (
             <div className="h-32 border-2 border-dashed border-border rounded-lg flex items-center justify-center">
               <p className="text-muted-foreground text-sm">Drop tasks here</p>

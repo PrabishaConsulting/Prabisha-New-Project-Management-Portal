@@ -1,12 +1,12 @@
-// components/ProjectBoard.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import {
   type Task,
   type ProjectMember,
   type User,
   type Project,
+  type Department,
   TaskStatus,
 } from "@/app/generated/client";
 import {
@@ -24,15 +24,22 @@ import { arrayMove } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
 import { KanbanColumn } from "./kanban-column";
 import { SortableTaskCard } from "./sortable-task-card";
-import { ProjectTable } from "./project-table";
-import { Button } from "@/components/ui/button";
-// ✨ 1. ADD NEW IMPORTS
-import { LayoutGrid, List, CalendarDays } from "lucide-react";
-import { differenceInDays, isPast, isToday } from "date-fns";
-import { type Department } from "@/app/generated/client";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ProjectContext } from "@/context/project-context";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
+import { useTaskTimer } from "@/hooks/useTaskTimer";
+import useSWRInfinite from "swr/infinite";
 
 const BOARD_COLUMNS = [
   { title: "To Do", status: TaskStatus.TO_DO },
@@ -45,55 +52,97 @@ type TaskWithAssignee = Task & {
   assignee: { id: string; name: string | null; avatar: string | null } | null;
 };
 type MemberWithUser = ProjectMember & { user: User };
-// ✨ Make sure the `dueDate` property is available on your BoardData type
-type BoardData = Project & {
+
+interface BoardData {
+  project: Project & {
+    members: MemberWithUser[];
+  };
   tasks: TaskWithAssignee[];
-  members: MemberWithUser[];
-};
+  taskCounts: Record<string, number>;
+  pagination: {
+    page: number;
+    limit: number;
+    totalTasks: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  };
+}
 
 interface ProjectBoardProps {
   projectId: string;
   currentUserId: string;
   departments: Department[];
-  
 }
+
+// SWR fetcher function
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 export default function ProjectBoard({
   projectId,
   currentUserId,
   departments,
 }: ProjectBoardProps) {
-  const [boardData, setBoardData] = useState<BoardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // SWR Infinite hook for paginated data
+  const { data, error, size, setSize, isValidating, mutate } = useSWRInfinite<BoardData>(
+    (pageIndex) => `/api/projects/${projectId}/board?page=${pageIndex + 1}&limit=20`,
+    fetcher,
+    {
+      revalidateFirstPage: false,
+    }
+  );
+
+  // Extract data from SWR
+  const boardData = data ? data[0] : null;
+  const tasks = data ? data.flatMap(page => page.tasks) : [];
+  const taskCounts = data ? data[0]?.taskCounts : {};
+  const isLoadingInitialData = !data && !error;
+  const isLoadingMore = isValidating && data && data.length === size;
+  const isEmpty = data?.[0]?.tasks.length === 0;
+  const isReachingEnd = data && data[data.length - 1]?.pagination.hasNextPage === false;
+
+  // State for drag and drop
   const [activeTask, setActiveTask] = useState<TaskWithAssignee | null>(null);
-  const [viewMode, setViewMode] = useState<"board" | "table">("board");
   const [originalTaskPosition, setOriginalTaskPosition] = useState<{
     status: TaskStatus;
     index: number;
   } | null>(null);
 
-  const fetchBoardData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/projects/${projectId}/board-data`);
-      if (!response.ok) throw new Error("Failed to fetch board data");
-      const data: BoardData = await response.json();
-      setBoardData(data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load project board.");
-      setBoardData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Dialog state
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [pendingStatusChange, setPendingStatusChange] = useState<{
+    taskId: string;
+    oldStatus: TaskStatus;
+    newStatus: TaskStatus;
+    tasksToUpdate: Array<{ id: string; status: TaskStatus; position: number }>;
+  } | null>(null);
+  const [statusComment, setStatusComment] = useState("");
+  const [actualTime, setActualTime] = useState<number>(0);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
 
+  // Observer ref for infinite scroll
+  const observerRef = useRef<HTMLDivElement | null>(null);
+
+  const { getTimerForTask } = useTaskTimer();
+
+  // Set up intersection observer for infinite scroll
   useEffect(() => {
-    if (projectId) fetchBoardData();
-  }, [projectId]);
+    if (!observerRef.current || isReachingEnd || isLoadingMore) return;
+    
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setSize(prevSize => prevSize + 1);
+      }
+    }, { threshold: 0.1 });
+    
+    if (observerRef.current) observer.observe(observerRef.current);
+    
+    return () => {
+      if (observerRef.current) observer.unobserve(observerRef.current);
+    };
+  }, [isReachingEnd, isLoadingMore, setSize]);
 
-
-
+  // Group tasks by status
   const tasksByStatus = useMemo(() => {
     const initial: Record<TaskStatus, TaskWithAssignee[]> = {
       TO_DO: [],
@@ -101,15 +150,12 @@ export default function ProjectBoard({
       REVIEW: [],
       DONE: [],
     };
-    if (!boardData) return initial;
-
-    return boardData.tasks.reduce((acc, task) => {
-      if (task.status) {
-        (acc[task.status] = acc[task.status] || []).push(task);
-      }
+    
+    return tasks.reduce((acc, task) => {
+      (acc[task.status] = acc[task.status] || []).push(task);
       return acc;
     }, initial);
-  }, [boardData]);
+  }, [tasks]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -118,67 +164,37 @@ export default function ProjectBoard({
   );
 
   const contextValue = useMemo(() => {
-    if (!boardData) {
-      return null;
-    }
+    if (!boardData) return null;
     return {
-      workspaceId: boardData.workspaceId, // We know this is a string here
+      workspaceId: boardData.project.workspaceId,
       projectId,
     };
-  }, [boardData, projectId]); // Dependency is now the whole boardData object
+  }, [boardData, projectId]);
 
   const handleTaskCreated = (newTask: TaskWithAssignee) => {
-    setBoardData((prev) => {
-      if (!prev) return null;
-      const updatedTasks = [newTask, ...prev.tasks];
-      return { ...prev, tasks: updatedTasks };
-    });
-    toast.success("Task created successfully!");
-  };
-
-  const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
-    if (!boardData) return;
-    const previousBoardData = { ...boardData };
-    setBoardData((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        tasks: prev.tasks.map((t) =>
-          t.id === taskId ? { ...t, ...updates } : t
-        ),
+    // Optimistically update the UI
+    mutate(data => {
+      if (!data) return data;
+      const updatedFirstPage = {
+        ...data[0],
+        tasks: [newTask, ...data[0].tasks],
+        taskCounts: {
+          ...data[0].taskCounts,
+          [newTask.status]: (data[0].taskCounts[newTask.status] || 0) + 1
+        }
       };
-    });
-
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update task");
-      }
-      toast.success("Task updated successfully!");
-      fetchBoardData();
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred during update.");
-      }
-      setBoardData(previousBoardData);
-    }
+      return [updatedFirstPage, ...data.slice(1)];
+    }, false);
+    
+    toast.success("Task created successfully!");
   };
 
   function handleDragStart(event: DragStartEvent) {
     if (event.active.data.current?.type === "Task") {
       const task = event.active.data.current.task as TaskWithAssignee;
       setActiveTask(task);
-
       const status = task.status;
-      const index =
-        tasksByStatus[status]?.findIndex((t) => t.id === task.id) ?? -1;
+      const index = tasksByStatus[status]?.findIndex((t) => t.id === task.id) ?? -1;
       if (index !== -1) {
         setOriginalTaskPosition({ status, index });
       }
@@ -188,15 +204,34 @@ export default function ProjectBoard({
   function handleDragOver(event: DragOverEvent) {
     const { active, over } = event;
     if (!over || !over.data.current || active.id === over.id) return;
-
     const isActiveATask = active.data.current?.type === "Task";
     if (!isActiveATask) return;
 
-    setBoardData((board) => {
-      if (!board) return null;
+    mutate(data => {
+      if (!data) return data;
+      
+      // Create a deep copy of the data
+      const newData = data.map(page => ({
+        ...page,
+        tasks: [...page.tasks]
+      }));
 
-      const activeTaskIndex = board.tasks.findIndex((t) => t.id === active.id);
-      if (activeTaskIndex === -1) return board;
+      // Find the active task in the pages
+      let activeTask: TaskWithAssignee | null = null;
+      let activePageIndex = -1;
+      let activeTaskIndex = -1;
+
+      for (let i = 0; i < newData.length; i++) {
+        const taskIndex = newData[i].tasks.findIndex(t => t.id === active.id);
+        if (taskIndex !== -1) {
+          activeTask = newData[i].tasks[taskIndex];
+          activePageIndex = i;
+          activeTaskIndex = taskIndex;
+          break;
+        }
+      }
+
+      if (!activeTask) return data;
 
       let overStatus: TaskStatus;
       const isOverAColumn = over.data.current?.type === "Column";
@@ -207,62 +242,68 @@ export default function ProjectBoard({
       } else if (isOverATask && over.data.current?.task) {
         overStatus = over.data.current.task.status;
       } else {
-        return board;
+        return data;
       }
 
-      const activeTask = board.tasks[activeTaskIndex];
-
+      // If dragging over a different column, update the task's status
       if (activeTask.status !== overStatus) {
-        const newTasks = [...board.tasks];
-        newTasks[activeTaskIndex] = {
-          ...newTasks[activeTaskIndex],
-          status: overStatus,
+        newData[activePageIndex].tasks[activeTaskIndex] = {
+          ...activeTask,
+          status: overStatus
         };
-        return { ...board, tasks: newTasks };
-      }
+      } 
+      // If dragging over a task in the same column, reorder
+      else if (isOverATask) {
+        const overTaskId = over.id;
+        let overPageIndex = -1;
+        let overTaskIndex = -1;
 
-      if (isOverATask) {
-        const overTaskIndex = board.tasks.findIndex((t) => t.id === over.id);
-        if (
-          activeTaskIndex !== overTaskIndex &&
-          board.tasks[activeTaskIndex].status ===
-            board.tasks[overTaskIndex].status
-        ) {
+        for (let i = 0; i < newData.length; i++) {
+          const index = newData[i].tasks.findIndex(t => t.id === overTaskId);
+          if (index !== -1) {
+            overPageIndex = i;
+            overTaskIndex = index;
+            break;
+          }
+        }
+
+        if (overPageIndex === -1 || overTaskIndex === -1) return data;
+
+        // If the active task and over task are in the same page, reorder within the page
+        if (activePageIndex === overPageIndex) {
           const reorderedTasks = arrayMove(
-            board.tasks,
+            newData[activePageIndex].tasks,
             activeTaskIndex,
             overTaskIndex
           );
-          return { ...board, tasks: reorderedTasks };
+          newData[activePageIndex].tasks = reorderedTasks;
         }
       }
 
-      return board;
-    });
+      return newData;
+    }, false);
   }
 
   async function handleDragEnd(event: DragEndEvent) {
     setActiveTask(null);
-
     const { active, over } = event;
     if (!over || !originalTaskPosition || !boardData) {
       setOriginalTaskPosition(null);
       return;
     }
 
-    const finalTasksState = boardData.tasks;
-    const movedTask = finalTasksState.find((t) => t.id === active.id);
-
+    const allTasks = tasks;
+    const movedTask = allTasks.find((t) => t.id === active.id);
     if (!movedTask) {
       setOriginalTaskPosition(null);
       return;
     }
 
     const finalStatus = movedTask.status;
-    const tasksInFinalColumn = finalTasksState.filter(
-      (t) => t.status === finalStatus
-    );
+    const tasksInFinalColumn = allTasks.filter((t) => t.status === finalStatus);
     const finalIndex = tasksInFinalColumn.findIndex((t) => t.id === active.id);
+
+    const statusChanged = originalTaskPosition.status !== finalStatus;
 
     if (
       originalTaskPosition.status === finalStatus &&
@@ -272,35 +313,51 @@ export default function ProjectBoard({
       return;
     }
 
-    setOriginalTaskPosition(null);
-
     const tasksToUpdate = tasksInFinalColumn.map((task, index) => ({
       id: task.id,
       status: task.status,
       position: index,
     }));
 
+    if (statusChanged) {
+      const timer = getTimerForTask(movedTask.id);
+      const elapsedMinutes = timer ? Math.round(timer.totalElapsed / 60) : 0;
+      setActualTime(elapsedMinutes);
+
+      setPendingStatusChange({
+        taskId: movedTask.id,
+        oldStatus: originalTaskPosition.status,
+        newStatus: finalStatus,
+        tasksToUpdate,
+      });
+      setIsStatusDialogOpen(true);
+      setOriginalTaskPosition(null);
+      return;
+    }
+
+    setOriginalTaskPosition(null);
+    await updateTaskOrder(tasksToUpdate, finalStatus);
+  }
+
+  const updateTaskOrder = async (
+    tasksToUpdate: Array<{ id: string; status: TaskStatus; position: number }>,
+    column: TaskStatus
+  ) => {
     try {
       if (tasksToUpdate.length > 0) {
         const response = await fetch("/api/tasks/update-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            tasks: tasksToUpdate,
-            column: finalStatus,
-            projectId: projectId,
-          }),
+          body: JSON.stringify({ tasks: tasksToUpdate, column, projectId }),
         });
 
         if (!response.ok) {
           const errorData = await response.json();
-          const error = new Error(
-            errorData.error || "An unknown error occurred."
-          );
-          throw error;
+          throw new Error(errorData.error || "An unknown error occurred.");
         }
-
-        const result = await response.json();
+        
+        // Refetch data after successful update
+        mutate();
       }
     } catch (error) {
       toast.error(
@@ -308,107 +365,202 @@ export default function ProjectBoard({
           ? error.message
           : "Could not save task arrangement."
       );
-      fetchBoardData();
+      mutate();
     }
-  }
+  };
 
-  if (isLoading) {
+  const handleStatusChangeConfirm = async () => {
+    if (!pendingStatusChange || !statusComment.trim()) return;
+    setIsUpdatingStatus(true);
+
+    try {
+      const statusResponse = await fetch(
+        `/api/tasks/${pendingStatusChange.taskId}/status`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            status: pendingStatusChange.newStatus,
+            comment: statusComment,
+            actualTime:
+              pendingStatusChange.newStatus === TaskStatus.DONE
+                ? actualTime
+                : undefined,
+          }),
+        }
+      );
+
+      if (!statusResponse.ok) throw new Error("Failed to update status");
+      await updateTaskOrder(
+        pendingStatusChange.tasksToUpdate,
+        pendingStatusChange.newStatus
+      );
+
+      toast.success(`Status updated to ${pendingStatusChange.newStatus}`);
+      mutate();
+
+      setIsStatusDialogOpen(false);
+      setStatusComment("");
+      setActualTime(0);
+      setPendingStatusChange(null);
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update status");
+      mutate();
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleStatusChangeCancel = () => {
+    setIsStatusDialogOpen(false);
+    setStatusComment("");
+    setActualTime(0);
+    setPendingStatusChange(null);
+    mutate();
+  };
+
+  if (isLoadingInitialData) {
     return (
       <div className="flex h-full items-center justify-center text-foreground">
         Loading Board...
       </div>
     );
   }
-  if (!boardData) {
+  
+  if (error) {
     return (
       <div className="flex h-full items-center justify-center text-destructive">
         Failed to load project data.
       </div>
     );
   }
+  
+  if (!boardData) {
+    return (
+      <div className="flex h-full items-center justify-center text-destructive">
+        No project data available.
+      </div>
+    );
+  }
 
   return (
     <ProjectContext.Provider value={contextValue}>
-      <div className=" h-full flex flex-col bg-background text-foreground">
-        {/* ✨ 3. UPDATE THE HEADER TO DISPLAY THE STATUS */}
-        {/* <header className="flex items-center justify-between mb-4 pb-2 border-b"> */}
-          {/* <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
-            {/* {getDueDateStatus()} */}
-          {/* </div> */}
-          {/* <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode("board")}
-              className={cn(
-                "flex items-center gap-2 px-3",
-                viewMode === "board"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Board
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "flex items-center gap-2 px-3",
-                viewMode === "table"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
-              )}
-            >
-              <List className="h-4 w-4" />
-              Table
-            </Button>
-          </div> */}
-        {/* </header> */}
-
-        {viewMode === "board" ? (
-          <DndContext
-            sensors={sensors}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-            collisionDetection={closestCorners}
-          >
-            <main className="flex-1 flex gap-6 p-4 overflow-x-auto">
-              {BOARD_COLUMNS.map((col) => (
-                <KanbanColumn
-                  key={col.status}
-                  column={col}
-                  tasks={tasksByStatus[col.status] || []}
-                  projectId={projectId}
-                  currentUserId={currentUserId}
-                  members={boardData.members}
-                  onTaskCreated={handleTaskCreated}
-                  departments={departments}
-                />
-              ))}
-            </main>
-            {createPortal(
-              <DragOverlay>
-                {activeTask ? (
-                  <div className="shadow-2xl rounded-lg transform scale-105">
-                    <SortableTaskCard task={activeTask} isOverlay />
-                  </div>
-                ) : null}
-              </DragOverlay>,
-              document.body
-            )}
-          </DndContext>
-        ) : (
-          <main className="flex-1 overflow-y-auto">
-            <ProjectTable
-              tasks={boardData.tasks}
-              onTaskUpdate={handleTaskUpdate}
-            />
+      <div className="h-full flex flex-col bg-background text-foreground">
+        <DndContext
+          sensors={sensors}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragOver={handleDragOver}
+          collisionDetection={closestCorners}
+        >
+          <main className="flex-1 flex gap-6 p-4 overflow-x-auto">
+            {BOARD_COLUMNS.map((col) => (
+              <KanbanColumn
+                key={col.status}
+                column={col}
+                tasks={tasksByStatus[col.status] || []}
+                taskCount={taskCounts[col.status] || 0}
+                projectId={projectId}
+                currentUserId={currentUserId}
+                members={boardData.project.members}
+                onTaskCreated={handleTaskCreated}
+                departments={departments}
+              />
+            ))}
           </main>
-        )}
+
+          <div ref={observerRef} className="h-10" />
+          {isLoadingMore && (
+            <div className="flex justify-center py-4 text-sm text-muted-foreground">
+              Loading more tasks...
+            </div>
+          )}
+          {isReachingEnd && (
+            <div className="flex justify-center py-4 text-sm text-muted-foreground">
+              No more tasks to load
+            </div>
+          )}
+
+          {createPortal(
+            <DragOverlay>
+              {activeTask ? (
+                <div className="shadow-2xl rounded-lg transform scale-105">
+                  <SortableTaskCard task={activeTask} isOverlay />
+                </div>
+              ) : null}
+            </DragOverlay>,
+            document.body
+          )}
+        </DndContext>
+
+        {/* Status Change Comment Dialog */}
+        <Dialog
+          open={isStatusDialogOpen}
+          onOpenChange={(open) => {
+            if (!isUpdatingStatus && !open) handleStatusChangeCancel();
+          }}
+        >
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Update Task Status</DialogTitle>
+              <DialogDescription>
+                Please add a comment about this status change.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <Label htmlFor="statusComment">Comment *</Label>
+              <Textarea
+                id="statusComment"
+                value={statusComment}
+                onChange={(e) => setStatusComment(e.target.value)}
+                className="min-h-[120px]"
+                placeholder="Describe the change or completion details..."
+                disabled={isUpdatingStatus}
+                autoFocus
+              />
+            </div>
+
+            {pendingStatusChange?.newStatus === TaskStatus.DONE && (
+              <div className="mt-4">
+                <Label htmlFor="actualTime">Actual Time (minutes)</Label>
+                <input
+                  type="number"
+                  id="actualTime"
+                  value={actualTime}
+                  onChange={(e) => setActualTime(Number(e.target.value))}
+                  className="w-full border border-input rounded-md px-3 py-2 text-sm"
+                  min={0}
+                  disabled={isUpdatingStatus}
+                />
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={handleStatusChangeCancel}
+                disabled={isUpdatingStatus}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleStatusChangeConfirm}
+                disabled={!statusComment.trim() || isUpdatingStatus}
+              >
+                {isUpdatingStatus ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save"
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProjectContext.Provider>
   );

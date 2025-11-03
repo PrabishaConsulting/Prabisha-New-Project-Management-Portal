@@ -1,26 +1,37 @@
-// components/ProjectBoard.tsx
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import useSWR from "swr";
+import { useMemo, useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { ProjectTable } from "@/components/kanban/project-table";
+import { ProjectContext } from "@/context/project-context";
 import {
   type Task,
   type ProjectMember,
   type User,
   type Project,
 } from "@/app/generated/client";
-import { ProjectTable } from "@/components/kanban/project-table";
-import { toast } from "sonner";
-import { ProjectContext } from "@/context/project-context";
-
 
 type TaskWithAssignee = Task & {
   assignee: { id: string; name: string | null; avatar: string | null } | null;
 };
+
 type MemberWithUser = ProjectMember & { user: User };
-// ✨ Make sure the `dueDate` property is available on your BoardData type
-type BoardData = Project & {
+
+interface PaginationMeta {
+  page: number;
+  limit: number;
+  totalTasks: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
+type BoardData = {
+  project: Project & { members: MemberWithUser[] };
   tasks: TaskWithAssignee[];
-  members: MemberWithUser[];
+  pagination: PaginationMeta;
 };
 
 interface ProjectBoardProps {
@@ -28,101 +39,56 @@ interface ProjectBoardProps {
   currentUserId: string;
 }
 
-export default function ProjectList({
-  projectId,
-  currentUserId,
-}: ProjectBoardProps) {
-  const [boardData, setBoardData] = useState<BoardData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// ---- SWR Fetcher ----
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch project board data");
+  return res.json();
+};
 
+export default function ProjectList({ projectId, currentUserId }: ProjectBoardProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const fetchBoardData = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/projects/${projectId}/board-data`);
-      if (!response.ok) throw new Error("Failed to fetch board data");
-      const data: BoardData = await response.json();
-      setBoardData(data);
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to load project board.");
-      setBoardData(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Read `page` from URL
+  const initialPage = Number(searchParams.get("page")) || 1;
+  const [page, setPage] = useState(initialPage);
+  const limit = 10; // can make dynamic later
 
+  // Update URL when page changes
   useEffect(() => {
-    if (projectId) fetchBoardData();
-  }, [projectId]);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    router.replace(`?${params.toString()}`);
+  }, [page]);
 
-  // ✨ 2. ADD DUE DATE STATUS FUNCTION
-
+  const {
+    data: boardData,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<BoardData>(
+    projectId ? `/api/projects/${projectId}/board-data?page=${page}&limit=${limit}` : null,
+    fetcher
+  );
 
   const contextValue = useMemo(() => {
-    if (!boardData) {
-      return null;
-    }
+    if (!boardData?.project) return null;
     return {
-      workspaceId: boardData.workspaceId, // We know this is a string here
+      workspaceId: boardData.project.workspaceId,
       projectId,
     };
-  }, [boardData, projectId]); // Dependency is now the whole boardData object
-
-//   const handleTaskCreated = (newTask: TaskWithAssignee) => {
-//     setBoardData((prev) => {
-//       if (!prev) return null;
-//       const updatedTasks = [newTask, ...prev.tasks];
-//       return { ...prev, tasks: updatedTasks };
-//     });
-//     toast.success("Task created successfully!");
-//   };
-
-  const handleTaskUpdate = async (taskId: string, updates: Partial<Task>) => {
-    if (!boardData) return;
-    const previousBoardData = { ...boardData };
-    setBoardData((prev) => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        tasks: prev.tasks.map((t) =>
-          t.id === taskId ? { ...t, ...updates } : t
-        ),
-      };
-    });
-
-    try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to update task");
-      }
-      toast.success("Task updated successfully!");
-      fetchBoardData();
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred during update.");
-      }
-      setBoardData(previousBoardData);
-    }
-  };
-
- 
+  }, [boardData, projectId]);
 
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center text-foreground">
-        Loading List...
+        Loading project board...
       </div>
     );
   }
-  if (!boardData) {
+
+  if (error || !boardData) {
     return (
       <div className="flex h-full items-center justify-center text-destructive">
         Failed to load project data.
@@ -130,54 +96,28 @@ export default function ProjectList({
     );
   }
 
+  const { tasks, pagination } = boardData;
+
+  const handleNext = () => {
+    if (pagination.hasNextPage) setPage((prev) => prev + 1);
+  };
+
+  const handlePrev = () => {
+    if (pagination.hasPrevPage) setPage((prev) => prev - 1);
+  };
+
   return (
     <ProjectContext.Provider value={contextValue}>
-      <div className=" h-full flex flex-col bg-background text-foreground">
-        {/* ✨ 3. UPDATE THE HEADER TO DISPLAY THE STATUS */}
-        {/* <header className="flex items-center justify-between mb-4 pb-2 border-b"> */}
-          {/* <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold">{boardData.name} Board</h1>
-            {/* {getDueDateStatus()} */}
-          {/* </div> */}
-          {/* <div className="flex items-center gap-2 p-1 bg-muted rounded-md">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode("board")}
-              className={cn(
-                "flex items-center gap-2 px-3",
-                viewMode === "board"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
-              )}
-            >
-              <LayoutGrid className="h-4 w-4" />
-              Board
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setViewMode("table")}
-              className={cn(
-                "flex items-center gap-2 px-3",
-                viewMode === "table"
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground"
-              )}
-            >
-              <List className="h-4 w-4" />
-              Table
-            </Button>
-          </div> */}
-        {/* </header> */}
-
-
-          <main className="flex-1 overflow-y-auto">
-            <ProjectTable
-              tasks={boardData.tasks}
-              onTaskUpdate={handleTaskUpdate}
-            />
-          </main>
+      <div className="h-full flex flex-col bg-background text-foreground">
+        <main className="flex-1 overflow-y-auto">
+          <ProjectTable
+            tasks={tasks}
+            onTaskUpdate={() => mutate()}
+            pagination={pagination}
+            onNext={handleNext}
+            onPrev={handlePrev}
+          />
+        </main>
       </div>
     </ProjectContext.Provider>
   );

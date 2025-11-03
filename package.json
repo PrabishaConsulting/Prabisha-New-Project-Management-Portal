@@ -16,9 +16,8 @@
     "check-env": "tsx scripts/check-env.ts",
     "check-env:prod": "cross-env NODE_ENV=production tsx scripts/check-env.ts",
     "db:backup": "tsx scripts/backup.ts",
+    "db:backup:sql": "bash -c 'source .env && mysqldump -h $(echo $DATABASE_URL | sed -E \"s|.*@([^:/]+):.*|\\1|\") -P $(echo $DATABASE_URL | sed -E \"s|.*:([0-9]+)/.*|\\1|\") -u $(echo $DATABASE_URL | sed -E \"s|.*//([^:]+):.*|\\1|\") -p$(echo $DATABASE_URL | sed -E \"s|.*//[^:]+:([^@]+)@.*|\\1|\") $(echo $DATABASE_URL | sed -E \"s|.*/([^?]+)$|\\1|\") > backup.sql'",
     "test": "jest",
-    "test:frontend": "jest --projects '<rootDir>/jest.config.ts' --selectProjects Frontend",
-    "test:backend": "jest --projects '<rootDir>/jest.config.ts' --selectProjects Backend",
     "test:watch": "jest --watch",
     "prepare": "husky install"
   },
@@ -93,6 +92,7 @@
     "react-day-picker": "latest",
     "react-dom": "latest",
     "react-dropzone": "^14.3.8",
+    "react-fast-marquee": "^1.6.5",
     "react-hook-form": "^7.62.0",
     "react-intersection-observer": "^10.0.0",
     "react-resizable-panels": "^3.0.4",

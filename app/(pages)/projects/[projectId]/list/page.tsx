@@ -1,4 +1,3 @@
-import ProjectBoard from "@/components/kanban/project-board";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";

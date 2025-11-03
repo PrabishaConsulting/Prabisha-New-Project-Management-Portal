@@ -391,7 +391,7 @@ export const updateTaskStatus = async (
       }
     } else if (isReopeningFromDone) {
       additionalData.completedAt = null;
-      additionalData.actualMinutes = null;
+      additionalData.actualMinutes = 0;
     }
 
     const updatedTask = await db.task.update({
@@ -435,7 +435,7 @@ export const updateTaskStatus = async (
     }
 
     // Add comment if task is marked as done
-    if ( comment && comment.trim() !== "") {
+    if (comment && comment.trim() !== "") {
       const commentResult = await addTaskCommentService(
         taskId,
         actorId,
@@ -541,6 +541,8 @@ export const canUserAccessTask = async (
 ): Promise<{
   authorized: boolean;
   error: string | null;
+  projectId?: string;
+  workspaceId?: string;
   reason?: "NOT_FOUND" | "FORBIDDEN" | "INTERNAL_SERVER_ERROR";
 }> => {
   try {
@@ -549,6 +551,12 @@ export const canUserAccessTask = async (
       select: {
         assigneeId: true,
         reporterId: true,
+        project: {
+          select: {
+            id: true,
+            workspaceId: true,
+          },
+        },
       },
     });
 
@@ -564,7 +572,12 @@ export const canUserAccessTask = async (
     const isReporter = task.reporterId === userId;
 
     if (isAssignee || isReporter) {
-      return { authorized: true, error: null };
+      return {
+        authorized: true,
+        error: null,
+        projectId: task.project?.id,
+        workspaceId: task.project?.workspaceId,
+      };
     } else {
       return {
         authorized: false,
