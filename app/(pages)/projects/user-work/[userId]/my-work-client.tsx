@@ -316,7 +316,7 @@ const handleRefresh = () => {
           <TableRow key={task.id}>
             <TableCell>
               <Link
-                href={`/projects/${task.projectId}?workspaceId=${task.workspaceId}`}
+                href={`/projects/${task.projectId}/board?workspaceId=${task.workspaceId}`}
                 className="group"
               >
                 <p className="font-medium group-hover:underline">

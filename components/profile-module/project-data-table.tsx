@@ -188,7 +188,7 @@ const handleExportPDF = async () => {
                   data-state={row.getIsSelected() && "selected"}
                   onClick={() =>
                     router.push(
-                      `/projects/${row.original.id}?workspaceId=${workspaceId}`
+                      `/projects/${row.original.id}/board?workspaceId=${workspaceId}`
                     )
                   }
                   className="cursor-pointer"

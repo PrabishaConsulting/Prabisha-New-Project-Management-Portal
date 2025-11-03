@@ -47,6 +47,8 @@ export async function PUT(
     // Extract validated data
     const { status, comment, actualTime } = validation.data;
 
+    console.log(status, comment , actualTime ,"debug value ")
+
     // 4. Core Logic
     // Pass actualTime to the service (only if status is DONE)
     const result = await updateTaskStatus(
@@ -56,6 +58,8 @@ export async function PUT(
       comment,
       status === "DONE" ? actualTime : 0
     );
+
+    console.log(result , "debug done")
 
     if (result.error) {
       return NextResponse.json({ message: result.error }, { status: 404 });

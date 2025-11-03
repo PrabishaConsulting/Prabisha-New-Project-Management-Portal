@@ -17,7 +17,7 @@ export default function CopyProjectLinkButton({ projectId , workspaceId }: { pro
 
   const handleCopy = () => {
     // window.location.origin is safe to use here because this is a Client Component
-    const projectUrl = `${window.location.origin}/projects/${projectId}?workspaceId=${workspaceId}`;
+    const projectUrl = `${window.location.origin}/projects/${projectId}/board?workspaceId=${workspaceId}`;
     
     navigator.clipboard.writeText(projectUrl).then(() => {
       toast.success("Project link copied to clipboard!");

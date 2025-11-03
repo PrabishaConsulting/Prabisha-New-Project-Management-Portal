@@ -336,7 +336,7 @@ model Task {
   projectId        String
   assigneeId       String?
   reporterId       String
-  position         Int
+  position         Float
   taskType         TaskType?        @default(TASK)
   priority         Priority         @default(MEDIUM)
   status           TaskStatus       @default(TO_DO)

@@ -76,7 +76,7 @@ export const ProjectCard = ({
       <div
         className="cursor-pointer flex-grow"
         onClick={() =>
-          router.push(`/projects/${project.id}?workspaceId=${workspaceId}`)
+          router.push(`/projects/${project.id}/board?workspaceId=${workspaceId}`)
         }
       >
         <div className="flex items-start justify-between ">

@@ -110,6 +110,8 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
     timeSpent?: number
   ) => {
     setIsUpdating(true);
+
+    console.log(commentText , newStatus , actualTime , "debug" )
     try {
       const response = await fetch(`/api/tasks/${task.id}/status`, {
         method: "PUT",
@@ -122,6 +124,9 @@ const StatusSelector = ({ task, onUpdate }: StatusSelectorProps) => {
       });
 
       if (!response.ok) throw new Error("Failed to update status");
+
+      const data  = await response.json()
+      console.log(data , "debug finally done")
 
       // Toast messages based on status
       if (newStatus === "IN_PROGRESS") {

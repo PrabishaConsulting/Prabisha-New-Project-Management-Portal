@@ -19621,7 +19621,7 @@ export namespace Prisma {
     readonly projectId: FieldRef<"Task", 'String'>
     readonly assigneeId: FieldRef<"Task", 'String'>
     readonly reporterId: FieldRef<"Task", 'String'>
-    readonly position: FieldRef<"Task", 'Int'>
+    readonly position: FieldRef<"Task", 'Float'>
     readonly taskType: FieldRef<"Task", 'TaskType'>
     readonly priority: FieldRef<"Task", 'Priority'>
     readonly status: FieldRef<"Task", 'TaskStatus'>
@@ -33826,6 +33826,13 @@ export namespace Prisma {
 
 
   /**
+   * Reference to a field of type 'Float'
+   */
+  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
+    
+
+
+  /**
    * Reference to a field of type 'TaskType'
    */
   export type EnumTaskTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TaskType'>
@@ -33871,13 +33878,6 @@ export namespace Prisma {
    * Reference to a field of type 'MistakeStatus'
    */
   export type EnumMistakeStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'MistakeStatus'>
-    
-
-
-  /**
-   * Reference to a field of type 'Float'
-   */
-  export type FloatFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Float'>
     
   /**
    * Deep Input Types
@@ -35132,7 +35132,7 @@ export namespace Prisma {
     projectId?: StringFilter<"Task"> | string
     assigneeId?: StringNullableFilter<"Task"> | string | null
     reporterId?: StringFilter<"Task"> | string
-    position?: IntFilter<"Task"> | number
+    position?: FloatFilter<"Task"> | number
     taskType?: EnumTaskTypeNullableFilter<"Task"> | $Enums.TaskType | null
     priority?: EnumPriorityFilter<"Task"> | $Enums.Priority
     status?: EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
@@ -35198,7 +35198,7 @@ export namespace Prisma {
     projectId?: StringFilter<"Task"> | string
     assigneeId?: StringNullableFilter<"Task"> | string | null
     reporterId?: StringFilter<"Task"> | string
-    position?: IntFilter<"Task"> | number
+    position?: FloatFilter<"Task"> | number
     taskType?: EnumTaskTypeNullableFilter<"Task"> | $Enums.TaskType | null
     priority?: EnumPriorityFilter<"Task"> | $Enums.Priority
     status?: EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
@@ -35259,7 +35259,7 @@ export namespace Prisma {
     projectId?: StringWithAggregatesFilter<"Task"> | string
     assigneeId?: StringNullableWithAggregatesFilter<"Task"> | string | null
     reporterId?: StringWithAggregatesFilter<"Task"> | string
-    position?: IntWithAggregatesFilter<"Task"> | number
+    position?: FloatWithAggregatesFilter<"Task"> | number
     taskType?: EnumTaskTypeNullableWithAggregatesFilter<"Task"> | $Enums.TaskType | null
     priority?: EnumPriorityWithAggregatesFilter<"Task"> | $Enums.Priority
     status?: EnumTaskStatusWithAggregatesFilter<"Task"> | $Enums.TaskStatus
@@ -37592,7 +37592,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -37622,7 +37622,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -37668,7 +37668,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -37689,7 +37689,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -39924,15 +39924,15 @@ export namespace Prisma {
     _max?: NestedEnumProjectRoleFilter<$PrismaModel>
   }
 
-  export type IntFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
+  export type FloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
     in?: number[]
     notIn?: number[]
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntFilter<$PrismaModel> | number
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
   }
 
   export type EnumTaskTypeNullableFilter<$PrismaModel = never> = {
@@ -39947,6 +39947,17 @@ export namespace Prisma {
     in?: $Enums.TaskStatus[]
     notIn?: $Enums.TaskStatus[]
     not?: NestedEnumTaskStatusFilter<$PrismaModel> | $Enums.TaskStatus
+  }
+
+  export type IntFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntFilter<$PrismaModel> | number
   }
 
   export type TaskOrderByRelevanceInput = {
@@ -40033,20 +40044,20 @@ export namespace Prisma {
     actualMinutes?: SortOrder
   }
 
-  export type IntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
+  export type FloatWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
     in?: number[]
     notIn?: number[]
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
     _count?: NestedIntFilter<$PrismaModel>
     _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type EnumTaskTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -40067,6 +40078,22 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTaskStatusFilter<$PrismaModel>
     _max?: NestedEnumTaskStatusFilter<$PrismaModel>
+  }
+
+  export type IntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
   }
 
   export type TaskScalarRelationFilter = {
@@ -42564,7 +42591,7 @@ export namespace Prisma {
     connect?: CalendarItemWhereUniqueInput | CalendarItemWhereUniqueInput[]
   }
 
-  export type IntFieldUpdateOperationsInput = {
+  export type FloatFieldUpdateOperationsInput = {
     set?: number
     increment?: number
     decrement?: number
@@ -42578,6 +42605,14 @@ export namespace Prisma {
 
   export type EnumTaskStatusFieldUpdateOperationsInput = {
     set?: $Enums.TaskStatus
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type ActivityLogUpdateManyWithoutTaskNestedInput = {
@@ -43700,6 +43735,17 @@ export namespace Prisma {
     _max?: NestedEnumProjectRoleFilter<$PrismaModel>
   }
 
+  export type NestedFloatFilter<$PrismaModel = never> = {
+    equals?: number | FloatFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | FloatFieldRefInput<$PrismaModel>
+    lte?: number | FloatFieldRefInput<$PrismaModel>
+    gt?: number | FloatFieldRefInput<$PrismaModel>
+    gte?: number | FloatFieldRefInput<$PrismaModel>
+    not?: NestedFloatFilter<$PrismaModel> | number
+  }
+
   export type NestedEnumTaskTypeNullableFilter<$PrismaModel = never> = {
     equals?: $Enums.TaskType | EnumTaskTypeFieldRefInput<$PrismaModel> | null
     in?: $Enums.TaskType[] | null
@@ -43714,23 +43760,7 @@ export namespace Prisma {
     not?: NestedEnumTaskStatusFilter<$PrismaModel> | $Enums.TaskStatus
   }
 
-  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: number | IntFieldRefInput<$PrismaModel>
-    in?: number[]
-    notIn?: number[]
-    lt?: number | IntFieldRefInput<$PrismaModel>
-    lte?: number | IntFieldRefInput<$PrismaModel>
-    gt?: number | IntFieldRefInput<$PrismaModel>
-    gte?: number | IntFieldRefInput<$PrismaModel>
-    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
-    _count?: NestedIntFilter<$PrismaModel>
-    _avg?: NestedFloatFilter<$PrismaModel>
-    _sum?: NestedIntFilter<$PrismaModel>
-    _min?: NestedIntFilter<$PrismaModel>
-    _max?: NestedIntFilter<$PrismaModel>
-  }
-
-  export type NestedFloatFilter<$PrismaModel = never> = {
+  export type NestedFloatWithAggregatesFilter<$PrismaModel = never> = {
     equals?: number | FloatFieldRefInput<$PrismaModel>
     in?: number[]
     notIn?: number[]
@@ -43738,7 +43768,12 @@ export namespace Prisma {
     lte?: number | FloatFieldRefInput<$PrismaModel>
     gt?: number | FloatFieldRefInput<$PrismaModel>
     gte?: number | FloatFieldRefInput<$PrismaModel>
-    not?: NestedFloatFilter<$PrismaModel> | number
+    not?: NestedFloatWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedFloatFilter<$PrismaModel>
+    _min?: NestedFloatFilter<$PrismaModel>
+    _max?: NestedFloatFilter<$PrismaModel>
   }
 
   export type NestedEnumTaskTypeNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -43759,6 +43794,22 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedEnumTaskStatusFilter<$PrismaModel>
     _max?: NestedEnumTaskStatusFilter<$PrismaModel>
+  }
+
+  export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: number | IntFieldRefInput<$PrismaModel>
+    in?: number[]
+    notIn?: number[]
+    lt?: number | IntFieldRefInput<$PrismaModel>
+    lte?: number | IntFieldRefInput<$PrismaModel>
+    gt?: number | IntFieldRefInput<$PrismaModel>
+    gte?: number | IntFieldRefInput<$PrismaModel>
+    not?: NestedIntWithAggregatesFilter<$PrismaModel> | number
+    _count?: NestedIntFilter<$PrismaModel>
+    _avg?: NestedFloatFilter<$PrismaModel>
+    _sum?: NestedIntFilter<$PrismaModel>
+    _min?: NestedIntFilter<$PrismaModel>
+    _max?: NestedIntFilter<$PrismaModel>
   }
 
   export type NestedEnumReadStatusFilter<$PrismaModel = never> = {
@@ -45238,7 +45289,7 @@ export namespace Prisma {
     projectId?: StringFilter<"Task"> | string
     assigneeId?: StringNullableFilter<"Task"> | string | null
     reporterId?: StringFilter<"Task"> | string
-    position?: IntFilter<"Task"> | number
+    position?: FloatFilter<"Task"> | number
     taskType?: EnumTaskTypeNullableFilter<"Task"> | $Enums.TaskType | null
     priority?: EnumPriorityFilter<"Task"> | $Enums.Priority
     status?: EnumTaskStatusFilter<"Task"> | $Enums.TaskStatus
@@ -46010,7 +46061,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -46039,7 +46090,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -49169,7 +49220,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -49198,7 +49249,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -49445,7 +49496,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -49474,7 +49525,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -49721,7 +49772,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -49750,7 +49801,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -50113,7 +50164,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -50142,7 +50193,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -51901,7 +51952,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -51929,7 +51980,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     projectId?: StringFieldUpdateOperationsInput | string
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -51955,7 +52006,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     projectId?: StringFieldUpdateOperationsInput | string
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -51974,7 +52025,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -52002,7 +52053,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -52028,7 +52079,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -52659,7 +52710,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -52688,7 +52739,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -52714,7 +52765,7 @@ export namespace Prisma {
     projectId?: StringFieldUpdateOperationsInput | string
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -53099,7 +53150,7 @@ export namespace Prisma {
     title?: StringFieldUpdateOperationsInput | string
     taskCode?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -53127,7 +53178,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus
@@ -53153,7 +53204,7 @@ export namespace Prisma {
     description?: NullableStringFieldUpdateOperationsInput | string | null
     assigneeId?: NullableStringFieldUpdateOperationsInput | string | null
     reporterId?: StringFieldUpdateOperationsInput | string
-    position?: IntFieldUpdateOperationsInput | number
+    position?: FloatFieldUpdateOperationsInput | number
     taskType?: NullableEnumTaskTypeFieldUpdateOperationsInput | $Enums.TaskType | null
     priority?: EnumPriorityFieldUpdateOperationsInput | $Enums.Priority
     status?: EnumTaskStatusFieldUpdateOperationsInput | $Enums.TaskStatus

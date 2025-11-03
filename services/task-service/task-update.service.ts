@@ -435,7 +435,7 @@ export const updateTaskStatus = async (
     }
 
     // Add comment if task is marked as done
-    if (isMarkingAsDone && comment && comment.trim() !== "") {
+    if ( comment && comment.trim() !== "") {
       const commentResult = await addTaskCommentService(
         taskId,
         actorId,
