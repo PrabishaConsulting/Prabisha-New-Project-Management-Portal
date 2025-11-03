@@ -3,7 +3,7 @@ import { ProjectRole, Task, TaskStatus } from "@/app/generated/client";
 import { authorizeProjectMember, AuthorizationError } from "./auth.service";
 import { TaskFormData } from "@/lib/zod";
 import { logActivity } from "../activity-user/activity-user.service";
-import { ACTIVITY_ACTIONS } from "../activity-user/helper";
+import { ACTIVITY_ACTIONS, ActivityAction } from "../activity-user/helper";
 import { ProjectCreationError } from "@/utils/errors";
 import {
   sendTaskAssignmentEmail,
@@ -47,108 +47,78 @@ export async function processAndValidateTaskUpdates(
   });
   const userName = user?.name || "A user";
 
-  for (const task of tasksToUpdate) {
-    const existingTask = existingTasksMap.get(task.id);
-    if (!existingTask) continue;
+for (const task of tasksToUpdate) {
+  const existingTask = existingTasksMap.get(task.id);
+  if (!existingTask) continue;
 
-    const statusHasChanged = existingTask.status !== task.status;
-    const positionHasChanged = existingTask.position !== task.position;
+  const statusHasChanged = existingTask.status !== task.status;
+  const positionHasChanged = existingTask.position !== task.position;
 
-    // Check if status changed to DONE
-    const isMarkedAsDone = statusHasChanged && task.status === "DONE";
-    // Check if status changed from DONE
-    const isMovedFromDone =
-      statusHasChanged &&
-      existingTask.status === "DONE" &&
-      task.status !== "DONE";
+  // --- AUTHORIZATION: Only for status changes ---
+  if (statusHasChanged) {
+    if (!isProjectLead && existingTask.assigneeId !== userId) {
+      throw new AuthorizationError(
+        `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
+      );
+    }
+  }
 
-    // Authorization check for status changes
-    if (statusHasChanged) {
-      if (!isProjectLead && existingTask.assigneeId !== userId) {
-        throw new AuthorizationError(
-          `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
-        );
-      }
+  // --- STATUS CHANGE LOGIC ---
+  if (statusHasChanged) {
+    const isMarkedAsDone = task.status === "DONE";
+    const isMovedFromDone = existingTask.status === "DONE" && task.status !== "DONE";
+
+    let primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS as ActivityAction; 
+    let description = `${userName} changed status from ${existingTask.status} to ${task.status} for task "${existingTask.title}"`;
+
+    if (isMarkedAsDone) {
+      primaryAction = ACTIVITY_ACTIONS.COMPLETE_TASK;
+      description = `${userName} completed task "${existingTask.title}"`;
+    } else if (isMovedFromDone) {
+      primaryAction = ACTIVITY_ACTIONS.REOPEN_TASK;
+      description = `${userName} reopened task "${existingTask.title}"`;
     }
 
-    // Track changes in metadata if anything changed
-    if (statusHasChanged || positionHasChanged) {
-      const changes: Record<string, { from: any; to: any }> = {};
-      const changedFields: string[] = [];
-      
-      // Determine the primary action
-      let primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK as string;
-      let description = "";
+    // Create one meaningful log per task
+    logEntries.push({
+      userId,
+      projectId,
+      taskId: existingTask.id,
+      action: primaryAction,
+      description,
+      metadata: JSON.stringify({
+        status: { from: existingTask.status, to: task.status },
+      }),
+    });
+  }
 
-      if (statusHasChanged) {
-        changes.status = { from: existingTask.status, to: task.status };
-        changedFields.push("status");
-        
-        // Set specific action for status changes
-        if (isMarkedAsDone) {
-          primaryAction = ACTIVITY_ACTIONS.COMPLETE_TASK;
-          description = `${userName} completed task "${existingTask.title}"`;
-        } else if (isMovedFromDone) {
-          primaryAction = ACTIVITY_ACTIONS.REOPEN_TASK;
-          description = `${userName} reopened task "${existingTask.title}"`;
-        } else {
-          primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS;
-          description = `${userName} changed status from ${existingTask.status} to ${task.status} for task "${existingTask.title}"`;
-        }
-      }
-
-      if (positionHasChanged) {
-        changes.position = { from: existingTask.position, to: task.position };
-        changedFields.push("position");
-        
-        // If only position changed (reordering)
-      }
-
-      // If both changed, update description
-      if (statusHasChanged && positionHasChanged) {
-        description = `${userName} updated ${changedFields.join(" and ")} for task "${existingTask.title}"`;
-      }
-
-      // Create a single log entry per task with all changes
-      logEntries.push({
-        userId,
-        projectId,
-        taskId: existingTask.id,
-        action: primaryAction,
-        description: description,
-        metadata: changes,
-      });
-
-      // Add completedAt information if needed
-      const taskWithCompletedAt = {
-        ...task,
-        completedAt: isMarkedAsDone
+  // --- COLLECT DB UPDATES ---
+  // Update only if something truly changed (status or position)
+  if (statusHasChanged || positionHasChanged) {
+    tasksThatChanged.push({
+      id: task.id,
+      status: task.status,
+      position: task.position,
+      completedAt:
+        statusHasChanged && task.status === "DONE"
           ? new Date()
-          : isMovedFromDone
+          : statusHasChanged && existingTask.status === "DONE"
           ? null
-          : undefined,
-      };
-      tasksThatChanged.push(taskWithCompletedAt);
-    }
+          : existingTask.completedAt,
+    });
   }
+}
 
-  if (tasksThatChanged.length > 0) {
-    await updateTaskOrder(tasksThatChanged);
+// --- Apply DB changes efficiently ---
+if (tasksThatChanged.length > 0) {
+  await updateTaskOrder(tasksThatChanged);
+}
 
-    // Bulk insert logs - one log per task with all changes
-    if (logEntries.length > 0) {
-      await db.activityLog.createMany({
-        data: logEntries.map((log) => ({
-          userId: log.userId,
-          projectId: log.projectId,
-          taskId: log.taskId,
-          action: log.action,
-          description: log.description,
-          metadata: log.metadata ? JSON.stringify(log.metadata) : null,
-        })),
-      });
-    }
-  }
+// --- Bulk insert logs (status-related only) ---
+if (logEntries.length > 0) {
+  await db.activityLog.createMany({ data: logEntries });
+}
+
 }
 
 /**
