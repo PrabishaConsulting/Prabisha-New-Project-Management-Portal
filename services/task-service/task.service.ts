@@ -102,10 +102,6 @@ export async function processAndValidateTaskUpdates(
         changedFields.push("position");
         
         // If only position changed (reordering)
-        if (!statusHasChanged) {
-          primaryAction = ACTIVITY_ACTIONS.REORDER_TASK;
-          description = `${userName} reordered task "${existingTask.title}"`;
-        }
       }
 
       // If both changed, update description
