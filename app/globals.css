@@ -91,62 +91,26 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
-  --animate-marquee: marquee 5s linear infinite;
---animate-marquee2: marquee2 5s linear infinite;
+  --animate-marquee: marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
 
-@keyframes marquee {
-  0% {
-    transform: translateX(0%);
-  }
-  100% {
-    transform: translateX(-100%);
-  }
-}
-
-@keyframes marquee2 {
-  0% {
-    transform: translateX(100%);
-  }
-  100% {
-    transform: translateX(0%);
-  }
-}
-
---animate-marquee-vertical: marquee-vertical var(--duration) linear infinite
-
-;
   @keyframes marquee {
-  from {
-    transform: translateX(0);
+    from {
+      transform: translateX(0);
     }
-  to {
-    transform: translateX(calc(-100% - var(--gap)));
+    to {
+      transform: translateX(calc(-100% - var(--gap)));
     }
   }
   @keyframes marquee-vertical {
-  from {
-    transform: translateY(0);
+    from {
+      transform: translateY(0);
     }
-  to {
-    transform: translateY(calc(-100% - var(--gap)));
-    }
-  }
-  @keyframes marquee {
-  from {
-    transform: translateX(0);
-    }
-  to {
-    transform: translateX(calc(-100% - var(--gap)));
+    to {
+      transform: translateY(calc(-100% - var(--gap)));
     }
   }
-  @keyframes marquee-vertical {
-  from {
-    transform: translateY(0);
-    }
-  to {
-    transform: translateY(calc(-100% - var(--gap)));
-    }
-  }}
+}
 
 /* 🎨 --- LIGHT MODE THEME --- */
 :root {
@@ -196,8 +160,12 @@ body {
   /* Sidebar Specific (Example) */
   --sidebar: oklch(98% 0.005 240); /* Very light gray background */
   --sidebar-foreground: oklch(14% 0.01 240); /* Dark gray text */
-  --sidebar-primary: oklch(59.34% 0.158 44.25); /* Brand orange for active elements */
-  --sidebar-primary-foreground: oklch(98% 0 0); /* White text on active elements */
+  --sidebar-primary: oklch(
+    59.34% 0.158 44.25
+  ); /* Brand orange for active elements */
+  --sidebar-primary-foreground: oklch(
+    98% 0 0
+  ); /* White text on active elements */
   --sidebar-accent: oklch(94% 0.01 240); /* Light gray for hover states */
   --sidebar-accent-foreground: oklch(14% 0.01 240); /* Dark text on hover */
   --sidebar-border: oklch(92% 0.005 240); /* Light border color */
@@ -253,8 +221,12 @@ body {
   /* Sidebar Specific for Dark Mode */
   --sidebar: oklch(15% 0.01 240); /* Dark blue-gray background */
   --sidebar-foreground: oklch(95% 0.005 240); /* Light gray text */
-  --sidebar-primary: oklch(68% 0.158 44.25); /* Lighter orange for active elements */
-  --sidebar-primary-foreground: oklch(15% 0 0); /* Dark text on active elements */
+  --sidebar-primary: oklch(
+    68% 0.158 44.25
+  ); /* Lighter orange for active elements */
+  --sidebar-primary-foreground: oklch(
+    15% 0 0
+  ); /* Dark text on active elements */
   --sidebar-accent: oklch(30% 0.02 240); /* Medium gray for hover states */
   --sidebar-accent-foreground: oklch(95% 0.005 240); /* Light text on hover */
   --sidebar-border: oklch(25% 0.01 240); /* Dark border color */

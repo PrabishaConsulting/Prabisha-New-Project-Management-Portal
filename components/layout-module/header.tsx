@@ -165,7 +165,7 @@ export function Header({
         {/* Marquee Announcement Bar */}
         {showMarquee && (
           <div className="relative flex w-full items-center justify-center overflow-hidden border-b border-border/50 bg-muted/40 dark:bg-muted/10">
-            <Marquee pauseOnHover className="[--duration:40s] py-2">
+            <Marquee pauseOnHover className="[--duration:30s] py-2">
               {announcements.map((item, i) => (
                 <div key={i} className="flex items-center gap-2 px-6">
                   <div className="flex items-center gap-2 rounded-full bg-background/80 px-4 py-1 shadow-sm ring-1 ring-border backdrop-blur-md">
