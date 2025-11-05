@@ -271,7 +271,7 @@ model InternalProduct {
 model Project {
   id                String           @id @default(cuid())
   name              String           @unique
-  description       String?
+  description       String?          @db.Text
   workspaceId       String
   projectCode       String?          @unique // 👈 new field, optional at first
   status            ProjectStatus    @default(ACTIVE)
@@ -332,7 +332,7 @@ model Task {
   id               String           @id @default(cuid())
   title            String
   taskCode         String?          @unique
-  description      String?
+  description      String?          @db.Text
   projectId        String
   assigneeId       String?
   reporterId       String
