@@ -2,27 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: [
-      "prabisha.com",
-      "bidisharay.com",
-      "prishatheexplorer.com",
-      "pratyushkumar.co.uk",
-      "res.cloudinary.com",
-      "intranet.prabisha.com",
-      "harrowbusiness.com",
-      "placehold.co",
-      "lh3.googleusercontent.com",
-      "randomuser.me",
-      "media-cdn.prabisha.com",
-    ],
+    // ✅ Remove deprecated `domains`
     remotePatterns: [
       {
-        protocol: "http",
-        hostname: "**",
+        protocol: "https",
+        hostname: "**.prabisha.com", // ✅ allow your image domain
       },
       {
         protocol: "https",
-        hostname: "**",
+        hostname: "res.cloudinary.com",
+      },
+      {
+        protocol: "https",
+        hostname: "media-cdn.prabisha.com",
+      },
+      {
+        protocol: "https",
+        hostname: "wordpress.com", // ✅ if using WordPress CDN
       },
     ],
   },

@@ -16,6 +16,7 @@ import {
   sendTaskAssignmentEmail,
   sendTaskForReviewEmail,
 } from "@/services/mail-service/mail-assignment.service";
+import { createAndBroadcastNotification } from "../notification-service/notification.service";
 
 type UpdateTaskPayload = {
   title?: string;
@@ -33,18 +34,27 @@ export const updateTaskService = async (
   updateData: UpdateTaskPayload,
   actorId: string
 ) => {
-  // 1. Fetch the original task state for comparison and authorization
+  // --- LOG: Initial function call ---
+  console.log(`[updateTaskService] Starting update for taskId: ${taskId} by actorId: ${actorId}`);
+  console.log(`[updateTaskService] UpdateData received:`, JSON.stringify(updateData, null, 2));
+
+  // 1. Fetch the original task state
   const originalTask = await db.task.findUnique({
     where: { id: taskId },
     include: {
-      assignee: { select: { name: true } },
+      assignee: { select: { id: true, name: true } },
+      reporter: { select: { id: true, name: true } },
       project: true,
     },
   });
 
   if (!originalTask) {
+    console.log(`[updateTaskService] ERROR: Task not found.`);
     return { error: "Task not found", status: 404 };
   }
+
+  // --- LOG: Fetched task details ---
+  console.log(`[updateTaskService] Fetched original task. Reporter ID: ${originalTask.reporter?.id}, Assignee ID: ${originalTask.assignee?.id}`);
 
   // 2. Authorization check
   const membership = await db.projectMember.findUnique({
@@ -53,27 +63,24 @@ export const updateTaskService = async (
     },
   });
   if (!membership) {
+    console.log(`[updateTaskService] ERROR: Actor ${actorId} is not a member of project ${originalTask.projectId}.`);
     return {
       error: "Forbidden: You are not a member of this project.",
       status: 403,
     };
   }
+  console.log(`[updateTaskService] Authorization successful for actor ${actorId}.`);
 
   // 3. Perform the database update
   const { status, ...otherData } = updateData;
   let updatedTask: Task;
 
-  // Check if status is changing to DONE
   const isMarkingAsDone =
     status === TaskStatus.DONE && originalTask.status !== TaskStatus.DONE;
-
-  // Check if status is changing from DONE to something else
   const isReopeningFromDone =
     originalTask.status === TaskStatus.DONE && status !== TaskStatus.DONE;
 
-  // Prepare additional data for the update
   const additionalData: any = {};
-
   if (isMarkingAsDone) {
     additionalData.completedAt = new Date();
   } else if (isReopeningFromDone) {
@@ -81,7 +88,7 @@ export const updateTaskService = async (
   }
 
   if (status && status !== originalTask.status) {
-    // Transaction for when the status (and therefore position) changes
+    console.log(`[updateTaskService] Status is changing. Running transaction...`);
     updatedTask = await db.$transaction(async (tx) => {
       const newPosition = await tx.task.count({
         where: { projectId: originalTask.projectId, status: status as any },
@@ -97,7 +104,7 @@ export const updateTaskService = async (
       });
     });
   } else {
-    // Standard update for all other fields
+    console.log(`[updateTaskService] Performing standard update (no status change).`);
     updatedTask = await db.task.update({
       where: { id: taskId },
       data: {
@@ -106,8 +113,9 @@ export const updateTaskService = async (
       },
     });
   }
+  console.log(`[updateTaskService] Database update successful.`);
 
-  // 4. Log ALL changes in a single activity log with proper action
+  // 4. Log ALL changes
   await _logTaskChanges(
     originalTask,
     updateData,
@@ -118,6 +126,78 @@ export const updateTaskService = async (
 
   // 5. Handle side-effects like notifications
   await handlePostUpdateActions(originalTask, updatedTask, actorId);
+
+  // --- REVISED NOTIFICATION LOGIC ---
+
+  const statusChanged = status && status !== originalTask.status;
+  const assigneeChanged =
+    updateData.assigneeId && updateData.assigneeId !== originalTask.assigneeId;
+  const priorityChanged =
+    updateData.priority && updateData.priority !== originalTask.priority;
+  const titleChanged =
+    updateData.title && updateData.title !== originalTask.title;
+  const descriptionChanged =
+    updateData.description &&
+    updateData.description !== originalTask.description;
+
+  const somethingChanged =
+    statusChanged ||
+    assigneeChanged ||
+    priorityChanged ||
+    titleChanged ||
+    descriptionChanged;
+
+  // --- LOG: Change detection ---
+  console.log(`[updateTaskService] Change detection results:`);
+  console.log(`  - statusChanged: ${statusChanged}`);
+  console.log(`  - assigneeChanged: ${assigneeChanged}`);
+  console.log(`  - priorityChanged: ${priorityChanged}`);
+  console.log(`  - titleChanged: ${titleChanged}`);
+  console.log(`  - descriptionChanged: ${descriptionChanged}`);
+  console.log(`  - Final 'somethingChanged' value: ${somethingChanged}`);
+
+  if (somethingChanged) {
+    const recipients = new Set<string>();
+
+    // --- LOG: Building recipient list ---
+    if (originalTask.reporter?.id && originalTask.reporter.id !== actorId) {
+      console.log(`[updateTaskService] Adding reporter ${originalTask.reporter.id} to recipients.`);
+      recipients.add(originalTask.reporter.id);
+    } else {
+      console.log(`[updateTaskService] Reporter not added (either null or is the actor).`);
+    }
+
+    if (originalTask.assignee?.id && originalTask.assignee.id !== actorId) {
+      console.log(`[updateTaskService] Adding assignee ${originalTask.assignee.id} to recipients.`);
+      recipients.add(originalTask.assignee.id);
+    } else {
+      console.log(`[updateTaskService] Assignee not added (either null or is the actor).`);
+    }
+
+    // Only send a notification if there are valid recipients
+    if (recipients.size > 0) {
+      const notificationPayload = {
+        type: "TASK_UPDATED",
+        message: `Task "${originalTask.title}" was updated.`,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${originalTask.projectId}/task/${originalTask.id}`,
+        recipients: Array.from(recipients),
+      };
+
+      // --- LOG: Before sending notification ---
+      console.log(`[updateTaskService] Preparing to send notification. Payload:`, JSON.stringify(notificationPayload, null, 2));
+
+      await createAndBroadcastNotification(notificationPayload);
+
+      // --- LOG: After sending notification ---
+      console.log(`[updateTaskService] Notification dispatched successfully.`);
+    } else {
+      // --- LOG: No recipients found ---
+      console.log(`[updateTaskService] No valid recipients found. Skipping notification.`);
+    }
+  } else {
+    // --- LOG: No changes detected ---
+    console.log(`[updateTaskService] No meaningful changes detected. Skipping notification.`);
+  }
 
   return { data: updatedTask };
 };
@@ -149,6 +229,14 @@ async function handlePostUpdateActions(
           assignedBy: actor.name!,
           taskUrl,
         });
+        // --- IN-APP NOTIFICATION ---
+        await createAndBroadcastNotification({
+          type: "TASK_ASSIGNED",
+          message: `${actor.name} assigned you the task "${updatedTask.title}".`,
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${updatedTask.projectId}/task/${updatedTask.id}`,
+          recipients: [newAssignee.id],
+        });
+        console.log(`[handlePostUpdateActions] Sent assignment email and notification to ${newAssignee.name}`);
       }
     }
 
@@ -172,6 +260,16 @@ async function handlePostUpdateActions(
             timeZone: "UTC",
           }),
         });
+        // --- IN-APP NOTIFICATION ---
+        if (originalTask.reporter.id) {
+          await createAndBroadcastNotification({
+            type: "TASK_READY_FOR_REVIEW",
+            message: `${actor.name} marked "${updatedTask.title}" as ready for your review.`,
+            url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${updatedTask.projectId}/task/${updatedTask.id}`,
+            recipients: [originalTask.reporter.id],
+          });
+        }
+        console.log(`[handlePostUpdateActions] Sent review email and notification to reporter ${originalTask.reporter.name}`);
       }
     }
   } catch (emailError) {
@@ -366,10 +464,13 @@ export const updateTaskStatus = async (
   actualMinutes?: number // ✅ Add this param
 ): Promise<{ task: Task | null; error: string | null }> => {
   try {
+    // --- Fetch full task details for notifications ---
     const originalTask = await db.task.findUnique({
       where: { id: taskId },
       include: {
         project: { select: { id: true } },
+        assignee: { select: { id: true, name: true } },
+        reporter: { select: { id: true, name: true } },
       },
     });
 
@@ -402,7 +503,7 @@ export const updateTaskStatus = async (
       },
     });
 
-    // Log the status change with appropriate action
+    // --- NOTIFICATION & ACTIVITY LOGIC ---
     if (originalTask.status !== newStatus) {
       const actor = await db.user.findUnique({
         where: { id: actorId },
@@ -413,13 +514,16 @@ export const updateTaskStatus = async (
       // Determine the correct action
       let action = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS as ActivityAction;
       let description = `${actorName} changed status to ${newStatus} for task "${originalTask.title}"`;
+      let notificationMessage = `Task "${originalTask.title}" status was changed to ${newStatus}.`;
 
       if (isMarkingAsDone) {
         action = ACTIVITY_ACTIONS.COMPLETE_TASK;
         description = `${actorName} completed task "${originalTask.title}"`;
+        notificationMessage = `${actorName} completed the task "${originalTask.title}".`;
       } else if (isReopeningFromDone) {
         action = ACTIVITY_ACTIONS.REOPEN_TASK;
         description = `${actorName} reopened task "${originalTask.title}"`;
+        notificationMessage = `${actorName} reopened the task "${originalTask.title}".`;
       }
 
       await logActivity(db, {
@@ -432,6 +536,29 @@ export const updateTaskStatus = async (
           status: { from: originalTask.status, to: newStatus },
         },
       });
+
+      // --- SEND IN-APP NOTIFICATION ---
+      const recipients = new Set<string>();
+      if (originalTask.reporter?.id && originalTask.reporter.id !== actorId) {
+        recipients.add(originalTask.reporter.id);
+      }
+      if (originalTask.assignee?.id && originalTask.assignee.id !== actorId) {
+        recipients.add(originalTask.assignee.id);
+      }
+
+      if (recipients.size > 0) {
+        await createAndBroadcastNotification({
+          type: "TASK_STATUS_UPDATED",
+          message: notificationMessage,
+          url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${originalTask.projectId}/task/${originalTask.id}`,
+          recipients: Array.from(recipients),
+        });
+        console.log(
+          `[updateTaskStatus] Sent status update notification to ${Array.from(
+            recipients
+          ).join(", ")}`
+        );
+      }
     }
 
     // Add comment if task is marked as done
@@ -604,10 +731,16 @@ export const addTaskCommentService = async (
   content: string
 ): Promise<{ comment: TaskComment | null; error: string | null }> => {
   try {
-    // Get task details for logging
+    // Get task details for logging and notifications
     const task = await db.task.findUnique({
       where: { id: taskId },
-      select: { id: true, title: true, projectId: true },
+      select: {
+        id: true,
+        title: true,
+        projectId: true,
+        reporterId: true,
+        assigneeId: true,
+      },
     });
 
     if (!task) {
@@ -622,18 +755,50 @@ export const addTaskCommentService = async (
       },
     });
 
-    // Log comment addition
-    const user = await db.user.findUnique({
+    // --- NOTIFICATION LOGIC ---
+    const actor = await db.user.findUnique({
       where: { id: userId },
       select: { name: true },
     });
+    const actorName = actor?.name || "A user";
 
+    // Find all other commenters on this task to notify them
+    const otherCommenters = await db.taskComment.findMany({
+      where: { taskId, userId: { not: userId } },
+      select: { userId: true },
+      distinct: ["userId"],
+    });
+
+    const recipients = new Set<string>();
+    if (task.reporterId && task.reporterId !== userId) {
+      recipients.add(task.reporterId);
+    }
+    if (task.assigneeId && task.assigneeId !== userId) {
+      recipients.add(task.assigneeId);
+    }
+    otherCommenters.forEach((c) => recipients.add(c.userId));
+
+    if (recipients.size > 0) {
+      await createAndBroadcastNotification({
+        type: "TASK_COMMENT_ADDED",
+        message: `${actorName} commented on "${task.title}"`,
+        url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${task.projectId}/task/${task.id}?commentId=${comment.id}`,
+        recipients: Array.from(recipients),
+      });
+      console.log(
+        `[addTaskCommentService] Sent comment notification to ${Array.from(
+          recipients
+        ).join(", ")}`
+      );
+    }
+
+    // Log comment addition
     await logActivity(db, {
       userId,
       projectId: task.projectId,
       taskId: task.id,
       action: ACTIVITY_ACTIONS.ADD_TASK_COMMENT,
-      description: `${user?.name || "A user"} added a comment to task "${
+      description: `${actorName} added a comment to task "${
         task.title
       }"`,
       metadata: {

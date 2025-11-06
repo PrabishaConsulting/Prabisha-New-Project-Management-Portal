@@ -9,6 +9,7 @@ import {
   sendTaskAssignmentEmail,
   sendTaskForReviewEmail,
 } from "../mail-service/mail-assignment.service";
+import { createAndBroadcastNotification } from "../notification-service/notification.service";
 
 type TaskUpdateData = {
   id: string;
@@ -17,10 +18,6 @@ type TaskUpdateData = {
   completedAt?: Date | null;
 };
 
-/**
- * Processes task updates, validates permissions, and logs changes with metadata.
- * Only ONE log per task that actually changes.
- */
 export async function processAndValidateTaskUpdates(
   userId: string,
   projectId: string,
@@ -30,8 +27,19 @@ export async function processAndValidateTaskUpdates(
   const isProjectLead = userRole === ProjectRole.LEAD;
 
   const taskIds = tasksToUpdate.map((t) => t.id);
+
+  // Fetch necessary data for logging and notifications
   const existingTasks = await db.task.findMany({
     where: { id: { in: taskIds } },
+    select: {
+      id: true,
+      status: true,
+      position: true,
+      assigneeId: true,
+      reporterId: true,
+      title: true,
+      completedAt: true,
+    },
   });
   const existingTasksMap = new Map(
     existingTasks.map((task) => [task.id, task])
@@ -40,85 +48,135 @@ export async function processAndValidateTaskUpdates(
   const tasksThatChanged: TaskUpdateData[] = [];
   const logEntries = [];
 
-  // Get user name for logging
+  // --- NEW: Tracker for a single, consolidated notification ---
+  const statusUpdateSummary = {
+    hasChanges: false,
+    taskTitles: [] as string[],
+    recipientIds: new Set<string>(),
+    // We'll capture the status change from the first item for the summary message
+    firstChange: { from: "", to: "" },
+  };
+
   const user = await db.user.findUnique({
     where: { id: userId },
     select: { name: true },
   });
   const userName = user?.name || "A user";
 
-for (const task of tasksToUpdate) {
-  const existingTask = existingTasksMap.get(task.id);
-  if (!existingTask) continue;
+  for (const task of tasksToUpdate) {
+    const existingTask = existingTasksMap.get(task.id);
+    if (!existingTask) continue;
 
-  const statusHasChanged = existingTask.status !== task.status;
-  const positionHasChanged = existingTask.position !== task.position;
+    const statusHasChanged = existingTask.status !== task.status;
+    const positionHasChanged = existingTask.position !== task.position;
 
-  // --- AUTHORIZATION: Only for status changes ---
-  if (statusHasChanged) {
-    if (!isProjectLead && existingTask.assigneeId !== userId) {
-      throw new AuthorizationError(
-        `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
-      );
+    // --- AUTHORIZATION: Only for status changes ---
+    if (statusHasChanged) {
+      if (!isProjectLead && existingTask.assigneeId !== userId) {
+        throw new AuthorizationError(
+          `Cannot change status for task "${existingTask.title}". You are not the assignee or a project lead.`
+        );
+      }
+    }
+
+    // --- STATUS CHANGE LOGIC ---
+    if (statusHasChanged) {
+      // --- NEW: Populate the summary tracker instead of creating a notification ---
+      if (!statusUpdateSummary.hasChanges) {
+        // Capture the details of the first status change to use in the summary
+        statusUpdateSummary.hasChanges = true;
+        statusUpdateSummary.firstChange.from = existingTask.status;
+        statusUpdateSummary.firstChange.to = task.status;
+      }
+      statusUpdateSummary.taskTitles.push(existingTask.title);
+
+      // Collect unique recipients, excluding the actor
+      if (existingTask.assigneeId && existingTask.assigneeId !== userId) {
+        statusUpdateSummary.recipientIds.add(existingTask.assigneeId);
+      }
+      if (existingTask.reporterId && existingTask.reporterId !== userId) {
+        statusUpdateSummary.recipientIds.add(existingTask.reporterId);
+      }
+
+      console.log("this service is runnign")
+
+      // This per-task log is still valuable, so we keep it
+      const isMarkedAsDone = task.status === "DONE";
+      const isMovedFromDone =
+        existingTask.status === "DONE" && task.status !== "DONE";
+
+      let primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS as ActivityAction;
+      let description = `${userName} changed status from ${existingTask.status} to ${task.status} for task "${existingTask.title}"`;
+
+      if (isMarkedAsDone) {
+        primaryAction = ACTIVITY_ACTIONS.COMPLETE_TASK;
+        description = `${userName} completed task "${existingTask.title}"`;
+      } else if (isMovedFromDone) {
+        primaryAction = ACTIVITY_ACTIONS.REOPEN_TASK;
+        description = `${userName} reopened task "${existingTask.title}"`;
+      }
+
+      logEntries.push({
+        userId,
+        projectId,
+        taskId: existingTask.id,
+        action: primaryAction,
+        description,
+        metadata: JSON.stringify({
+          status: { from: existingTask.status, to: task.status },
+        }),
+      });
+    }
+
+    // --- COLLECT DB UPDATES ---
+    // This logic remains the same. We update the DB if status OR position changes.
+    if (statusHasChanged || positionHasChanged) {
+      tasksThatChanged.push({
+        id: task.id,
+        status: task.status,
+        position: task.position,
+        completedAt:
+          statusHasChanged && task.status === "DONE"
+            ? new Date()
+            : statusHasChanged && existingTask.status === "DONE"
+            ? null
+            : existingTask.completedAt,
+      });
     }
   }
 
-  // --- STATUS CHANGE LOGIC ---
-  if (statusHasChanged) {
-    const isMarkedAsDone = task.status === "DONE";
-    const isMovedFromDone = existingTask.status === "DONE" && task.status !== "DONE";
+  // --- Apply DB changes efficiently ---
+  if (tasksThatChanged.length > 0) {
+    await updateTaskOrder(tasksThatChanged);
+  }
 
-    let primaryAction = ACTIVITY_ACTIONS.UPDATE_TASK_STATUS as ActivityAction; 
-    let description = `${userName} changed status from ${existingTask.status} to ${task.status} for task "${existingTask.title}"`;
+  // --- Bulk insert logs (status-related only) ---
+  if (logEntries.length > 0) {
+    await db.activityLog.createMany({ data: logEntries });
+  }
 
-    if (isMarkedAsDone) {
-      primaryAction = ACTIVITY_ACTIONS.COMPLETE_TASK;
-      description = `${userName} completed task "${existingTask.title}"`;
-    } else if (isMovedFromDone) {
-      primaryAction = ACTIVITY_ACTIONS.REOPEN_TASK;
-      description = `${userName} reopened task "${existingTask.title}"`;
+  // --- NEW: Build and send a SINGLE consolidated notification ---
+  if (statusUpdateSummary.hasChanges && statusUpdateSummary.recipientIds.size > 0) {
+    const { taskTitles, recipientIds, firstChange } = statusUpdateSummary;
+    const { from: fromStatus, to: toStatus } = firstChange;
+
+    let message: string;
+    if (taskTitles.length === 1) {
+      // For a single task, use the specific descriptive message
+      message = `${userName} changed status from ${fromStatus} to ${toStatus} for task "${taskTitles[0]}"`;
+    } else {
+      // For multiple tasks, create a summary message
+      message = `${userName} updated the status of ${taskTitles.length} tasks from "${fromStatus}" to "${toStatus}".`;
     }
 
-    // Create one meaningful log per task
-    logEntries.push({
-      userId,
-      projectId,
-      taskId: existingTask.id,
-      action: primaryAction,
-      description,
-      metadata: JSON.stringify({
-        status: { from: existingTask.status, to: task.status },
-      }),
+    await createAndBroadcastNotification({
+      type: "TASKS_BULK_STATUS_UPDATED", // A new, more specific notification type
+      message,
+      // Link to the project board since multiple tasks were affected
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${projectId}`,
+      recipients: Array.from(recipientIds),
     });
   }
-
-  // --- COLLECT DB UPDATES ---
-  // Update only if something truly changed (status or position)
-  if (statusHasChanged || positionHasChanged) {
-    tasksThatChanged.push({
-      id: task.id,
-      status: task.status,
-      position: task.position,
-      completedAt:
-        statusHasChanged && task.status === "DONE"
-          ? new Date()
-          : statusHasChanged && existingTask.status === "DONE"
-          ? null
-          : existingTask.completedAt,
-    });
-  }
-}
-
-// --- Apply DB changes efficiently ---
-if (tasksThatChanged.length > 0) {
-  await updateTaskOrder(tasksThatChanged);
-}
-
-// --- Bulk insert logs (status-related only) ---
-if (logEntries.length > 0) {
-  await db.activityLog.createMany({ data: logEntries });
-}
-
 }
 
 /**
@@ -151,7 +209,7 @@ export async function updateTaskOrder(tasks: TaskUpdateData[]): Promise<void> {
 /**
  * Handles sending notifications after a new task has been created.
  */
-async function handlePostCreationActions(newTask: Task) {
+async function handlePostCreationActions(newTask: Task, currentUserId: string) {
   try {
     const [reporter, assignee, project] = await Promise.all([
       db.user.findUnique({ where: { id: newTask.reporterId } }),
@@ -191,8 +249,8 @@ async function handlePostCreationActions(newTask: Task) {
       });
     }
 
-    // Notify the Assignee
-    if (assignee && assignee.email) {
+    // Notify the Assignee (only if assignee is different from the creator)
+    if (assignee && assignee.email && assignee.id !== currentUserId) {
       await sendTaskAssignmentEmail({
         assigneeName: assignee.name!,
         assigneeEmail: assignee.email,
@@ -292,7 +350,11 @@ export async function createTask(data: TaskFormData, userId: string) {
     projectId: newTask.projectId,
     taskId: newTask.id,
     action: ACTIVITY_ACTIONS.CREATE_TASK,
-    description: `${userName} created task "${newTask.title}" in ${projectName}${assigneeName ? ` and assigned to ${assigneeName}` : ''}`,
+    description: `${userName} created task "${
+      newTask.title
+    }" in ${projectName}${
+      assigneeName ? ` and assigned to ${assigneeName}` : ""
+    }`,
     metadata: {
       status: newTask.status,
       priority: newTask.priority,
@@ -305,7 +367,7 @@ export async function createTask(data: TaskFormData, userId: string) {
     },
   });
 
-  await handlePostCreationActions(newTask);
+  // await handlePostCreationActions(newTask, userId);
 
   const taskWithAttachments = await db.task.findUnique({
     where: { id: newTask.id },
@@ -313,6 +375,20 @@ export async function createTask(data: TaskFormData, userId: string) {
       attachments: true,
     },
   });
+
+  const recipientId =
+    newTask.assigneeId && newTask.assigneeId !== userId
+      ? newTask.assigneeId
+      : newTask.reporterId;
+
+  if (recipientId) {
+    await createAndBroadcastNotification({
+      type: "TASK_CREATED",
+      message: `Task "${newTask.title}" has been assigned.`,
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/projects/${newTask.projectId}/task/${newTask.id}`,
+      recipients: [recipientId],
+    });
+  }
 
   return taskWithAttachments;
 }
@@ -337,9 +413,7 @@ export async function deleteTask(taskId: string, userId: string) {
   const isProjectLead = userRole === ProjectRole.LEAD;
 
   if (!isProjectLead && task.reporterId !== userId) {
-    throw new AuthorizationError(
-      "You are not authorized to delete this task."
-    );
+    throw new AuthorizationError("You are not authorized to delete this task.");
   }
 
   // Delete the task
@@ -357,7 +431,9 @@ export async function deleteTask(taskId: string, userId: string) {
     userId,
     projectId: task.projectId,
     action: ACTIVITY_ACTIONS.DELETE_TASK,
-    description: `${user?.name || "A user"} deleted task "${task.title}" from ${task.project?.name || "the project"}`,
+    description: `${user?.name || "A user"} deleted task "${task.title}" from ${
+      task.project?.name || "the project"
+    }`,
     metadata: {
       taskId: taskId,
       taskTitle: task.title,

@@ -1,50 +1,73 @@
-import { Queue } from 'bullmq';
-// Define types for the data we'll be passing around.
-// These should ideally come from a shared types package or be based on your Prisma schema.
-interface Project {
-  id: string;
-  name: string;
-  workspaceId: string;
-  departmentId: string;
-}
 
-interface User {
-  id: string;
-  name: string | null;
-}
+import { db } from "@/lib/db";
+import Ably from "ably";
 
-const QUEUE_NAME = 'notification-queue';
+const ably = new Ably.Realtime(process.env.NEXT_PUBLIC_ABLY_KEY!);
+const channel = ably.channels.get("notifications");
 
-// Connect to the same Redis instance your worker is listening to.
-// Use environment variables for production.
-const notificationQueue = new Queue(QUEUE_NAME, {
-  connection: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-  },
-});
+export async function createAndBroadcastNotification({
+  type,
+  message,
+  url,
+  recipients,
+}: {
+  type: string;
+  message: string;
+  url?: string;
+  recipients: string[];
+}) {
+  if (!recipients.length) return null;
 
-/**
- * Queues a 'project:created' notification job.
- * This is its only responsibility.
- * @param project - The newly created project object.
- * @param creator - The user who created the project.
- */
-export const queueProjectCreatedNotification = async (project: Project, creator: User ) => {
-  const jobData = {
-    projectId: project.id,
-    projectName: project.name,
-    creatorId: creator.id,
-    creatorName: creator.name || 'A new user',
-    workspaceId: project.workspaceId,
-    departmentId : project.departmentId
-    
-  };
-
-  await notificationQueue.add('project:created', jobData, {
-    removeOnComplete: true,
-    attempts: 3,
+  // 1️⃣ Save in DB
+  const notification = await db.notification.create({
+    data: {
+      type,
+      message,
+      url,
+      recipients: {
+        create: recipients.map((recipientId) => ({
+          recipientId,
+        })),
+      },
+    },
+    include: { recipients: true },
   });
 
-  console.log(`✅ Queued 'project:created' notification for project: ${project.name}`);
-};
+  // 2️⃣ Broadcast via Ably
+  channel.publish("new-notification", {
+    id: notification.id,
+    type,
+    message,
+    url,
+    recipients,
+    createdAt: notification.createdAt,
+  });
+
+  return notification;
+}
+
+/** Mark all notifications as read for a given user */
+export async function markNotificationsAsRead(userId: string) {
+  await db.notificationRecipient.updateMany({
+    where: { recipientId: userId, status: "UNREAD" },
+    data: { status: "READ", readAt: new Date() },
+  });
+}
+
+/** Fetch all notifications for a user */
+export async function getUserNotifications(userId: string) {
+  const results = await db.notificationRecipient.findMany({
+    where: { recipientId: userId },
+    include: { notification: true },
+    orderBy: { notification: { createdAt: "desc" } },
+  });
+
+  return results.map((n) => ({
+    id: n.notification.id,
+    type: n.notification.type,
+    message: n.notification.message,
+    url: n.notification.url,
+    createdAt: n.notification.createdAt,
+    status: n.status,
+  }));
+}

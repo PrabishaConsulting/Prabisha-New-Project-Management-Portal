@@ -222,7 +222,7 @@ export function Header({
               <span className="sr-only">Toggle theme</span>
             </Button>
             <WorldClockTooltip />
-            <NotificationPopover />
+            <NotificationPopover userId= {user?.id}/>
             <FeedbackDialog>
               <Button variant="ghost" className="flex items-center gap-2">
                 <HelpCircle className="h-5 w-5" />
