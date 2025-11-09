@@ -5,7 +5,6 @@ import { AuthProvider } from "@/provider/session-provider";
 import { Toaster } from "sonner";
 import { ThemeProvider } from "../provider/theme-provider";
 
-
 const poppins = Poppins({
   variable: "--font-poppins",
   subsets: ["latin"],
@@ -32,12 +31,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning={true} >
+    <html lang="en" suppressHydrationWarning={true}>
       <body
         className={`${poppins.variable} ${montserrat.variable} antialiased`}
       >
         <AuthProvider>
-
           <ThemeProvider attribute="class" defaultTheme="system">
             {children}
             <Toaster richColors closeButton position="bottom-right" />

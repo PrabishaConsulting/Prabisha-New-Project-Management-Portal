@@ -121,9 +121,11 @@ const announcements = [
 export function Header({
   session,
   className,
+  role,
 }: {
   session: any;
   className: string;
+  role: string;
 }) {
   const router = useRouter();
 
@@ -161,7 +163,23 @@ export function Header({
       <header
         className={`sticky top-0 left-0 right-0 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}
       >
-        {/* Marquee Announcement Bar */}
+        {/* 🧑‍💼 Admin Banner */}
+        {role.toLocaleLowerCase() === "admin" && (
+          <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-center py-2 px-4 flex items-center justify-center gap-3">
+            <span className="font-medium tracking-wide">
+              🔒 Admin Mode — You have elevated privileges.
+            </span>
+
+            {/* ✅ Admin Link Button */}
+            <a
+              href="/admin"
+              className="ml-2 inline-flex items-center rounded-md bg-white/20 hover:bg-white/30 text-white px-3 py-1 text-sm font-semibold transition-all duration-150"
+            >
+              Go to Admin Panel →
+            </a>
+          </div>
+        )}
+
         {/* Marquee Announcement Bar */}
         {showMarquee && (
           <div className="relative flex w-full items-center justify-center overflow-hidden border-b border-border/50 bg-muted/40 dark:bg-muted/10">
@@ -207,7 +225,6 @@ export function Header({
 
           {/* Right Section: Actions */}
           <div className="flex items-center gap-4">
-            {/* Theme Toggle Button */}
             <Button
               variant="ghost"
               size="icon"
@@ -222,14 +239,13 @@ export function Header({
               <span className="sr-only">Toggle theme</span>
             </Button>
             <WorldClockTooltip />
-            <NotificationPopover userId= {user?.id}/>
+            <NotificationPopover userId={user?.id} />
             <FeedbackDialog>
               <Button variant="ghost" className="flex items-center gap-2">
                 <HelpCircle className="h-5 w-5" />
                 <span className="hidden sm:inline">Help</span>
               </Button>
             </FeedbackDialog>
-            {/* User Avatar with Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Avatar className="h-9 w-9 cursor-pointer capitalize">

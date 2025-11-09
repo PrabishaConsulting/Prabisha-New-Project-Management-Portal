@@ -74,23 +74,7 @@ export default async function AllTaskPage() {
         </CardContent>
       </Card>
 
-      {/* Team Tasks Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Team Tasks</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Team Stats Card with Suspense */}
-          <Suspense fallback={<StatusCardSkeleton />}>
-            <StatusCard {...stats} />
-          </Suspense>
-          
-          {/* Team Tasks Table */}
-          <Suspense fallback={<TaskTableSkeleton />}>
-            <TaskTable data={teamTasks} />
-          </Suspense>
-        </CardContent>
-      </Card>
+    
     </div>
   );
 }
