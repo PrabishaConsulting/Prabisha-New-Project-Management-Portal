@@ -119,17 +119,18 @@ const announcements = [
 ];
 
 export function Header({
-  session,
+  user,
   className,
   role,
+  workspaceRole
 }: {
-  session: any;
+  user: any;
   className: string;
   role: string;
+  workspaceRole: string
 }) {
   const router = useRouter();
 
-  const user = session?.user;
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
@@ -158,13 +159,14 @@ export function Header({
 
   if (!user) return null;
 
+
   return (
     <>
       <header
         className={`sticky top-0 left-0 right-0 backdrop-blur-md dark:bg-gray-900/60 border-b border-gray-200 dark:border-gray-800 shadow-sm z-50 ${className}`}
       >
         {/* 🧑‍💼 Admin Banner */}
-        {role.toLocaleLowerCase() === "admin" && (
+        {role.toLocaleLowerCase() === "admin" && workspaceRole === "owner" && (
           <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-center py-2 px-4 flex items-center justify-center gap-3">
             <span className="font-medium tracking-wide">
               🔒 Admin Mode — You have elevated privileges.
