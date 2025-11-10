@@ -195,7 +195,7 @@ export default function DashboardLayout({
             <MobileHeader />
             <div className="sticky top-0 z-50">
               {/* ✅ Pass role to header */}
-              <Header user={session?.user} className="" role={role} />
+              <Header user={session?.user} workspaceRole="role" className="" role={role} />
               <SidebarTrigger className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-9 left-[-0.85rem] z-50" />
             </div>
 

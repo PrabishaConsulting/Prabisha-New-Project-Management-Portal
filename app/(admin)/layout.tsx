@@ -182,7 +182,7 @@ export default async function AdminLayout({
           <MobileHeader />
           <div className="sticky top-0 z-50">
             {/* ✅ Pass role to header */}
-            <Header user={user} className="" role="user" />
+            <Header user={user} workspaceRole="role" className="" role="user" />
             <SidebarTrigger className="absolute rounded-sm hover:bg-foreground hover:text-background px-0 py-0 bg-foreground text-background top-9 left-[-0.85rem] z-50" />
           </div>
 
