@@ -5,12 +5,6 @@ import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import { ProjectContext } from "@/context/project-context";
 import {
-  Users,
-  FolderOpen,
-  Settings,
-  Package,
-  BarChart3,
-  Building2,
   GalleryVerticalEnd,
 } from "lucide-react";
 
@@ -123,7 +117,7 @@ export default function DashboardLayout({
     {
       title: "Dashboard",
       url: "/dashboard",
-      icon: FolderOpen,
+      icon: "FolderOpen",
       items: [
         { title: "My Tasks", url: "/all-task" },
         { title: "Team Task", url: "/team-task" },
@@ -134,7 +128,7 @@ export default function DashboardLayout({
     {
       title: "Contact",
       url: `/workspaces/${currentWorkspace?.id}/members`,
-      icon: Users,
+      icon: "Users",
       items: [
         { title: "Team", url: `/workspaces/${currentWorkspace?.id}/members` },
         { title: "Clients", url: `/workspaces/clients` },
@@ -143,18 +137,18 @@ export default function DashboardLayout({
     {
       title: "Assets",
       url: "/assets",
-      icon: Package,
+      icon: "Package",
       items: [
         { title: "Assets", url: "/assets" },
         { title: "Our Products", url: "/our-product" },
       ],
     },
-    { title: "Workspaces", url: "/workspaces", icon: Building2 },
-    { title: "Analytics", url: "/all-user", icon: BarChart3 },
+    { title: "Workspaces", url: "/workspaces", icon: "Building2" },
+    { title: "Analytics", url: "/all-user", icon: "BarChart3"},
     {
       title: "Settings",
       url: `/account/${session?.user?.id}`,
-      icon: Settings,
+      icon: "Settings",
       items: [
         { title: "My Projects", url: `/account/${session?.user?.id}` },
         { title: "Security", url: `/account/${session?.user?.id}/security` },

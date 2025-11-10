@@ -35,7 +35,7 @@ export default function AdminPanelPage() {
         <h1 className="text-3xl font-bold">Admin Panel</h1>
         <p className="text-muted-foreground">Manage users, projects, and workspaces directly.</p>
       </header>
-      <Tabs defaultValue="users">
+      {/* <Tabs defaultValue="users">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users"><Users className="w-4 h-4 mr-2" />User Management</TabsTrigger>
           <TabsTrigger value="projects"><FolderKanban className="w-4 h-4 mr-2" />Project Management</TabsTrigger>
@@ -47,7 +47,7 @@ export default function AdminPanelPage() {
         <TabsContent value="projects">
           <ProjectManagementTab />
         </TabsContent>
-      </Tabs>
+      </Tabs> */}
     </div>
   );
 }

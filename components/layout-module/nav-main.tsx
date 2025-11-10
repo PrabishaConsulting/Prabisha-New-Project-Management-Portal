@@ -3,8 +3,8 @@
 import {
   ChevronRight,
   ChevronDown,
-  type LucideIcon,
 } from "lucide-react";
+import * as Icons from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -38,19 +38,27 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 
+/* 🧩 DYNAMIC ICON RENDERER — icon name as string */
+function DynamicIcon({ name, className }: { name?: string; className?: string }) {
+  if (!name) return null;
+  const LucideIcon = (Icons as unknown as Record<string, React.ElementType>)[name];
+  if (!LucideIcon) return null;
+  return <LucideIcon className={className || "h-4 w-4"} />;
+}
+
 export function NavMain({
   items,
 }: {
   items: {
     title: string;
     url: string;
-    icon?: LucideIcon;
+    icon?: string; // now string instead of LucideIcon
     isActive?: boolean;
     badge?: string;
     items?: {
       title: string;
       url: string;
-      icon?: LucideIcon;
+      icon?: string;
       badge?: string;
     }[];
   }[];
@@ -62,27 +70,21 @@ export function NavMain({
   // Automatically open groups with active children
   useEffect(() => {
     const newOpenGroups = new Set<string>();
-    
     items.forEach(item => {
       const hasActiveChild = item.items?.some(child => child.url === pathname);
       const isParentActive = item.url === pathname;
-      
       if (hasActiveChild || isParentActive) {
         newOpenGroups.add(item.title);
       }
     });
-    
     setOpenGroups(newOpenGroups);
   }, [pathname, items]);
 
   const toggleGroup = (groupName: string) => {
     setOpenGroups(prev => {
       const newSet = new Set(prev);
-      if (newSet.has(groupName)) {
-        newSet.delete(groupName);
-      } else {
-        newSet.add(groupName);
-      }
+      if (newSet.has(groupName)) newSet.delete(groupName);
+      else newSet.add(groupName);
       return newSet;
     });
   };
@@ -93,16 +95,14 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-
       <SidebarMenu>
         {items.map((item) => {
           const hasChildren = item.items && item.items.length > 0;
           const isParentActive = isActiveLink(item.url, item.items);
 
-          // --- COLLAPSED STATE LOGIC ---
+          /* 🧭 COLLAPSED SIDEBAR STATE */
           if (state === "collapsed") {
             if (hasChildren) {
-              // RENDER POPOVER FOR ITEMS WITH CHILDREN
               return (
                 <Popover key={item.title}>
                   <PopoverTrigger asChild>
@@ -116,20 +116,14 @@ export function NavMain({
                             : "hover:bg-muted"
                         )}
                       >
-                        {item.icon && <item.icon className="h-4 w-4" />}
+                        <DynamicIcon name={item.icon} />
                         <span className="sr-only">{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </PopoverTrigger>
-                  <PopoverContent
-                    side="right"
-                    align="start"
-                    className="p-1 w-48"
-                  >
+                  <PopoverContent side="right" align="start" className="p-1 w-48">
                     <div className="flex flex-col space-y-1">
-                      <p className="px-3 py-2 text-sm font-semibold">
-                        {item.title}
-                      </p>
+                      <p className="px-3 py-2 text-sm font-semibold">{item.title}</p>
                       {item.items?.map((child) => {
                         const isSubActive = pathname === child.url;
                         return (
@@ -143,9 +137,7 @@ export function NavMain({
                                 : "hover:text-foreground/80"
                             )}
                           >
-                            {child.icon && (
-                              <child.icon className="h-4 w-4" />
-                            )}
+                            <DynamicIcon name={child.icon} />
                             <span>{child.title}</span>
                             {child.badge && (
                               <Badge variant="secondary" className="text-xs h-5">
@@ -160,7 +152,6 @@ export function NavMain({
                 </Popover>
               );
             } else {
-              // RENDER TOOLTIP FOR ITEMS WITHOUT CHILDREN
               return (
                 <Tooltip key={item.title}>
                   <TooltipTrigger asChild>
@@ -176,7 +167,7 @@ export function NavMain({
                         )}
                       >
                         <Link href={item.url}>
-                          {item.icon && <item.icon className="h-4 w-4" />}
+                          <DynamicIcon name={item.icon} />
                           <span className="sr-only">{item.title}</span>
                         </Link>
                       </SidebarMenuButton>
@@ -190,7 +181,7 @@ export function NavMain({
             }
           }
 
-          // --- EXPANDED STATE LOGIC ---
+          /* 🧱 EXPANDED SIDEBAR STATE */
           return (
             <SidebarMenuItem key={item.title}>
               {hasChildren ? (
@@ -209,11 +200,8 @@ export function NavMain({
                           : "hover:bg-primary"
                       )}
                     >
-                      <Link
-                        href={item.url}
-                        className="flex items-center gap-2 w-full"
-                      >
-                        {item.icon && <item.icon className="h-4 w-4" />}
+                      <Link href={item.url} className="flex items-center gap-2 w-full">
+                        <DynamicIcon name={item.icon} />
                         <span className="flex-1">{item.title}</span>
                         {item.badge && (
                           <Badge variant="secondary" className="text-xs h-5">
@@ -257,13 +245,8 @@ export function NavMain({
                                   : "hover:text-foreground/80"
                               )}
                             >
-                              <Link
-                                href={child.url}
-                                className="flex items-center gap-2 w-full"
-                              >
-                                {child.icon && (
-                                  <child.icon className="h-4 w-4" />
-                                )}
+                              <Link href={child.url} className="flex items-center gap-2 w-full">
+                                <DynamicIcon name={child.icon} />
                                 <span className="flex-1">{child.title}</span>
                                 {child.badge && (
                                   <Badge variant="secondary" className="text-xs h-4">
@@ -289,11 +272,8 @@ export function NavMain({
                       : "hover:bg-muted"
                   )}
                 >
-                  <Link
-                    href={item.url}
-                    className="flex items-center gap-2 w-full"
-                  >
-                    {item.icon && <item.icon className="h-4 w-4" />}
+                  <Link href={item.url} className="flex items-center gap-2 w-full">
+                    <DynamicIcon name={item.icon} />
                     <span className="flex-1">{item.title}</span>
                     {item.badge && (
                       <Badge variant="secondary" className="text-xs h-5">
