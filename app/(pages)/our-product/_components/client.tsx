@@ -2,8 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback } from "react";
 import { Plus } from "lucide-react";
 import { products } from "@/app/generated/client";
 import { ColumnDef } from "@tanstack/react-table";
@@ -14,52 +13,62 @@ import { DataTable } from "./data-table";
 
 interface ProductClientProps {
   initialData: any;
+  initialPageCount: number;
+  initialTotalProducts: number;
+  initialCategories: any;
   columns: ColumnDef<products>[];
-  pageCount: number;
-  categories : any;
 }
 
-export function ProductClient({ initialData, columns, pageCount , categories}: ProductClientProps) {
-  const router = useRouter();
+export function ProductClient({ 
+  initialData, 
+  initialPageCount, 
+  initialTotalProducts, 
+  initialCategories, 
+  columns 
+}: ProductClientProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
 
-  const handleSuccess = () => {
+  const handleSuccess = useCallback(() => {
     setIsModalOpen(false);
     setEditingProduct(null);
-    router.refresh(); // Optional: force a client-side refresh
-  };
+    // We'll let the DataTable handle the refresh
+    window.location.reload();
+  }, []);
+
+  const handleAddNew = useCallback(() => {
+    setEditingProduct(null);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setIsModalOpen(false);
+    setEditingProduct(null);
+  }, []);
 
   return (
     <>
-      {/* Your table/data display here */}
-      
-      
-
       <ProductFormModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingProduct(null);
-        }}
-        onSuccess={handleSuccess} // Pass the function here
+        onClose={handleCloseModal}
+        onSuccess={handleSuccess}
         initialData={editingProduct}
       />
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Our Products</CardTitle>
-          <Button onClick={() => setIsModalOpen(true)}>
+          <Button onClick={handleAddNew}>
             <Plus className="mr-2 h-4 w-4" /> Add New
           </Button>
         </CardHeader>
         <CardContent>
           <DataTable
-          categories={categories}
+            initialData={initialData}
+            initialPageCount={initialPageCount}
+            initialTotalProducts={initialTotalProducts}
+            initialCategories={initialCategories}
             columns={columns}
-            data={initialData}
             searchKey="title"
-            pageCount={pageCount}
-            onSuccess={handleSuccess} // Pass handler for edit/delete actions
           />
         </CardContent>
       </Card>
