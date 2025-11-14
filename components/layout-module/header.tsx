@@ -49,6 +49,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Marquee } from "../ui/marquee";
+import ProductsPanel from "./our-products";
 
 // Import Marquee component
 type UserMenuItem =
@@ -305,6 +306,7 @@ export function Header({
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
+            <ProductsPanel/>
           </div>
         </div>
       </header>
