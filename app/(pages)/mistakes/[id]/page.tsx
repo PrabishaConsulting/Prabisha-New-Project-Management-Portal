@@ -35,15 +35,15 @@ export const metadata: Metadata = {
 }
 
 const impactVariant: Record<string, string> = {
-  LOW: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  MEDIUM: 'bg-amber-100 text-amber-700 border-amber-200',
-  HIGH: 'bg-rose-100 text-rose-700 border-rose-200',
+  LOW: 'bg-emerald-100 text-emerald-700 ',
+  MEDIUM: 'bg-amber-100 text-amber-700 ',
+  HIGH: 'bg-rose-100 text-rose-700 ',
 }
 
 const statusVariant: Record<string, string> = {
-  PENDING: 'border border-dashed border-slate-300 text-slate-600 bg-white',
-  REVIEWED: 'bg-sky-100 text-sky-700 border-sky-200',
-  ARCHIVED: 'bg-slate-100 text-slate-600 border-slate-200',
+  PENDING: '  ',
+  REVIEWED: 'bg-sky-100 text-sky-700 ',
+  ARCHIVED: '100  ',
 }
 
 async function getMistake(id: string) {
@@ -98,15 +98,17 @@ function formatDateTime(date: Date) {
 export default async function MistakeDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const session = await getServerSession(authOptions)
 
   if (!session?.user) {
     redirect('/login')
   }
+  const {id} = await params
 
-  const mistake = await getMistake(params.id)
+  if(id === undefined ) return null
+  const mistake = await getMistake(id)
 
   if (!mistake) {
     notFound()
@@ -117,14 +119,14 @@ export default async function MistakeDetailPage({
   const isAuthor = (session.user as any).id === mistake.authorId
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-5xl flex-col gap-8 px-6 py-10">
+    <div className=" flex min-h-screen w-full  flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
         <div className="space-y-2">
-          <Link href="/mistakes" className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700">
+          <Link href="/mistakes" className="inline-flex items-center text-sm  hover:">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to mistakes
           </Link>
-          <h1 className="text-3xl font-bold text-slate-900 md:text-4xl">{mistake.mistakeIdentified}</h1>
-          <p className="max-w-2xl text-sm text-slate-600">
+          <h1 className="text-3xl font-bold  md:text-4xl">{mistake.mistakeIdentified}</h1>
+          <p className="max-w-2xl text-sm ">
             Review the full context, actions taken, and key learnings for this logged mistake. Admins can manage status
             updates and reviewer notes from this page.
           </p>
@@ -163,63 +165,73 @@ export default async function MistakeDetailPage({
         </div>
       </div>
 
+       <Alert className=" 50 ">
+        <AlertDescription className="flex flex-col gap-2 text-sm leading-relaxed">
+          <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
+            <AlertCircle className="h-4 w-4" /> Why reviewer notes matter
+          </span>
+          Reviewer feedback stays visible to the entire team so everyone can understand the quality gates before
+          closing a mistake. Use these notes to inform future training sessions and preventive checklists.
+        </AlertDescription>
+      </Alert>
+
       <section className="grid gap-6 md:grid-cols-[2fr,1fr]">
-        <Card className="border border-slate-200 shadow-sm">
+        <Card className="border  shadow-sm">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
               <AlertCircle className="h-4 w-4" /> Root cause analysis
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6 text-sm leading-relaxed text-slate-700">
+          <CardContent className="space-y-6 text-sm leading-relaxed ">
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">What happened</h3>
-              <p className="mt-2 whitespace-pre-line text-base text-slate-800">{mistake.rootCause}</p>
+              <h3 className="text-xs font-semibold uppercase tracking-wide ">What happened</h3>
+              <p className="mt-2 whitespace-pre-line text-base ">{mistake.rootCause}</p>
             </div>
             <Separator />
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">How it was resolved</h3>
-              <p className="mt-2 whitespace-pre-line text-base text-slate-800">{mistake.resolution}</p>
+              <h3 className="text-xs font-semibold uppercase tracking-wide ">How it was resolved</h3>
+              <p className="mt-2 whitespace-pre-line text-base ">{mistake.resolution}</p>
             </div>
             <Separator />
             <div>
-              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500">Key learnings</h3>
-              <p className="mt-2 whitespace-pre-line text-base text-slate-800">{mistake.learnings}</p>
+              <h3 className="text-xs font-semibold uppercase tracking-wide ">Key learnings</h3>
+              <p className="mt-2 whitespace-pre-line text-base ">{mistake.learnings}</p>
             </div>
           </CardContent>
         </Card>
 
         <div className="space-y-6">
-          <Card className="border border-slate-200 shadow-sm">
+          <Card className="border  shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
                 <Calendar className="h-4 w-4" /> Timeline
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4 text-sm text-slate-600">
+            <CardContent className="space-y-4 text-sm ">
               <div className="flex items-start gap-3">
-                <Clock className="mt-1 h-4 w-4 text-slate-400" />
+                <Clock className="mt-1 h-4 w-4 " />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Mistake Date</p>
-                  <p className="font-medium text-slate-800">{formatDate(mistake.mistakeDate)}</p>
+                  <p className="text-xs uppercase tracking-wide ">Mistake Date</p>
+                  <p className="font-medium ">{formatDate(mistake.mistakeDate)}</p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
-                <Layers className="mt-1 h-4 w-4 text-slate-400" />
+                <Layers className="mt-1 h-4 w-4 " />
                 <div>
-                  <p className="text-xs uppercase tracking-wide text-slate-500">Status last updated</p>
-                  <p className="font-medium text-slate-800">{formatDateTime(mistake.updatedAt)}</p>
+                  <p className="text-xs uppercase tracking-wide ">Status last updated</p>
+                  <p className="font-medium ">{formatDateTime(mistake.updatedAt)}</p>
                 </div>
               </div>
               {mistake.reviewer && (
                 <div className="flex items-start gap-3">
-                  <ShieldCheck className="mt-1 h-4 w-4 text-slate-400" />
+                  <ShieldCheck className="mt-1 h-4 w-4 " />
                   <div>
-                    <p className="text-xs uppercase tracking-wide text-slate-500">Reviewed by</p>
-                    <p className="font-medium text-slate-800">
+                    <p className="text-xs uppercase tracking-wide ">Reviewed by</p>
+                    <p className="font-medium ">
                       {mistake.reviewer.name || mistake.reviewer.email}
                     </p>
                     {mistake.reviewNotes && (
-                      <p className="mt-1 text-sm text-slate-600">{mistake.reviewNotes}</p>
+                      <p className="mt-1 text-sm ">{mistake.reviewNotes}</p>
                     )}
                   </div>
                 </div>
@@ -227,38 +239,38 @@ export default async function MistakeDetailPage({
             </CardContent>
           </Card>
 
-          <Card className="border border-slate-200 shadow-sm">
+          <Card className="border  shadow-sm">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
                 <FileText className="h-4 w-4" /> Attachments
               </CardTitle>
             </CardHeader>
             <CardContent>
               {mistake.attachments.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 py-8 text-center">
+                <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed  50 py-8 text-center">
                   <Image src="/empty-state.svg" alt="No attachments" width={140} height={140} />
-                  <p className="text-sm text-slate-500">No attachments were provided for this mistake.</p>
+                  <p className="text-sm ">No attachments were provided for this mistake.</p>
                 </div>
               ) : (
                 <ul className="space-y-3 text-sm">
                   {mistake.attachments.map((file, index) => (
                     <li key={index}
-                      className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 text-slate-700 shadow-sm">
+                      className="flex items-center justify-between rounded-lg border   px-3 py-2  shadow-sm">
                       <div className="flex items-center gap-3">
-                        <FileText className="h-4 w-4 text-slate-400" />
+                        <FileText className="h-4 w-4 " />
                         <div>
                           <p className="font-medium">
                             {file.name || file.originalName || file.fileName || `Attachment ${index + 1}`}
                           </p>
                           {file.size && (
-                            <p className="text-xs text-slate-400">{Math.round(file.size / 1024)} KB</p>
+                            <p className="text-xs ">{Math.round(file.size / 1024)} KB</p>
                           )}
                         </div>
                       </div>
                       <Link
                         href={file.url || '#'}
                         target="_blank"
-                        className="text-sm font-medium text-blue-600 hover:text-blue-700"
+                        className="text-sm font-medium  hover:"
                       >
                         Download
                       </Link>
@@ -270,16 +282,16 @@ export default async function MistakeDetailPage({
           </Card>
 
           {(isAdmin || isAuthor) && (
-            <Card className="border border-slate-200 shadow-sm">
+            <Card className="border  shadow-sm">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+                <CardTitle className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
                   <UserCog className="h-4 w-4" /> Management actions
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Alert className="border-slate-200 bg-slate-50 text-slate-700">
+                <Alert className=" 50 ">
                   <AlertDescription className="flex flex-col gap-1 text-sm leading-relaxed">
-                    <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
+                    <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
                       <CheckCircle2 className="h-4 w-4" /> Admin controls
                     </span>
                     <span>
@@ -314,7 +326,7 @@ export default async function MistakeDetailPage({
                       </Alert>
                     </>
                   ) : (
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm ">
                       You can review this entry, but only administrators can update or delete mistakes.
                     </p>
                   )}
@@ -325,15 +337,7 @@ export default async function MistakeDetailPage({
         </div>
       </section>
 
-      <Alert className="border-slate-200 bg-slate-50 text-slate-700">
-        <AlertDescription className="flex flex-col gap-2 text-sm leading-relaxed">
-          <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
-            <AlertCircle className="h-4 w-4" /> Why reviewer notes matter
-          </span>
-          Reviewer feedback stays visible to the entire team so everyone can understand the quality gates before
-          closing a mistake. Use these notes to inform future training sessions and preventive checklists.
-        </AlertDescription>
-      </Alert>
+     
     </div>
   )
 }

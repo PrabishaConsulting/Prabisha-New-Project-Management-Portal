@@ -26,9 +26,9 @@ const impactVariant: Record<string, string> = {
 }
 
 const statusVariant: Record<string, string> = {
-  PENDING: 'border border-dashed border-slate-300 text-slate-600 bg-white',
+  PENDING: 'border    bg-white',
   REVIEWED: 'bg-sky-100 text-sky-700 border-sky-200',
-  ARCHIVED: 'bg-slate-100 text-slate-600 border-slate-200',
+  ARCHIVED: '100  ',
 }
 
 async function getMistakes() {
@@ -84,18 +84,18 @@ export default async function MistakesPage() {
     <div className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-8 px-6 py-10">
       <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 md:text-4xl">Mistake Learning Library</h1>
-          <p className="mt-2 max-w-2xl text-base text-slate-600">
+          <h1 className="text-3xl font-bold  md:text-4xl">Mistake Learning Library</h1>
+          <p className="mt-2 max-w-2xl text-base ">
             Explore recorded mistakes, understand their impact, and learn the key actions taken to prevent them
             from happening again.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <Badge variant="outline" className="bg-slate-50 text-slate-700">
+          <Badge variant="outline" className="50 ">
             <Users className="mr-1 h-4 w-4" /> {(session.user as any)?.name || 'Unknown user'}
           </Badge>
           <Link href="/mistakes/new">
-            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg">
+            <Button className="from-blue-600 to-indigo-600  shadow-lg">
               Log Mistake
             </Button>
           </Link>
@@ -103,19 +103,19 @@ export default async function MistakesPage() {
       </div>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <Card className="border-none bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg">
+        <Card className="border-none  from-blue-600 to-indigo-600  shadow-lg">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-base font-semibold uppercase tracking-wide text-white/80">
+            <CardTitle className="flex items-center text-base font-semibold uppercase tracking-wide /80">
               <Layers className="mr-2 h-4 w-4" /> Total Mistakes
             </CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">{total}</CardContent>
-          <CardFooter className="text-sm text-white/70">
+          <CardFooter className="text-sm /70">
             Includes all documented mistakes with full details and attachments.
           </CardFooter>
         </Card>
 
-        <Card className="border-none bg-gradient-to-br from-amber-50 to-amber-100 text-amber-900 shadow-lg">
+        <Card className="border-none  from-amber-50 to-amber-100 text-amber-900 shadow-lg">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center text-base font-semibold uppercase tracking-wide text-amber-700">
               <ShieldCheck className="mr-2 h-4 w-4" /> Reviewed
@@ -127,24 +127,24 @@ export default async function MistakesPage() {
           </CardFooter>
         </Card>
 
-        <Card className="border-none bg-gradient-to-br from-slate-50 to-slate-100 text-slate-900 shadow-lg">
+        <Card className="border-none  from-slate-50 to-slate-100  shadow-lg">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center text-base font-semibold uppercase tracking-wide text-slate-600">
+            <CardTitle className="flex items-center text-base font-semibold uppercase tracking-wide ">
               <AlertCircle className="mr-2 h-4 w-4" /> Pending Review
             </CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">{pending}</CardContent>
-          <CardFooter className="text-sm text-slate-600">
+          <CardFooter className="text-sm ">
             Pending items need follow-up actions or validation.
           </CardFooter>
         </Card>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-2">
+      <section className="grid gap-5 md:grid-cols-3">
         {(['LOW', 'MEDIUM', 'HIGH'] as const).map((impact) => (
-          <Card key={impact} className="border border-dashed border-slate-200">
+          <Card key={impact} className="border  ">
             <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-600">
+              <CardTitle className="flex items-center gap-2 text-sm font-semibold ">
                 <span
                   className={`inline-flex h-6 items-center rounded-full px-3 text-xs font-semibold uppercase ${
                     impactVariant[impact]
@@ -156,12 +156,12 @@ export default async function MistakesPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-semibold text-slate-900">
+              <p className="text-3xl font-semibold ">
                 {impactStats[impact] ?? 0}
-                <span className="ml-2 text-base font-normal text-slate-500">records</span>
+                <span className="ml-2 text-base font-normal ">records</span>
               </p>
-              <p className="mt-2 text-sm text-slate-500">
-                Mistakes classified with <span className="font-medium text-slate-700">{impact.toLowerCase()}</span>{' '}
+              <p className="mt-2 text-sm ">
+                Mistakes classified with <span className="font-medium ">{impact.toLowerCase()}</span>{' '}
                 impact level.
               </p>
             </CardContent>
@@ -173,7 +173,7 @@ export default async function MistakesPage() {
 
       <section className="space-y-6">
         {mistakes.length === 0 ? (
-          <Card className="border-dashed border-2 border-slate-200 bg-slate-50">
+          <Card className=" border-2  50">
             <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
               <Image
                 src="/empty-state.svg"
@@ -183,13 +183,13 @@ export default async function MistakesPage() {
                 className="opacity-80"
               />
               <div className="space-y-2">
-                <h2 className="text-xl font-semibold text-slate-700">No mistakes logged yet</h2>
-                <p className="text-sm text-slate-500">
+                <h2 className="text-xl font-semibold ">No mistakes logged yet</h2>
+                <p className="text-sm ">
                   Create the first mistake log to start building a learning repository.
                 </p>
               </div>
               <Link href="/mistakes/new">
-                <Button className="bg-blue-600 text-white hover:bg-blue-700">
+                <Button className="bg-blue-600  hover:bg-blue-700">
                   Log the first mistake
                 </Button>
               </Link>
@@ -197,7 +197,7 @@ export default async function MistakesPage() {
           </Card>
         ) : (
           mistakes.map((mistake) => (
-            <Card key={mistake.id} className="border border-slate-200 shadow-sm">
+            <Card key={mistake.id} className="border  shadow-sm">
               <CardHeader className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3">
@@ -219,10 +219,10 @@ export default async function MistakesPage() {
                       {mistake.category.replace('_', ' ')}
                     </Badge>
                   </div>
-                  <CardTitle className="text-2xl font-semibold text-slate-900">
+                  <CardTitle className="text-2xl font-semibold ">
                     {mistake.mistakeIdentified}
                   </CardTitle>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500">
+                  <div className="flex flex-wrap items-center gap-4 text-sm ">
                     <span className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" /> {formatDate(mistake.mistakeDate)}
                     </span>
@@ -241,18 +241,18 @@ export default async function MistakesPage() {
               <CardContent className="grid gap-6 md:grid-cols-2">
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide ">
                       Root Cause
                     </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-700">
+                    <p className="mt-1 text-sm leading-relaxed ">
                       {mistake.rootCause}
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide ">
                       Resolution
                     </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-700">
+                    <p className="mt-1 text-sm leading-relaxed ">
                       {mistake.resolution}
                     </p>
                   </div>
@@ -260,17 +260,17 @@ export default async function MistakesPage() {
 
                 <div className="space-y-4">
                   <div>
-                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide ">
                       Key Learnings
                     </h3>
-                    <p className="mt-1 text-sm leading-relaxed text-slate-700">
+                    <p className="mt-1 text-sm leading-relaxed ">
                       {mistake.learnings}
                     </p>
                   </div>
 
                   {Array.isArray(mistake.attachments) && mistake.attachments.length > 0 && (
                     <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide ">
                         Attachments
                       </h3>
                       <ul className="mt-2 space-y-2 text-sm">
@@ -296,9 +296,9 @@ export default async function MistakesPage() {
         )}
       </section>
 
-      <Alert className="border-slate-200 bg-slate-50 text-slate-700">
+      <Alert className=" 50 ">
         <AlertDescription className="flex flex-col gap-2 text-sm leading-relaxed">
-          <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
+          <span className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide ">
             <AlertCircle className="h-4 w-4" /> Why we document mistakes
           </span>
           Sharing mistakes creates a safe learning environment, improves cross-team transparency, and accelerates

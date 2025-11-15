@@ -174,12 +174,12 @@ export default function NewMistakePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 py-8">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className=" py-8">
+      <div className=" px-4 ">
         {/* Header */}
         <div className="mb-6">
           <Link href="/mistakes">
-            <Button variant="ghost" className="mb-4 hover:bg-white/60">
+            <Button variant="ghost" className="mb-4 hover:/60">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Mistakes
             </Button>
@@ -188,29 +188,46 @@ export default function NewMistakePage() {
 
         {/* Alerts */}
         {error && (
-          <Alert variant="destructive" className="mb-6 shadow-lg border-red-200 bg-red-50">
+          <Alert variant="destructive" className="mb-6 mt-10 lg -red-200 bg-red-50">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="text-red-800">{error}</AlertDescription>
           </Alert>
         )}
 
         {success && (
-          <Alert className="mb-6 shadow-lg border-green-200 bg-green-50">
-            <AlertCircle className="h-4 w-4 text-green-600" />
-            <AlertDescription className="text-green-700 font-medium">{success}</AlertDescription>
+          <Alert className="mb-6 mt-10 lg -green-200 50">
+            <AlertCircle className="h-4 w-4 600" />
+            <AlertDescription className="700 font-medium">{success}</AlertDescription>
           </Alert>
         )}
-
+  <Card className="mt-8  lg -0 r from-amber-50 to-orange-50 backdrop-blur-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center">
+              <span className="mr-2">💡</span>
+              Tips for Better Mistake Documentation
+            </h3>
+            <div className="grid md:grid-cols-2 gap-4 text-sm text-amber-700">
+              <div className="space-y-2">
+                <p><strong>Be Specific:</strong> Include exact times, steps, and conditions</p>
+                <p><strong>No Blame:</strong> Focus on the process, not individuals</p>
+              </div>
+              <div className="space-y-2">
+                <p><strong>Think Prevention:</strong> How can we stop this from recurring?</p>
+                <p><strong>Add Context:</strong> Screenshots and documents help others learn</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         {/* Main Form Card */}
-        <Card className="shadow-2xl border-0 bg-white/90 backdrop-blur-lg overflow-hidden">
-          <CardHeader className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 text-white">
+        <Card className="mt-10 2xl -0 /90 backdrop-blur-lg overflow-hidden">
+          <CardHeader className="r from-blue-600 via-purple-600 to-indigo-600 ">
             <CardTitle className="text-2xl font-bold flex items-center">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center mr-3">
+              <div className="w-8 h-8 /20 rounded-full flex items-center justify-center mr-3">
                 📝
               </div>
               Mistake Details
             </CardTitle>
-            <CardDescription className="text-blue-100 text-base">
+            <CardDescription className="100 text-base">
               Fill in all the required information about the mistake to help improve our processes
             </CardDescription>
           </CardHeader>
@@ -220,7 +237,7 @@ export default function NewMistakePage() {
               
               {/* Mistake Identification */}
               <div className="space-y-3">
-                <Label htmlFor="mistakeIdentified" className="text-lg font-semibold text-slate-700">
+                <Label htmlFor="mistakeIdentified" className="text-lg font-semibold ">
                   Mistake Identified *
                 </Label>
                 <Input
@@ -228,10 +245,10 @@ export default function NewMistakePage() {
                   value={formData.mistakeIdentified}
                   onChange={(e) => handleInputChange('mistakeIdentified', e.target.value)}
                   placeholder="Provide a clear, brief description of the mistake..."
-                  className="text-base h-12 border-2 border-slate-200 focus:border-blue-500 transition-all duration-200"
+                  className="text-base h-12 -2 -slate-200 focus:-blue-500 transition-all duration-200"
                   maxLength={500}
                 />
-                <p className="text-sm text-slate-500 flex justify-between">
+                <p className="text-sm  flex justify-between">
                   <span>Be specific and concise</span>
                   <span className="font-medium">{formData.mistakeIdentified.length}/500</span>
                 </p>
@@ -240,17 +257,17 @@ export default function NewMistakePage() {
               {/* Impact and Category Row */}
               <div className="grid md:grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <Label htmlFor="impact" className="text-lg font-semibold text-slate-700">
+                  <Label htmlFor="impact" className="text-lg font-semibold ">
                     Impact Level *
                   </Label>
                   <Select value={formData.impact} onValueChange={(value) => handleInputChange('impact', value)}>
-                    <SelectTrigger className="h-12 text-base border-2 border-slate-200 focus:border-blue-500">
+                    <SelectTrigger className="h-12 text-base -2 -slate-200 focus:-blue-500">
                       <SelectValue placeholder="Select the impact level" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="LOW" className="text-base">
                         <div className="flex items-center">
-                          <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                          <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
                           Low Impact
                         </div>
                       </SelectItem>
@@ -271,11 +288,11 @@ export default function NewMistakePage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label htmlFor="category" className="text-lg font-semibold text-slate-700">
+                  <Label htmlFor="category" className="text-lg font-semibold ">
                     Category *
                   </Label>
                   <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                    <SelectTrigger className="h-12 text-base border-2 border-slate-200 focus:border-blue-500">
+                    <SelectTrigger className="h-12 text-base -2 -slate-200 focus:-blue-500">
                       <SelectValue placeholder="Select mistake category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -304,7 +321,7 @@ export default function NewMistakePage() {
 
               {/* Mistake Date */}
               <div className="space-y-3">
-                <Label htmlFor="mistakeDate" className="text-lg font-semibold text-slate-700">
+                <Label htmlFor="mistakeDate" className="text-lg font-semibold ">
                   When did this mistake occur? *
                 </Label>
                 <Input
@@ -312,13 +329,13 @@ export default function NewMistakePage() {
                   type="date"
                   value={formData.mistakeDate}
                   onChange={(e) => handleInputChange('mistakeDate', e.target.value)}
-                  className="text-base h-12 border-2 border-slate-200 focus:border-blue-500 transition-all duration-200"
+                  className="text-base h-12 -2 -slate-200 focus:-blue-500 transition-all duration-200"
                 />
               </div>
 
               {/* Root Cause Analysis */}
               <div className="space-y-3">
-                <Label htmlFor="rootCause" className="text-lg font-semibold text-slate-700">
+                <Label htmlFor="rootCause" className="text-lg font-semibold ">
                   Root Cause Analysis *
                 </Label>
                 <Textarea
@@ -326,15 +343,15 @@ export default function NewMistakePage() {
                   value={formData.rootCause}
                   onChange={(e) => handleInputChange('rootCause', e.target.value)}
                   placeholder="Dive deep into what really caused this mistake. Consider the 5 Whys approach..."
-                  className="min-h-[140px] text-base border-2 border-slate-200 focus:border-blue-500 transition-all duration-200 resize-y"
+                  className="min-h-[140px] text-base -2 -slate-200 focus:-blue-500 transition-all duration-200 resize-y"
                   rows={6}
                 />
-                <p className="text-sm text-slate-500">Think about underlying causes, not just symptoms</p>
+                <p className="text-sm ">Think about underlying causes, not just symptoms</p>
               </div>
 
               {/* Resolution */}
               <div className="space-y-3">
-                <Label htmlFor="resolution" className="text-lg font-semibold text-slate-700">
+                <Label htmlFor="resolution" className="text-lg font-semibold ">
                   How was it resolved? *
                 </Label>
                 <Textarea
@@ -342,15 +359,15 @@ export default function NewMistakePage() {
                   value={formData.resolution}
                   onChange={(e) => handleInputChange('resolution', e.target.value)}
                   placeholder="Describe the steps taken to fix the mistake and restore normal operations..."
-                  className="min-h-[140px] text-base border-2 border-slate-200 focus:border-blue-500 transition-all duration-200 resize-y"
+                  className="min-h-[140px] text-base -2 -slate-200 focus:-blue-500 transition-all duration-200 resize-y"
                   rows={6}
                 />
-                <p className="text-sm text-slate-500">Include immediate fixes and long-term solutions</p>
+                <p className="text-sm ">Include immediate fixes and long-term solutions</p>
               </div>
 
               {/* Key Learnings */}
               <div className="space-y-3">
-                <Label htmlFor="learnings" className="text-lg font-semibold text-slate-700">
+                <Label htmlFor="learnings" className="text-lg font-semibold ">
                   Key Learnings & Prevention *
                 </Label>
                 <Textarea
@@ -358,19 +375,19 @@ export default function NewMistakePage() {
                   value={formData.learnings}
                   onChange={(e) => handleInputChange('learnings', e.target.value)}
                   placeholder="What did you learn? How will you prevent this from happening again? What processes need to change?"
-                  className="min-h-[140px] text-base border-2 border-slate-200 focus:border-blue-500 transition-all duration-200 resize-y"
+                  className="min-h-[140px] text-base -2 -slate-200 focus:-blue-500 transition-all duration-200 resize-y"
                   rows={6}
                 />
-                <p className="text-sm text-slate-500">Focus on actionable insights and preventive measures</p>
+                <p className="text-sm ">Focus on actionable insights and preventive measures</p>
               </div>
 
               {/* File Upload Section */}
               <div className="space-y-4">
-                <Label className="text-lg font-semibold text-slate-700">Supporting Documents & Images</Label>
-                <div className="border-2 border-dashed border-blue-300 bg-blue-50/50 rounded-xl p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 cursor-pointer">
-                  <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-                  <p className="text-slate-700 mb-2 text-lg font-medium">Drop files here or click to upload</p>
-                  <p className="text-slate-500 text-sm mb-4">Support images, PDFs, documents, and text files</p>
+                <Label className="text-lg font-semibold ">Supporting Documents & Images</Label>
+                <div className=" rounded-xl p-8 text-center hover:bg-blue-400 hover:50 transition-all duration-200 cursor-pointer">
+                  <Upload className="w-12 h-12 500 mx-auto mb-4" />
+                  <p className=" mb-2 text-lg font-medium">Drop files here or click to upload</p>
+                  <p className=" text-sm mb-4">Support images, PDFs, documents, and text files</p>
                   <Input
                     type="file"
                     multiple
@@ -381,7 +398,7 @@ export default function NewMistakePage() {
                   />
                   <Label
                     htmlFor="file-upload"
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl cursor-pointer hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="inline-flex items-center px-6 py-3 r from-blue-600 to-purple-600  rounded-xl cursor-pointer hover:from-blue-700 hover:to-purple-700 transition-all duration-200 font-medium mt-10 lg hover:mt-10 xl transform hover:scale-105"
                   >
                     <Upload className="w-5 h-5 mr-2" />
                     Choose Files
@@ -391,30 +408,30 @@ export default function NewMistakePage() {
                 {/* File Preview Grid */}
                 {files.length > 0 && (
                   <div className="space-y-4">
-                    <p className="font-semibold text-slate-700 text-lg">Selected Files ({files.length})</p>
+                    <p className="font-semibold  text-lg">Selected Files ({files.length})</p>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {files.map((file, index) => (
-                        <div key={index} className="flex items-center p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
+                        <div key={index} className="flex items-center p-4 r from-blue-50 to-indigo-50 rounded-xl  -blue-200 mt-10 sm">
                           {file.preview ? (
                             <div className="relative">
                               <img
                                 src={file.preview}
                                 alt={file.name}
-                                className="w-16 h-16 object-cover rounded-lg mr-4 shadow-md"
+                                className="w-16 h-16 object-cover rounded-lg mr-4 mt-10 md"
                               />
-                              <div className="absolute -top-1 -right-1 w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                                <span className="text-white text-xs">📷</span>
+                              <div className="absolute -top-1 -right-1 w-6 h-6 500 rounded-full flex items-center justify-center">
+                                <span className=" text-xs">📷</span>
                               </div>
                             </div>
                           ) : (
-                            <div className="w-16 h-16 bg-slate-200 rounded-lg mr-4 flex items-center justify-center shadow-md">
-                              <FileText className="w-8 h-8 text-slate-500" />
+                            <div className="w-16 h-16 bg-slate-200 rounded-lg mr-4 flex items-center justify-center mt-10 md">
+                              <FileText className="w-8 h-8 " />
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-slate-800 truncate">{file.name}</p>
-                            <p className="text-xs text-slate-600">{formatFileSize(file.size)}</p>
-                            <p className="text-xs text-blue-600 capitalize">{file.type.split('/')[0]} file</p>
+                            <p className="text-sm font-semibold  truncate">{file.name}</p>
+                            <p className="text-xs ">{formatFileSize(file.size)}</p>
+                            <p className="text-xs 600 capitalize">{file.type.split('/')[0]} file</p>
                           </div>
                           <Button
                             type="button"
@@ -433,12 +450,12 @@ export default function NewMistakePage() {
               </div>
 
               {/* Submit Section */}
-              <div className="flex flex-col sm:flex-row gap-4 justify-end pt-8 border-t-2 border-slate-100">
+              <div className="flex flex-col sm:flex-row gap-4 justify-end pt-8 -t-2 -slate-100">
                 <Link href="/mistakes">
                   <Button
                     type="button"
                     variant="outline"
-                    className="w-full sm:w-auto px-8 py-3 text-base border-2 hover:bg-slate-50"
+                    className="w-full sm:w-auto px-8 py-3 text-base -2 hover:bg-slate-50"
                   >
                     Cancel
                   </Button>
@@ -446,7 +463,7 @@ export default function NewMistakePage() {
                 <Button
                   type="submit"
                   disabled={loading}
-                  className="w-full sm:w-auto px-8 py-3 text-base bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 font-semibold"
+                  className="w-full sm:w-auto px-8 py-3 text-base r from-blue-600 via-purple-600 to-indigo-600 hover:from-blue-700 hover:via-purple-700 hover:to-indigo-700 mt-10 lg hover:mt-10 xl transform hover:scale-105 transition-all duration-200 font-semibold"
                 >
                   {loading ? (
                     <>
@@ -466,24 +483,7 @@ export default function NewMistakePage() {
         </Card>
 
         {/* Helper Tips Card */}
-        <Card className="mt-8 shadow-lg border-0 bg-gradient-to-r from-amber-50 to-orange-50 backdrop-blur-sm">
-          <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-amber-800 mb-3 flex items-center">
-              <span className="mr-2">💡</span>
-              Tips for Better Mistake Documentation
-            </h3>
-            <div className="grid md:grid-cols-2 gap-4 text-sm text-amber-700">
-              <div className="space-y-2">
-                <p><strong>Be Specific:</strong> Include exact times, steps, and conditions</p>
-                <p><strong>No Blame:</strong> Focus on the process, not individuals</p>
-              </div>
-              <div className="space-y-2">
-                <p><strong>Think Prevention:</strong> How can we stop this from recurring?</p>
-                <p><strong>Add Context:</strong> Screenshots and documents help others learn</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+      
       </div>
     </div>
   )
