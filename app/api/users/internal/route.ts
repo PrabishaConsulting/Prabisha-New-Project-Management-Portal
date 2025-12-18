@@ -18,13 +18,14 @@ export async function GET(req: NextRequest) {
     const whereClause: Prisma.UserWhereInput = {};
 
     // 1. Role Filter (Default to INTERNAL if not specified)
+
+    // 1. UserType Filter (Strictly INTERNAL)
+    whereClause.userType = "INTERNAL";
+
+    // Role Filter (Optional, if passed)
     if (role) {
       whereClause.role = role as Role;
-    } else {
-      whereClause.role = "INTERNAL";
     }
-
-    // 2. Active Status Filter (Default to true if not specified)
     // If isActive is provided as 'false', filter by false.
     // If 'all' or specific logic needed, can adjust. Here we default to true.
     if (isActive !== null) {
@@ -72,7 +73,6 @@ export async function GET(req: NextRequest) {
         isActive: true,
         department: {
           select: {
-            id: true,
             name: true,
           },
         },
