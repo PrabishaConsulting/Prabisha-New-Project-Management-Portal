@@ -1,11 +1,11 @@
 // app/api/assets/route.ts
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { AssetStatus, LiveStatus } from '@/app/generated/client';
-import whois from 'whois';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth'; // Assuming you have this
-import { logActivity } from '@/services/activity-user/activity-user.service'; // Assuming this path
+import { NextResponse } from "next/server";
+import { db } from "@/lib/db";
+import { AssetStatus, LiveStatus } from "@/app/generated/client";
+import { lookup } from "whois";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth"; // Assuming you have this
+import { logActivity } from "@/services/activity-user/activity-user.service"; // Assuming this path
 import { ACTIVITY_ACTIONS } from "@/services/activity-user/helper";
 // You'll need to install these packages:
 // npm install whois
@@ -19,31 +19,44 @@ async function checkDomainStatus(domainName: string): Promise<{
   registrar?: string;
 }> {
   return new Promise((resolve) => {
-    whois.lookup(domainName, (err: any, data: string) => {
+    lookup(domainName, (err: any, data: string) => {
       if (err) {
-        console.error('WHOIS lookup error:', err);
+        console.error("WHOIS lookup error:", err);
         resolve({ isRegistered: false });
         return;
       }
 
       try {
-        const isRegistered = !data.toLowerCase().includes('no match') && 
-                           !data.toLowerCase().includes('not found') &&
-                           !data.toLowerCase().includes('no entries found');
+        const isRegistered =
+          !data.toLowerCase().includes("no match") &&
+          !data.toLowerCase().includes("not found") &&
+          !data.toLowerCase().includes("no entries found");
 
         // Extract registration date
         let registrationDate: Date | undefined;
-        const regDateMatch = data.match(/creation date:?\s*(.+)|registered on:?\s*(.+)|created:?\s*(.+)/i);
+        const regDateMatch = data.match(
+          /creation date:?\s*(.+)|registered on:?\s*(.+)|created:?\s*(.+)/i
+        );
         if (regDateMatch) {
-          const dateStr = (regDateMatch[1] || regDateMatch[2] || regDateMatch[3]).trim();
+          const dateStr = (
+            regDateMatch[1] ||
+            regDateMatch[2] ||
+            regDateMatch[3]
+          ).trim();
           registrationDate = new Date(dateStr);
         }
 
         // Extract expiration date
         let expirationDate: Date | undefined;
-        const expDateMatch = data.match(/expir(?:y|ation) date:?\s*(.+)|expires:?\s*(.+)|expiry:?\s*(.+)/i);
+        const expDateMatch = data.match(
+          /expir(?:y|ation) date:?\s*(.+)|expires:?\s*(.+)|expiry:?\s*(.+)/i
+        );
         if (expDateMatch) {
-          const dateStr = (expDateMatch[1] || expDateMatch[2] || expDateMatch[3]).trim();
+          const dateStr = (
+            expDateMatch[1] ||
+            expDateMatch[2] ||
+            expDateMatch[3]
+          ).trim();
           expirationDate = new Date(dateStr);
         }
 
@@ -56,12 +69,18 @@ async function checkDomainStatus(domainName: string): Promise<{
 
         resolve({
           isRegistered,
-          registrationDate: registrationDate && !isNaN(registrationDate.getTime()) ? registrationDate : undefined,
-          expirationDate: expirationDate && !isNaN(expirationDate.getTime()) ? expirationDate : undefined,
-          registrar
+          registrationDate:
+            registrationDate && !isNaN(registrationDate.getTime())
+              ? registrationDate
+              : undefined,
+          expirationDate:
+            expirationDate && !isNaN(expirationDate.getTime())
+              ? expirationDate
+              : undefined,
+          registrar,
         });
       } catch (parseError) {
-        console.error('WHOIS data parsing error:', parseError);
+        console.error("WHOIS data parsing error:", parseError);
         resolve({ isRegistered: false });
       }
     });
@@ -76,15 +95,15 @@ async function checkLiveStatus(domainName: string): Promise<LiveStatus> {
       `https://${domainName}`,
       `http://${domainName}`,
       `https://www.${domainName}`,
-      `http://www.${domainName}`
+      `http://www.${domainName}`,
     ];
 
     for (const url of urls) {
       try {
         const response = await fetch(url, {
-          method: 'HEAD',
+          method: "HEAD",
         });
-        
+
         if (response.ok) {
           return LiveStatus.ONLINE;
         }
@@ -93,10 +112,10 @@ async function checkLiveStatus(domainName: string): Promise<LiveStatus> {
         continue;
       }
     }
-    
+
     return LiveStatus.OFFLINE;
   } catch (error) {
-    console.error('Live status check error:', error);
+    console.error("Live status check error:", error);
     return LiveStatus.UNKNOWN;
   }
 }
@@ -104,8 +123,10 @@ async function checkLiveStatus(domainName: string): Promise<LiveStatus> {
 // Function to determine asset status based on expiry date
 function determineAssetStatus(expiryDate: Date): AssetStatus {
   const now = new Date();
-  const daysUntilExpiry = Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  
+  const daysUntilExpiry = Math.ceil(
+    (expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  );
+
   if (daysUntilExpiry < 0) {
     return AssetStatus.EXPIRED;
   } else if (daysUntilExpiry <= 30) {
@@ -138,7 +159,7 @@ export async function GET() {
       // 2. Safely handle null expiry dates by treating them as infinitely far in the future
       const dateA = a.expiryDate ? new Date(a.expiryDate).getTime() : Infinity;
       const dateB = b.expiryDate ? new Date(b.expiryDate).getTime() : Infinity;
-      
+
       return dateA - dateB;
     });
 
@@ -146,10 +167,12 @@ export async function GET() {
   } catch (error) {
     // It's helpful to log the actual error to the console for debugging
     console.error("Failed to fetch or sort assets:", error);
-    return NextResponse.json({ error: 'Failed to fetch assets' }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch assets" },
+      { status: 500 }
+    );
   }
 }
-
 
 // POST handler to add a new asset
 export async function POST(request: Request) {
@@ -162,16 +185,24 @@ export async function POST(request: Request) {
     let actualExpiryDate = new Date(data.expiryDate);
 
     // Check domain status if it's a domain-related asset and domainName is provided
-    if (data.domainName && (data.assetType === 'DOMAIN' || data.assetType === 'HOSTING' || data.assetType === 'SSL')) {
+    if (
+      data.domainName &&
+      (data.assetType === "DOMAIN" ||
+        data.assetType === "HOSTING" ||
+        data.assetType === "SSL")
+    ) {
       console.log(`Checking status for domain: ${data.domainName}`);
-      
+
       try {
         // Check domain registration info
         domainInfo = await checkDomainStatus(data.domainName);
-        console.log('Domain info:', domainInfo);
+        console.log("Domain info:", domainInfo);
 
         // Update expiry date if we found a more accurate one from WHOIS
-        if (domainInfo.expirationDate && domainInfo.expirationDate > new Date()) {
+        if (
+          domainInfo.expirationDate &&
+          domainInfo.expirationDate > new Date()
+        ) {
           actualExpiryDate = domainInfo.expirationDate;
           console.log(`Updated expiry date from WHOIS: ${actualExpiryDate}`);
         }
@@ -179,9 +210,8 @@ export async function POST(request: Request) {
         // Check live status
         liveStatus = await checkLiveStatus(data.domainName);
         console.log(`Live status: ${liveStatus}`);
-
       } catch (error) {
-        console.error('Domain status check error:', error);
+        console.error("Domain status check error:", error);
         // Continue with the original data if checks fail
       }
     }
@@ -199,8 +229,8 @@ export async function POST(request: Request) {
       liveStatus = data.liveStatus;
     }
 
-    console.log('Final asset status:', assetStatus);
-    console.log('Final live status:', liveStatus);
+    console.log("Final asset status:", assetStatus);
+    console.log("Final live status:", liveStatus);
 
     // IMPORTANT: You would add password encryption logic here before saving
     // const encryptedPassword = encrypt(data.password);
@@ -225,7 +255,7 @@ export async function POST(request: Request) {
         renewalPeriod: data.renewalPeriod,
 
         // --- Status ---
-        status: "ACTIVE" ,
+        status: "ACTIVE",
         liveStatus: "OFFLINE",
         lastChecked: new Date(),
 
@@ -239,26 +269,31 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log('Asset created successfully:', newAsset.id);
+    console.log("Asset created successfully:", newAsset.id);
 
     // Include domain info in response for frontend feedback
     const response = {
       ...newAsset,
-      domainInfo: domainInfo ? {
-        isRegistered: domainInfo.isRegistered,
-        registrar: domainInfo.registrar,
-        whoisExpiryDate: domainInfo.expirationDate,
-        whoisRegistrationDate: domainInfo.registrationDate,
-      } : null
+      domainInfo: domainInfo
+        ? {
+            isRegistered: domainInfo.isRegistered,
+            registrar: domainInfo.registrar,
+            whoisExpiryDate: domainInfo.expirationDate,
+            whoisRegistrationDate: domainInfo.registrationDate,
+          }
+        : null,
     };
 
     return NextResponse.json(response, { status: 201 });
   } catch (error) {
-    console.error('Failed to create asset:', error);
-    return NextResponse.json({ 
-      error: 'Failed to create asset',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
+    console.error("Failed to create asset:", error);
+    return NextResponse.json(
+      {
+        error: "Failed to create asset",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -269,7 +304,10 @@ export async function PUT(request: Request) {
     const { id, ...updateData } = data;
 
     if (!id) {
-      return NextResponse.json({ error: 'Asset ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Asset ID is required" },
+        { status: 400 }
+      );
     }
 
     const updatedAsset = await db.asset.update({
@@ -283,8 +321,11 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(updatedAsset);
   } catch (error) {
-    console.error('Failed to update asset:', error);
-    return NextResponse.json({ error: 'Failed to update asset' }, { status: 500 });
+    console.error("Failed to update asset:", error);
+    return NextResponse.json(
+      { error: "Failed to update asset" },
+      { status: 500 }
+    );
   }
 }
 
@@ -292,10 +333,13 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
+    const id = searchParams.get("id");
 
     if (!id) {
-      return NextResponse.json({ error: 'Asset ID is required' }, { status: 400 });
+      return NextResponse.json(
+        { error: "Asset ID is required" },
+        { status: 400 }
+      );
     }
 
     await db.asset.delete({
@@ -304,7 +348,10 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Failed to delete asset:', error);
-    return NextResponse.json({ error: 'Failed to delete asset' }, { status: 500 });
+    console.error("Failed to delete asset:", error);
+    return NextResponse.json(
+      { error: "Failed to delete asset" },
+      { status: 500 }
+    );
   }
 }
