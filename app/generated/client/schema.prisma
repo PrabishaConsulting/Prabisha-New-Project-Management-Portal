@@ -56,6 +56,7 @@ model User {
   name                 String
   password             String?
   avatar               String?
+  isActive             Boolean               @default(true)
   role                 Role                  @default(MEMBER)
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
@@ -586,6 +587,7 @@ enum Role {
   ADMIN
   MANAGER
   MEMBER
+  INTERNAL
 }
 
 enum WorkspaceRole {

@@ -156,6 +156,7 @@ exports.Prisma.UserScalarFieldEnum = {
   name: 'name',
   password: 'password',
   avatar: 'avatar',
+  isActive: 'isActive',
   role: 'role',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
@@ -710,7 +711,8 @@ exports.Prisma.MistakeLogOrderByRelevanceFieldEnum = {
 exports.Role = exports.$Enums.Role = {
   ADMIN: 'ADMIN',
   MANAGER: 'MANAGER',
-  MEMBER: 'MEMBER'
+  MEMBER: 'MEMBER',
+  INTERNAL: 'INTERNAL'
 };
 
 exports.UserType = exports.$Enums.UserType = {
