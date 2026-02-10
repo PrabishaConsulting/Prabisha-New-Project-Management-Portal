@@ -2,8 +2,10 @@
 import { db } from "@/lib/db";
 import Ably from "ably";
 
-const ably = new Ably.Realtime(process.env.NEXT_PUBLIC_ABLY_KEY!);
-const channel = ably.channels.get("notifications");
+const ably = process.env.NEXT_PUBLIC_ABLY_KEY 
+  ? new Ably.Realtime(process.env.NEXT_PUBLIC_ABLY_KEY) 
+  : null;
+const channel = ably?.channels.get("notifications");
 
 export async function createAndBroadcastNotification({
   type,
@@ -33,15 +35,17 @@ export async function createAndBroadcastNotification({
     include: { recipients: true },
   });
 
-  // 2️⃣ Broadcast via Ably
-  channel.publish("new-notification", {
-    id: notification.id,
-    type,
-    message,
-    url,
-    recipients,
-    createdAt: notification.createdAt,
-  });
+  // 2️⃣ Broadcast via Ably (if configured)
+  if (channel) {
+    channel.publish("new-notification", {
+      id: notification.id,
+      type,
+      message,
+      url,
+      recipients,
+      createdAt: notification.createdAt,
+    });
+  }
 
   return notification;
 }

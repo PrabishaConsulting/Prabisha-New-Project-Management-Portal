@@ -149,10 +149,10 @@ export function NotificationPopover({ userId }: { userId: string }) {
     }
   }, []);
 
-  // Ably Effect (remains the same)
+  // Ably Effect (optional - only if key is configured)
   useEffect(() => {
-    if (ablyRef.current) return;
-    const ably = new Ably.Realtime({ key: process.env.NEXT_PUBLIC_ABLY_KEY!, echoMessages: false });
+    if (ablyRef.current || !process.env.NEXT_PUBLIC_ABLY_KEY) return;
+    const ably = new Ably.Realtime({ key: process.env.NEXT_PUBLIC_ABLY_KEY, echoMessages: false });
     ablyRef.current = ably;
     const channel = ably.channels.get("notifications");
     channelRef.current = channel;
