@@ -858,7 +858,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\xampp\\htdocs\\project-management\\app\\generated\\client",
+      "value": "D:\\prabisha projects\\Professional_Products\\prabisha-project-pro\\app\\generated\\client",
       "fromEnvVar": null
     },
     "config": {
@@ -880,7 +880,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\xampp\\htdocs\\project-management\\prisma\\schema.prisma",
+    "sourceFilePath": "D:\\prabisha projects\\Professional_Products\\prabisha-project-pro\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

@@ -19,6 +19,7 @@ import {
   Star,
   TrendingUp,
   Sparkles,
+  Plus,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 
@@ -50,6 +51,9 @@ import {
 } from "@/components/ui/command";
 import { Marquee } from "../ui/marquee";
 import ProductsPanel from "./our-products";
+import { TaskFormDialog } from "../modals/AddTaskDialog";
+import { TaskFormData } from "@/lib/zod";
+import { toast } from "sonner";
 
 // Import Marquee component
 type UserMenuItem =
@@ -123,12 +127,12 @@ export function Header({
   user,
   className,
   role,
-  workspaceRole
+  workspaceRole,
 }: {
   user: any;
   className: string;
   role: string;
-  workspaceRole: string
+  workspaceRole: string;
 }) {
   const router = useRouter();
 
@@ -136,6 +140,7 @@ export function Header({
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
   const [showMarquee, setShowMarquee] = useState(true); // Control marquee visibility
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -158,8 +163,36 @@ export function Header({
     setTheme(theme === "light" ? "dark" : "light");
   };
 
-  if (!user) return null;
+  const handleCreateTask = async (data: TaskFormData) => {
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
 
+      if (!response.ok) {
+        const errorData = await response.json();
+        if (errorData.code === "VALIDATION_ERROR" && errorData.details) {
+          const validationMessages = errorData.details
+            .map((issue: any) => issue.message)
+            .join("\n");
+          toast.error(`Validation Failed:\n${validationMessages}`);
+        } else {
+          toast.error(errorData.message || "An unknown error occurred.");
+        }
+        return;
+      }
+
+      toast.success("Task created successfully!");
+      setIsTaskDialogOpen(false);
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      toast.error("Could not connect to the server. Please check your network.");
+    }
+  };
+
+  if (!user) return null;
 
   return (
     <>
@@ -228,6 +261,16 @@ export function Header({
 
           {/* Right Section: Actions */}
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsTaskDialogOpen(true)}
+              className="rounded-full"
+              title="Quick add task (Alt+T)"
+            >
+              <Plus className="size-[18px]" />
+              <span className="sr-only">Add Task</span>
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -306,7 +349,7 @@ export function Header({
                 })}
               </DropdownMenuContent>
             </DropdownMenu>
-            <ProductsPanel/>
+            <ProductsPanel />
           </div>
         </div>
       </header>
@@ -349,6 +392,13 @@ export function Header({
           </CommandGroup>
         </CommandList>
       </CommandDialog>
+
+      {/* Task Form Dialog */}
+      <TaskFormDialog
+        isOpen={isTaskDialogOpen}
+        onOpenChange={setIsTaskDialogOpen}
+        onSubmit={handleCreateTask}
+      />
     </>
   );
 }
