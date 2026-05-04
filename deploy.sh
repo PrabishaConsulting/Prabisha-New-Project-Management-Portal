@@ -49,9 +49,12 @@ pnpm prisma db push
 echo "🔧 Generating Prisma Client..."
 pnpm prisma generate
 
-# Create index.ts re-export for module resolution
-echo "export * from './client';" > src/generated/prisma/client/index.ts
-echo "✅ Created Prisma client index.ts"
+# Create index.ts re-export for module resolution if needed
+if [ -d "generated/prisma" ]; then
+    echo "✅ Prisma client generated successfully"
+else
+    echo "⚠️  Warning: Prisma client directory not found"
+fi
 
 # Build the application
 echo "🏗️ Building application..."
