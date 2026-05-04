@@ -6,12 +6,8 @@ import { GoogleGenAI } from '@google/genai';
 
 // ─── Gemini client (@google/genai) ───────────────────────────────────────────
 //
-// Using @google/genai (the newer SDK) instead of @google/generative-ai.
-// The API surface is slightly different:
-//   - new GoogleGenAI({ apiKey })   instead of new GoogleGenerativeAI(key)
-//   - ai.models.generateContent()  instead of model.generateContent()
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+// Using @google/genai (the newer unified SDK for Gemini 2.0+)
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
