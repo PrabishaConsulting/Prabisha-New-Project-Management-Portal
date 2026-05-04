@@ -39,18 +39,19 @@ echo "📌 pnpm version: $(pnpm -v)"
 
 # Install dependencies
 echo "📦 Installing dependencies..."
-pnpm install --ignore-scripts
+pnpm install
 
 # Sync database schema
 echo "🗄️ Syncing database schema..."
 pnpm prisma db push
 
-# Clean old Prisma clients
-echo "🧹 Cleaning old Prisma clients..."
+# Clean old Prisma clients and Next.js cache
+echo "🧹 Cleaning old Prisma clients and cache..."
 rm -rf app/generated/client
 rm -rf node_modules/.prisma
+rm -rf .next
 
-# Generate Prisma Client
+# Generate Prisma Client with correct binaries
 echo "🔧 Generating Prisma Client..."
 pnpm prisma generate
 
@@ -62,10 +63,6 @@ else
     echo "❌ ERROR: Prisma client not found at app/generated/client"
     exit 1
 fi
-
-# Clean Next.js cache to ensure fresh build
-echo "🧹 Cleaning Next.js cache..."
-rm -rf .next
 
 # Build the application
 echo "🏗️ Building application..."
