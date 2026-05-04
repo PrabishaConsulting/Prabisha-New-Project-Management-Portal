@@ -1,3 +1,5 @@
+'use server'
+
 // lib/task-service.ts
 import { db } from "@/lib/db";
 import { TaskStatus } from "@/app/generated/client";

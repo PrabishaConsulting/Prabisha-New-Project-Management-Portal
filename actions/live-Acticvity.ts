@@ -1,3 +1,5 @@
+'use server'
+
 import { Prisma } from "@/app/generated/client";
 import { db } from "@/lib/db";
 // Define a new, more minimal type for our return data
