@@ -1,6 +1,6 @@
 import { AuthOptions } from 'next-auth';
 import { prisma } from '@/lib/prisma';
-import { Role } from '../generated/prisma/client';
+import { Role } from '@/app/generated/client';
 
 export const authOptions: AuthOptions = {
   debug: true,

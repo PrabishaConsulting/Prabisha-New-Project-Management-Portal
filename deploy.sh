@@ -48,6 +48,7 @@ pnpm prisma db push
 # Clean old Prisma clients and Next.js cache
 echo "🧹 Cleaning old Prisma clients and cache..."
 rm -rf app/generated/client
+rm -rf generated/prisma
 rm -rf node_modules/.prisma
 rm -rf .next
 
