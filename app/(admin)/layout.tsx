@@ -167,7 +167,7 @@ export default async function AdminLayout({
                   id: user.id,
                   name: user.name || "",
                   email: user.email || "",
-                  avatar: user.avatar || null,
+                  avatar: user.image || null,
                 }
               : null
           }
