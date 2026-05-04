@@ -54,11 +54,13 @@ rm -rf node_modules/.prisma
 echo "🔧 Generating Prisma Client..."
 pnpm prisma generate
 
-# Create index.ts re-export for module resolution if needed
-if [ -d "generated/prisma" ]; then
-    echo "✅ Prisma client generated successfully"
+# Verify Prisma client was generated
+if [ -d "app/generated/client" ]; then
+    echo "✅ Prisma client generated successfully at app/generated/client"
+    ls -la app/generated/client/ | head -5
 else
-    echo "⚠️  Warning: Prisma client directory not found"
+    echo "❌ ERROR: Prisma client not found at app/generated/client"
+    exit 1
 fi
 
 # Build the application
