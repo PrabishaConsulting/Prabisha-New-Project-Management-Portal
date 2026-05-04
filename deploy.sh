@@ -59,6 +59,14 @@ pnpm prisma generate
 if [ -d "app/generated/client" ]; then
     echo "✅ Prisma client generated successfully at app/generated/client"
     ls -la app/generated/client/ | head -5
+    
+    # Create index.js if it doesn't exist to help with module resolution
+    if [ ! -f "app/generated/client/index.js" ]; then
+        echo "Creating index.js for better module resolution..."
+        cat > app/generated/client/index.js << 'EOF'
+module.exports = require('./client');
+EOF
+    fi
 else
     echo "❌ ERROR: Prisma client not found at app/generated/client"
     exit 1
