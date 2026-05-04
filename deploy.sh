@@ -45,9 +45,11 @@ pnpm install --ignore-scripts
 echo "🗄️ Syncing database schema..."
 pnpm prisma db push
 
-# Clean old Prisma client
-echo "🧹 Cleaning old Prisma client..."
+# Clean old Prisma clients
+echo "🧹 Cleaning old Prisma clients..."
 rm -rf generated/prisma
+rm -rf app/generated/client
+rm -rf node_modules/.prisma
 
 # Generate Prisma Client
 echo "🔧 Generating Prisma Client..."
