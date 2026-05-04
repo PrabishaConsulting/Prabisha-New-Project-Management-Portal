@@ -45,6 +45,10 @@ pnpm install --ignore-scripts
 echo "🗄️ Syncing database schema..."
 pnpm prisma db push
 
+# Clean old Prisma client
+echo "🧹 Cleaning old Prisma client..."
+rm -rf generated/prisma
+
 # Generate Prisma Client
 echo "🔧 Generating Prisma Client..."
 pnpm prisma generate
