@@ -190,7 +190,7 @@ export default function LandingPage() {
                 FAQ
               </Link>
               <div className="flex flex-col gap-2 pt-2 border-t">
-                <Button onClick={() => handleLogin()} className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                <Button onClick={() => handleLogin()} className="py-2 text-sm font-medium">
                   Log in
                 </Button>
                 <Button className="rounded-full">

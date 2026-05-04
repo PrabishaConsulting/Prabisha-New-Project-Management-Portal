@@ -4,9 +4,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
-import { embedAndStore } from '@/lib/knowledge-base/vector-store';
-import { processURL } from '@/lib/knowledge-base/web-scraper';
-import { processFile, processTable, extractTextFromPDF } from '@/lib/knowledge-base/processor';
+import { embedAndStore } from '@/lib/langchain/vector-store';
+import { processURL } from '@/lib/langchain/knowledge-base/web-scraper';
+import { processFile, processTable, extractTextFromPDF } from '@/lib/langchain/knowledge-base/processor';
 
 const config = {
   runtime: 'nodejs',

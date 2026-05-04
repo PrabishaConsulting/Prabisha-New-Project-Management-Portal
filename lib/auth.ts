@@ -1,5 +1,6 @@
 import { AuthOptions } from 'next-auth';
 import { prisma } from '@/lib/prisma';
+import { Role } from '../generated/prisma/client';
 
 export const authOptions: AuthOptions = {
   debug: true,
@@ -38,11 +39,13 @@ export const authOptions: AuthOptions = {
         });
 
         // Map and validate role from SSO
-        let userRole: 'ADMIN' | 'USER' = 'USER';
+        let userRole: Role = Role.MEMBER;
         if (user.role) {
           const roleUpper = (user.role as string).toUpperCase();
-          if (roleUpper === 'ADMIN') userRole = 'ADMIN';
-          else if (roleUpper === 'USER') userRole = 'USER';
+          if (roleUpper === 'ADMIN') userRole = Role.ADMIN;
+          else if (roleUpper === 'MANAGER') userRole = Role.MANAGER;
+          else if (roleUpper === 'MEMBER') userRole = Role.MEMBER;
+          else if (roleUpper === 'INTERNAL') userRole = Role.INTERNAL;
         }
 
         if (existingUser) {
@@ -53,8 +56,8 @@ export const authOptions: AuthOptions = {
               where: { email: user.email },
               data: {
                 id: user.id, // Migrate the local ID to the Central ID
-                name: user.name,
-                image: user.image,
+                ...(user.name && { name: user.name }),
+                ...(user.image && { avatar: user.image }),
                 role: userRole,
               },
             });
@@ -63,8 +66,8 @@ export const authOptions: AuthOptions = {
             await prisma.user.update({
               where: { id: user.id },
               data: {
-                name: user.name,
-                image: user.image,
+                ...(user.name && { name: user.name }),
+                ...(user.image && { avatar: user.image }),
                 role: userRole,
               },
             });
@@ -75,8 +78,8 @@ export const authOptions: AuthOptions = {
             data: {
               id: user.id,
               email: user.email,
-              name: user.name,
-              image: user.image,
+              name: user.name ?? user.email.split('@')[0],
+              avatar: user.image,
               role: userRole,
             },
           });
@@ -116,27 +119,3 @@ export const authOptions: AuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
-
-// Type declarations for NextAuth
-declare module 'next-auth' {
-  interface Session {
-    user: {
-      id: string;
-      role: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
-    }
-  }
-  
-  interface User {
-    role?: string;
-  }
-}
-
-declare module 'next-auth/jwt' {
-  interface JWT {
-    id?: string;
-    role?: string;
-  }
-}

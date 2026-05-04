@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/chart";
 
 // Recharts Components
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, TooltipProps, LabelList } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, TooltipContentProps, TooltipPayload, LabelList } from "recharts";
 
 // --- Types ---
 interface ChartDataItem {
@@ -82,13 +82,13 @@ const getFirstName = (fullName: string): string => {
 };
 
 // --- Custom Tooltip Component ---
-const CustomTooltip = ({ active, payload, label }: TooltipProps<string, string>) => {
+const CustomTooltip = ({ active, payload, label }: Partial<TooltipContentProps<number, string>>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-background border border-border rounded-lg shadow-lg p-4 min-w-[200px]">
         <p className="font-semibold text-lg mb-2">{label}</p>
         <div className="space-y-2">
-          {payload.map((entry, index) => (
+          {payload.map((entry: TooltipPayload[number], index: number) => (
             <div key={index} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div 
