@@ -177,7 +177,7 @@ export default function DashboardLayout({
                     id: session.user.id,
                     name: session.user.name || "",
                     email: session.user.email || "",
-                    avatar: session.user.avatar || null,
+                    avatar: session.user.image || null,
                   }
                 : null
             }

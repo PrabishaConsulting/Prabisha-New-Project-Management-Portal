@@ -62,6 +62,11 @@ export default async function ProjectLayout({
       href: `/projects/${projectId}/notes?workspaceId=${workspaceId}`,
       icon: 'NotebookTabs',
     },
+    {
+      label: 'Knowledge Base',
+      href: `/projects/${projectId}/knowledge-base?workspaceId=${workspaceId}`,
+      icon: 'Book',
+    }
   ];
 
   return (

@@ -8,7 +8,8 @@ import {
   Calendar,
   File,
   NotebookTabs,
-  LineChart
+  LineChart,
+  Book
 } from "lucide-react"; // 1. Import all possible icons
 import { usePathname, useSearchParams } from "next/navigation";
 
@@ -21,8 +22,8 @@ const iconMap: { [key: string]: LucideIcon } = {
   Calendar,
   File,
   NotebookTabs,
-  LineChart  // Add this line
-
+  LineChart,  // Add this line
+  Book // Add this line
 };
 
 // Update the Tab interface here as well

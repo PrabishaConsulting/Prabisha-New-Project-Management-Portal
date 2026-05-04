@@ -34,6 +34,8 @@ export const getActiveWorkspaceId = async (userEmail: string): Promise<string | 
     },
   });
 
+  console.log(user);
+
   if (!user) {
     return null; // User not found
   }

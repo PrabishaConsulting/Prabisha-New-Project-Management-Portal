@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { useTheme } from "next-themes"
+import { signIn } from "next-auth/react"
 
 export default function LandingPage() {
   const [isScrolled, setIsScrolled] = useState(false)
@@ -93,6 +94,14 @@ export default function LandingPage() {
   //   },
   // ]
 
+  const handleLogin = async (callbackUrl = "/dashboard") => {
+    try {
+      await signIn("central-auth", { callbackUrl }, { prompt: "login" });
+    } catch (error) {
+      console.error("Central login error:", error);
+    }
+  };
+
   
 
   return (
@@ -138,13 +147,13 @@ export default function LandingPage() {
               {mounted && theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
               <span className="sr-only">Toggle theme</span>
             </Button>
-            <Link
-              href="/sign-in"
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            <Button
+              onClick={() => handleLogin()}
+              variant="outline"
             >
               Log in
-            </Link>
-            <Button onClick={() => window.location.href = "/sign-up"} className="rounded-full">
+            </Button>
+            <Button onClick={() => handleLogin()} className="rounded-full">
               Get Started
               <ChevronRight className="ml-1 size-4" />
             </Button>
@@ -181,9 +190,9 @@ export default function LandingPage() {
                 FAQ
               </Link>
               <div className="flex flex-col gap-2 pt-2 border-t">
-                <Link href="/sign-in" className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
+                <Button onClick={() => handleLogin()} className="py-2 text-sm font-medium" onClick={() => setMobileMenuOpen(false)}>
                   Log in
-                </Link>
+                </Button>
                 <Button className="rounded-full">
                   Get Started
                   <ChevronRight className="ml-1 size-4" />

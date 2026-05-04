@@ -32,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from 'sonner';
 
 // Define the type for the combined list from our API
 type MemberListItem = {
@@ -41,7 +42,7 @@ type MemberListItem = {
     name: string | null;
     avatar: string | null;
     role: string;
-    status: 'Active' | 'Pending' | 'Archived'; // Added 'Archived' status
+    status: 'Active' | 'Pending' | 'Archived';
     joined: string;
     department: string | null;
 };
@@ -62,12 +63,17 @@ export default function MembersPage() {
         setIsLoading(true);
         try {
             const response = await fetch(`/api/workspaces/${workspaceId}/members`);
-            if (!response.ok) throw new Error("Failed to fetch members");
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || "Failed to fetch members");
+            }
             const data = await response.json();
-            console.log(data , "data")
             setMembers(data);
         } catch (error) {
             console.error(error);
+            toast.error("Failed to load members", {
+                description: error instanceof Error ? error.message : "Please try again later",
+            });
         } finally {
             setIsLoading(false);
         }
@@ -79,6 +85,8 @@ export default function MembersPage() {
 
     const handleArchiveMember = async (memberId: string) => {
         setIsProcessing(true);
+        const loadingToast = toast.loading("Archiving member...");
+        
         try {
             const response = await fetch(`/api/workspaces/${workspaceId}/members/${memberId}`, {
                 method: 'PATCH',
@@ -86,15 +94,26 @@ export default function MembersPage() {
                 body: JSON.stringify({ status: 'Archived' }),
             });
             
-            if (!response.ok) throw new Error("Failed to archive member");
+            const errorData = await response.json().catch(() => ({}));
+            
+            if (!response.ok) {
+                throw new Error(errorData.error || `Failed to archive member (${response.status})`);
+            }
             
             setMembers(prev => prev.map(m => 
                 m.id === memberId ? { ...m, status: 'Archived' } : m
             ));
+            
+            toast.success("Member archived successfully", {
+                description: "The member has been removed from the workspace",
+            });
         } catch (error) {
             console.error(error);
-            alert('Failed to archive member');
+            toast.error("Failed to archive member", {
+                description: error instanceof Error ? error.message : "Please check your permissions and try again",
+            });
         } finally {
+            toast.dismiss(loadingToast);
             setIsProcessing(false);
             setMemberToAction(null);
             setActionType(null);
@@ -103,6 +122,8 @@ export default function MembersPage() {
 
     const handleUnarchiveMember = async (memberId: string) => {
         setIsProcessing(true);
+        const loadingToast = toast.loading("Activating member...");
+        
         try {
             const response = await fetch(`/api/workspaces/${workspaceId}/members/${memberId}`, {
                 method: 'PATCH',
@@ -110,15 +131,26 @@ export default function MembersPage() {
                 body: JSON.stringify({ status: 'Active' }),
             });
             
-            if (!response.ok) throw new Error("Failed to activate member");
+            const errorData = await response.json().catch(() => ({}));
+            
+            if (!response.ok) {
+                throw new Error(errorData.error || `Failed to activate member (${response.status})`);
+            }
             
             setMembers(prev => prev.map(m => 
                 m.id === memberId ? { ...m, status: 'Active' } : m
             ));
+            
+            toast.success("Member activated successfully", {
+                description: "The member now has access to the workspace",
+            });
         } catch (error) {
             console.error(error);
-            alert('Failed to activate member');
+            toast.error("Failed to activate member", {
+                description: error instanceof Error ? error.message : "Please check your permissions and try again",
+            });
         } finally {
+            toast.dismiss(loadingToast);
             setIsProcessing(false);
             setMemberToAction(null);
             setActionType(null);
@@ -127,18 +159,40 @@ export default function MembersPage() {
 
     const handleRemoveMember = async (memberId: string) => {
         setIsProcessing(true);
+        const loadingToast = toast.loading("Removing member...");
+        
         try {
             const response = await fetch(`/api/workspaces/${workspaceId}/members/${memberId}`, {
                 method: 'DELETE',
             });
             
-            if (!response.ok) throw new Error("Failed to remove member");
+            const errorData = await response.json().catch(() => ({}));
+            
+            if (!response.ok) {
+                // Handle specific status codes with user-friendly messages
+                if (response.status === 403) {
+                    throw new Error("You don't have permission to remove members. Only workspace admins can perform this action.");
+                } else if (response.status === 401) {
+                    throw new Error("Please sign in to remove members");
+                } else if (response.status === 404) {
+                    throw new Error("Member not found or already removed");
+                } else {
+                    throw new Error(errorData.error || `Failed to remove member (${response.status})`);
+                }
+            }
             
             setMembers(prev => prev.filter(m => m.id !== memberId));
+            
+            toast.success("Member removed successfully", {
+                description: "The member has been permanently removed from the workspace",
+            });
         } catch (error) {
             console.error(error);
-            alert('Failed to remove member');
+            toast.error("Failed to remove member", {
+                description: error instanceof Error ? error.message : "Please check your permissions and try again",
+            });
         } finally {
+            toast.dismiss(loadingToast);
             setIsProcessing(false);
             setMemberToAction(null);
             setActionType(null);
@@ -239,6 +293,12 @@ export default function MembersPage() {
                             <TableRow>
                                 <TableCell colSpan={6} className="text-center h-24">
                                     Loading members...
+                                </TableCell>
+                            </TableRow>
+                        ) : members.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                                    No members found
                                 </TableCell>
                             </TableRow>
                         ) : (

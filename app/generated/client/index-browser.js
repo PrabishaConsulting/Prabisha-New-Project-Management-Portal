@@ -21,11 +21,11 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.19.2
+ * Prisma Client JS version: 6.19.3
  * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
  */
 Prisma.prismaVersion = {
-  client: "6.19.2",
+  client: "6.19.3",
   engine: "c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
 }
 
@@ -462,252 +462,20 @@ exports.Prisma.NullableJsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
-};
-
-exports.Prisma.AccountOrderByRelevanceFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  type: 'type',
-  provider: 'provider',
-  providerAccountId: 'providerAccountId',
-  refresh_token: 'refresh_token',
-  access_token: 'access_token',
-  token_type: 'token_type',
-  scope: 'scope',
-  id_token: 'id_token',
-  session_state: 'session_state'
-};
-
-exports.Prisma.SessionOrderByRelevanceFieldEnum = {
-  id: 'id',
-  sessionToken: 'sessionToken',
-  userId: 'userId'
-};
-
-exports.Prisma.Role2OrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name'
-};
-
-exports.Prisma.UserOrderByRelevanceFieldEnum = {
-  id: 'id',
-  userCode: 'userCode',
-  email: 'email',
-  name: 'name',
-  password: 'password',
-  avatar: 'avatar',
-  resetToken: 'resetToken',
-  departmentId: 'departmentId',
-  industry: 'industry',
-  location: 'location'
-};
-
-exports.Prisma.WorkspaceCalendarOrderByRelevanceFieldEnum = {
-  id: 'id',
-  workspaceId: 'workspaceId',
-  name: 'name'
-};
-
-exports.Prisma.CalendarItemOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description',
-  taskId: 'taskId',
-  projectId: 'projectId',
-  createdById: 'createdById',
-  workspaceCalendarId: 'workspaceCalendarId',
-  color: 'color'
-};
-
-exports.Prisma.AssetOrderByRelevanceFieldEnum = {
-  id: 'id',
-  provider: 'provider',
-  name: 'name',
-  domainName: 'domainName',
-  ipAddress: 'ipAddress',
-  hostingPlan: 'hostingPlan',
-  serverLocation: 'serverLocation',
-  controlPanelUrl: 'controlPanelUrl',
-  username: 'username',
-  password: 'password',
-  notes: 'notes'
-};
-
-exports.Prisma.DepartmentOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name'
-};
-
-exports.Prisma.WorkspaceOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  ownerId: 'ownerId',
-  defaultCalendarView: 'defaultCalendarView',
-  businessHoursStart: 'businessHoursStart',
-  businessHoursEnd: 'businessHoursEnd',
-  workingDays: 'workingDays'
-};
-
-exports.Prisma.WorkspaceMemberOrderByRelevanceFieldEnum = {
-  id: 'id',
-  workspaceId: 'workspaceId',
-  userId: 'userId'
-};
-
-exports.Prisma.WorkspaceInvitationOrderByRelevanceFieldEnum = {
-  id: 'id',
-  workspaceId: 'workspaceId',
-  email: 'email',
-  invitedById: 'invitedById',
-  token: 'token',
-  temppassword: 'temppassword'
-};
-
-exports.Prisma.InternalProductOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  email: 'email',
-  internalCode: 'internalCode',
-  industry: 'industry',
-  location: 'location'
 };
 
 exports.Prisma.JsonNullValueFilter = {
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
-};
-
-exports.Prisma.QueryMode = {
-  default: 'default',
-  insensitive: 'insensitive'
-};
-
-exports.Prisma.ProjectOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  workspaceId: 'workspaceId',
-  projectCode: 'projectCode',
-  zohoFolderLink: 'zohoFolderLink',
-  createdBy: 'createdBy',
-  departmentId: 'departmentId',
-  clientId: 'clientId',
-  internalProductId: 'internalProductId'
-};
-
-exports.Prisma.ProjectMemberOrderByRelevanceFieldEnum = {
-  id: 'id',
-  projectId: 'projectId',
-  userId: 'userId'
-};
-
-exports.Prisma.TaskOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  taskCode: 'taskCode',
-  description: 'description',
-  projectId: 'projectId',
-  assigneeId: 'assigneeId',
-  reporterId: 'reporterId',
-  departmentId: 'departmentId'
-};
-
-exports.Prisma.TaskCommentOrderByRelevanceFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  userId: 'userId',
-  content: 'content'
-};
-
-exports.Prisma.TimeEntryOrderByRelevanceFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  userId: 'userId',
-  description: 'description'
-};
-
-exports.Prisma.TaskAttachmentOrderByRelevanceFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  userId: 'userId',
-  filename: 'filename',
-  url: 'url',
-  mimeType: 'mimeType'
-};
-
-exports.Prisma.ActivityLogOrderByRelevanceFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  projectId: 'projectId',
-  taskId: 'taskId',
-  action: 'action',
-  description: 'description',
-  metadata: 'metadata'
-};
-
-exports.Prisma.NotificationOrderByRelevanceFieldEnum = {
-  id: 'id',
-  type: 'type',
-  message: 'message',
-  url: 'url'
-};
-
-exports.Prisma.NotificationRecipientOrderByRelevanceFieldEnum = {
-  id: 'id',
-  recipientId: 'recipientId',
-  notificationId: 'notificationId'
-};
-
-exports.Prisma.categoriesOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description'
-};
-
-exports.Prisma.productsOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  url: 'url',
-  icon: 'icon',
-  image: 'image'
-};
-
-exports.Prisma.SidebarGroupOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title'
-};
-
-exports.Prisma.SidebarItemOrderByRelevanceFieldEnum = {
-  id: 'id',
-  label: 'label',
-  href: 'href',
-  icon: 'icon',
-  sidebarGroupId: 'sidebarGroupId'
-};
-
-exports.Prisma.SidebarGroupAccessOrderByRelevanceFieldEnum = {
-  roleId: 'roleId',
-  sidebarGroupId: 'sidebarGroupId'
-};
-
-exports.Prisma.SidebarItemAccessOrderByRelevanceFieldEnum = {
-  roleId: 'roleId',
-  sidebarItemId: 'sidebarItemId'
-};
-
-exports.Prisma.MistakeLogOrderByRelevanceFieldEnum = {
-  id: 'id',
-  mistakeIdentified: 'mistakeIdentified',
-  rootCause: 'rootCause',
-  resolution: 'resolution',
-  learnings: 'learnings',
-  authorId: 'authorId',
-  reviewerId: 'reviewerId',
-  reviewNotes: 'reviewNotes'
 };
 exports.Role = exports.$Enums.Role = {
   ADMIN: 'ADMIN',

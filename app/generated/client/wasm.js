@@ -36,11 +36,11 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.19.2
+ * Prisma Client JS version: 6.19.3
  * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
  */
 Prisma.prismaVersion = {
-  client: "6.19.2",
+  client: "6.19.3",
   engine: "c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
 }
 
@@ -434,252 +434,20 @@ exports.Prisma.NullableJsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
+exports.Prisma.QueryMode = {
+  default: 'default',
+  insensitive: 'insensitive'
+};
+
 exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
-};
-
-exports.Prisma.AccountOrderByRelevanceFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  type: 'type',
-  provider: 'provider',
-  providerAccountId: 'providerAccountId',
-  refresh_token: 'refresh_token',
-  access_token: 'access_token',
-  token_type: 'token_type',
-  scope: 'scope',
-  id_token: 'id_token',
-  session_state: 'session_state'
-};
-
-exports.Prisma.SessionOrderByRelevanceFieldEnum = {
-  id: 'id',
-  sessionToken: 'sessionToken',
-  userId: 'userId'
-};
-
-exports.Prisma.Role2OrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name'
-};
-
-exports.Prisma.UserOrderByRelevanceFieldEnum = {
-  id: 'id',
-  userCode: 'userCode',
-  email: 'email',
-  name: 'name',
-  password: 'password',
-  avatar: 'avatar',
-  resetToken: 'resetToken',
-  departmentId: 'departmentId',
-  industry: 'industry',
-  location: 'location'
-};
-
-exports.Prisma.WorkspaceCalendarOrderByRelevanceFieldEnum = {
-  id: 'id',
-  workspaceId: 'workspaceId',
-  name: 'name'
-};
-
-exports.Prisma.CalendarItemOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  description: 'description',
-  taskId: 'taskId',
-  projectId: 'projectId',
-  createdById: 'createdById',
-  workspaceCalendarId: 'workspaceCalendarId',
-  color: 'color'
-};
-
-exports.Prisma.AssetOrderByRelevanceFieldEnum = {
-  id: 'id',
-  provider: 'provider',
-  name: 'name',
-  domainName: 'domainName',
-  ipAddress: 'ipAddress',
-  hostingPlan: 'hostingPlan',
-  serverLocation: 'serverLocation',
-  controlPanelUrl: 'controlPanelUrl',
-  username: 'username',
-  password: 'password',
-  notes: 'notes'
-};
-
-exports.Prisma.DepartmentOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name'
-};
-
-exports.Prisma.WorkspaceOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  ownerId: 'ownerId',
-  defaultCalendarView: 'defaultCalendarView',
-  businessHoursStart: 'businessHoursStart',
-  businessHoursEnd: 'businessHoursEnd',
-  workingDays: 'workingDays'
-};
-
-exports.Prisma.WorkspaceMemberOrderByRelevanceFieldEnum = {
-  id: 'id',
-  workspaceId: 'workspaceId',
-  userId: 'userId'
-};
-
-exports.Prisma.WorkspaceInvitationOrderByRelevanceFieldEnum = {
-  id: 'id',
-  workspaceId: 'workspaceId',
-  email: 'email',
-  invitedById: 'invitedById',
-  token: 'token',
-  temppassword: 'temppassword'
-};
-
-exports.Prisma.InternalProductOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  email: 'email',
-  internalCode: 'internalCode',
-  industry: 'industry',
-  location: 'location'
 };
 
 exports.Prisma.JsonNullValueFilter = {
   DbNull: Prisma.DbNull,
   JsonNull: Prisma.JsonNull,
   AnyNull: Prisma.AnyNull
-};
-
-exports.Prisma.QueryMode = {
-  default: 'default',
-  insensitive: 'insensitive'
-};
-
-exports.Prisma.ProjectOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description',
-  workspaceId: 'workspaceId',
-  projectCode: 'projectCode',
-  zohoFolderLink: 'zohoFolderLink',
-  createdBy: 'createdBy',
-  departmentId: 'departmentId',
-  clientId: 'clientId',
-  internalProductId: 'internalProductId'
-};
-
-exports.Prisma.ProjectMemberOrderByRelevanceFieldEnum = {
-  id: 'id',
-  projectId: 'projectId',
-  userId: 'userId'
-};
-
-exports.Prisma.TaskOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  taskCode: 'taskCode',
-  description: 'description',
-  projectId: 'projectId',
-  assigneeId: 'assigneeId',
-  reporterId: 'reporterId',
-  departmentId: 'departmentId'
-};
-
-exports.Prisma.TaskCommentOrderByRelevanceFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  userId: 'userId',
-  content: 'content'
-};
-
-exports.Prisma.TimeEntryOrderByRelevanceFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  userId: 'userId',
-  description: 'description'
-};
-
-exports.Prisma.TaskAttachmentOrderByRelevanceFieldEnum = {
-  id: 'id',
-  taskId: 'taskId',
-  userId: 'userId',
-  filename: 'filename',
-  url: 'url',
-  mimeType: 'mimeType'
-};
-
-exports.Prisma.ActivityLogOrderByRelevanceFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  projectId: 'projectId',
-  taskId: 'taskId',
-  action: 'action',
-  description: 'description',
-  metadata: 'metadata'
-};
-
-exports.Prisma.NotificationOrderByRelevanceFieldEnum = {
-  id: 'id',
-  type: 'type',
-  message: 'message',
-  url: 'url'
-};
-
-exports.Prisma.NotificationRecipientOrderByRelevanceFieldEnum = {
-  id: 'id',
-  recipientId: 'recipientId',
-  notificationId: 'notificationId'
-};
-
-exports.Prisma.categoriesOrderByRelevanceFieldEnum = {
-  id: 'id',
-  name: 'name',
-  description: 'description'
-};
-
-exports.Prisma.productsOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title',
-  url: 'url',
-  icon: 'icon',
-  image: 'image'
-};
-
-exports.Prisma.SidebarGroupOrderByRelevanceFieldEnum = {
-  id: 'id',
-  title: 'title'
-};
-
-exports.Prisma.SidebarItemOrderByRelevanceFieldEnum = {
-  id: 'id',
-  label: 'label',
-  href: 'href',
-  icon: 'icon',
-  sidebarGroupId: 'sidebarGroupId'
-};
-
-exports.Prisma.SidebarGroupAccessOrderByRelevanceFieldEnum = {
-  roleId: 'roleId',
-  sidebarGroupId: 'sidebarGroupId'
-};
-
-exports.Prisma.SidebarItemAccessOrderByRelevanceFieldEnum = {
-  roleId: 'roleId',
-  sidebarItemId: 'sidebarItemId'
-};
-
-exports.Prisma.MistakeLogOrderByRelevanceFieldEnum = {
-  id: 'id',
-  mistakeIdentified: 'mistakeIdentified',
-  rootCause: 'rootCause',
-  resolution: 'resolution',
-  learnings: 'learnings',
-  authorId: 'authorId',
-  reviewerId: 'reviewerId',
-  reviewNotes: 'reviewNotes'
 };
 exports.CalendarItemType = exports.$Enums.CalendarItemType = {
   TASK_DEADLINE: 'TASK_DEADLINE',
@@ -858,7 +626,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "D:\\prabisha projects\\Professional_Products\\prabisha-project-pro\\app\\generated\\client",
+      "value": "F:\\Projects\\Prabisha\\prabisha-project-management\\app\\generated\\client",
       "fromEnvVar": null
     },
     "config": {
@@ -880,7 +648,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\prabisha projects\\Professional_Products\\prabisha-project-pro\\prisma\\schema.prisma",
+    "sourceFilePath": "F:\\Projects\\Prabisha\\prabisha-project-management\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -888,12 +656,12 @@ const config = {
     "schemaEnvPath": "../../../.env"
   },
   "relativePath": "../../../prisma",
-  "clientVersion": "6.19.2",
+  "clientVersion": "6.19.3",
   "engineVersion": "c2990dca591cba766e3b7ef5d9e8a84796e47ab7",
   "datasourceNames": [
     "db"
   ],
-  "activeProvider": "mysql",
+  "activeProvider": "postgresql",
   "postinstall": false,
   "inlineDatasources": {
     "db": {
@@ -903,8 +671,8 @@ const config = {
       }
     }
   },
-  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\" // here do not use the new client (prisma-client)\n  binaryTargets = [\"native\", \"linux-musl\", \"rhel-openssl-3.0.x\"] // first one is for cross-platform, second one for docker, last one for serverless environment. safe to include all\n  output        = \"../app/generated/client\" // it is better to include the generator inside `src/` or `app/` if `src/` not available.\n}\n\ndatasource db {\n  provider = \"mysql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Account {\n  id                String  @id @default(cuid())\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String? @db.Text\n  access_token      String? @db.Text\n  expires_at        Int?\n  token_type        String?\n  scope             String?\n  id_token          String? @db.Text\n  session_state     String?\n  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([provider, providerAccountId])\n  @@index([userId], map: \"accounts_userId_fkey\")\n  @@map(\"accounts\")\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@index([userId], map: \"sessions_userId_fkey\")\n  @@map(\"sessions\")\n}\n\nmodel Role2 {\n  id                 String               @id @unique @default(cuid())\n  name               String               @unique\n  createdAt          DateTime             @default(now())\n  updatedAt          DateTime             @updatedAt\n  SidebarGroupAccess SidebarGroupAccess[]\n  SidebarItemAccess  SidebarItemAccess[]\n}\n\nmodel User {\n  id                   String                @id @default(cuid())\n  userCode             String?               @unique // 👈 new field, optional at first\n  email                String                @unique\n  name                 String\n  password             String?\n  avatar               String?\n  isActive             Boolean               @default(true)\n  role                 Role                  @default(MEMBER)\n  createdAt            DateTime              @default(now())\n  updatedAt            DateTime              @updatedAt\n  resetToken           String?\n  resetTokenExpiry     DateTime?\n  departmentId         String?\n  userType             UserType              @default(INTERNAL)\n  industry             String?\n  location             String?\n  accounts             Account[]\n  activityLogs         ActivityLog[]\n  projectMemberships   ProjectMember[]\n  clientProjects       Project[]             @relation(\"clientProjects\")\n  Project              Project[]\n  sessions             Session[]\n  attachments          TaskAttachment[]\n  comments             TaskComment[]\n  assignedTasks        Task[]                @relation(\"TaskAssignee\")\n  reportedTasks        Task[]                @relation(\"TaskReporter\")\n  timeEntries          TimeEntry[]\n  department           Department?           @relation(fields: [departmentId], references: [id])\n  WorkspaceInvitation  WorkspaceInvitation[]\n  workspaceMemberships WorkspaceMember[]\n  ownedWorkspaces      Workspace[]           @relation(\"WorkspaceOwner\")\n\n  notifications    NotificationRecipient[] // A user can have many notification records\n  calendarItems    CalendarItem[]          @relation(\"CalendarItemCreator\")\n  ReviewedMistakes MistakeLog[]            @relation(\"ReviewedMistakes\")\n  MistakeLog       MistakeLog[]\n\n  @@index([departmentId], map: \"users_departmentId_fkey\")\n  @@map(\"users\")\n}\n\nmodel WorkspaceCalendar {\n  id          String   @id @default(cuid())\n  workspaceId String\n  name        String   @default(\"Workspace Calendar\")\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n\n  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)\n  events    CalendarItem[]\n\n  @@unique([workspaceId]) // One calendar per workspace\n  @@map(\"workspace_calendars\")\n}\n\nmodel CalendarItem {\n  id          String   @id @default(cuid())\n  title       String\n  description String?  @db.Text\n  startTime   DateTime\n  endTime     DateTime\n  isAllDay    Boolean  @default(false)\n\n  // What type of item is this?\n  itemType CalendarItemType @default(EVENT)\n\n  // Links to existing data\n  taskId    String? // Link to existing task\n  projectId String? // Link to project\n\n  // Who and where\n  createdById         String\n  workspaceCalendarId String\n\n  // Visual and priority\n  color    String             @default(\"#3B82F6\")\n  priority Priority           @default(MEDIUM)\n  status   CalendarItemStatus @default(SCHEDULED)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  // Relations\n  workspaceCalendar WorkspaceCalendar @relation(fields: [workspaceCalendarId], references: [id], onDelete: Cascade)\n  createdBy         User              @relation(\"CalendarItemCreator\", fields: [createdById], references: [id])\n  task              Task?             @relation(fields: [taskId], references: [id])\n  project           Project?          @relation(fields: [projectId], references: [id])\n\n  @@index([workspaceCalendarId])\n  @@index([createdById])\n  @@index([taskId])\n  @@index([projectId])\n  @@index([startTime])\n  @@index([endTime])\n  @@map(\"calendar_items\")\n}\n\nenum CalendarItemType {\n  TASK_DEADLINE // Automatic from task due dates\n  MEETING // User created meetings\n  EVENT // General events\n  BREAK // Lunch, coffee breaks\n  VACATION // Time off\n  TRAINING // Training sessions\n  CLIENT_CALL // Client meetings\n  MILESTONE // Project milestones\n}\n\nenum CalendarItemStatus {\n  SCHEDULED // Normal scheduled item\n  IN_PROGRESS // Currently happening\n  COMPLETED // Done\n  CANCELLED // Cancelled\n  POSTPONED // Moved to later\n}\n\nmodel Asset {\n  id              String        @id @default(cuid())\n  assetType       AssetType\n  provider        String        @default(\"TVMServer\")\n  name            String\n  domainName      String?\n  ipAddress       String?\n  hostingPlan     String?\n  serverLocation  String?\n  purchaseDate    DateTime\n  expiryDate      DateTime\n  autoRenew       Boolean       @default(false)\n  renewalPeriod   RenewalPeriod\n  status          AssetStatus   @default(ACTIVE)\n  liveStatus      LiveStatus    @default(UNKNOWN)\n  lastChecked     DateTime?\n  controlPanelUrl String?\n  username        String?\n  password        String?\n  notes           String?       @db.Text\n  createdAt       DateTime      @default(now())\n  updatedAt       DateTime      @updatedAt\n\n  @@map(\"assets\")\n}\n\nmodel Department {\n  id      String    @id @default(cuid())\n  name    String    @unique\n  project Project[]\n  users   User[]\n  task    Task[]\n\n  @@map(\"departments\")\n}\n\nmodel Workspace {\n  id                  String                @id @default(cuid())\n  name                String\n  ownerId             String\n  createdAt           DateTime              @default(now())\n  updatedAt           DateTime              @updatedAt\n  projects            Project[]\n  invitations         WorkspaceInvitation[]\n  members             WorkspaceMember[]\n  owner               User                  @relation(\"WorkspaceOwner\", fields: [ownerId], references: [id])\n  WorkspaceCalendar   WorkspaceCalendar?\n  // Calendar settings for workspace\n  calendarEnabled     Boolean               @default(true)\n  defaultCalendarView String                @default(\"week\")\n  businessHoursStart  String?               @default(\"09:00\")\n  businessHoursEnd    String?               @default(\"18:00\")\n  workingDays         String                @default(\"1,2,3,4,5\") // Monday to Friday\n\n  @@index([ownerId], map: \"workspaces_ownerId_fkey\")\n  @@map(\"workspaces\")\n}\n\nmodel WorkspaceMember {\n  id          String        @id @default(cuid())\n  workspaceId String\n  userId      String\n  role        WorkspaceRole @default(MEMBER)\n  joinedAt    DateTime      @default(now())\n  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)\n  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)\n\n  @@unique([workspaceId, userId])\n  @@index([userId], map: \"workspace_members_userId_fkey\")\n  @@map(\"workspace_members\")\n}\n\nmodel WorkspaceInvitation {\n  id           String        @id @default(cuid())\n  workspaceId  String\n  email        String\n  invitedById  String\n  role         WorkspaceRole @default(MEMBER)\n  token        String        @unique\n  accepted     Boolean       @default(false)\n  expiresAt    DateTime\n  createdAt    DateTime      @default(now())\n  temppassword String?\n  invitedBy    User          @relation(fields: [invitedById], references: [id])\n  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)\n\n  @@unique([workspaceId, email])\n  @@index([invitedById], map: \"workspace_invitations_invitedById_fkey\")\n  @@map(\"workspace_invitations\")\n}\n\nmodel InternalProduct {\n  id           String    @id @default(cuid())\n  name         String    @unique\n  email        String?\n  internalCode String?\n  industry     String?\n  location     String?\n  createdAt    DateTime  @default(now())\n  updatedAt    DateTime  @updatedAt\n  projects     Project[]\n}\n\nmodel Project {\n  id                String           @id @default(cuid())\n  name              String           @unique\n  description       String?          @db.Text\n  workspaceId       String\n  projectCode       String?          @unique // 👈 new field, optional at first\n  status            ProjectStatus    @default(ACTIVE)\n  priority          Priority         @default(MEDIUM)\n  projectType       ProjectType      @default(FIXED_TERM) // <-- New field\n  zohoFolderLink    String?\n  startDate         DateTime?\n  dueDate           DateTime?\n  createdBy         String\n  createdAt         DateTime         @default(now())\n  updatedAt         DateTime         @updatedAt\n  departmentId      String?\n  clientId          String?\n  isClientProject   Boolean          @default(false) // Renamed from 'isClient' for clarity\n  notes             Json? // <-- CHANGE THIS from String? @db.Text to Json?\n  activityLogs      ActivityLog[]\n  members           ProjectMember[]\n  clientUser        User?            @relation(\"clientProjects\", fields: [clientId], references: [id])\n  creator           User             @relation(fields: [createdBy], references: [id])\n  department        Department?      @relation(fields: [departmentId], references: [id])\n  workspace         Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)\n  internalProductId String?\n  internalProduct   InternalProduct? @relation(fields: [internalProductId], references: [id])\n  tasks             Task[]\n\n  calendarItems CalendarItem[]\n\n  @@index([createdBy], map: \"projects_createdBy_fkey\")\n  @@index([workspaceId], map: \"projects_workspaceId_fkey\")\n  @@index([clientId], map: \"projects_clientId_fkey\")\n  @@index([departmentId], map: \"projects_departmentId_fkey\")\n  @@map(\"projects\")\n}\n\nmodel ProjectMember {\n  id         String      @id @default(cuid())\n  projectId  String\n  userId     String\n  role       ProjectRole @default(MEMBER)\n  assignedAt DateTime    @default(now())\n  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)\n  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)\n\n  @@unique([projectId, userId])\n  @@index([userId], map: \"project_members_userId_fkey\")\n  @@map(\"project_members\")\n}\n\nenum TaskType {\n  TASK\n  BUG\n  FEATURE\n  IMPROVEMENT\n  EPIC\n}\n\nmodel Task {\n  id               String           @id @default(cuid())\n  title            String\n  taskCode         String?          @unique\n  description      String?          @db.Text\n  projectId        String\n  assigneeId       String?\n  reporterId       String\n  position         Float\n  taskType         TaskType?        @default(TASK)\n  priority         Priority         @default(MEDIUM)\n  status           TaskStatus       @default(TO_DO)\n  estimatedMinutes Int? // Changed from estimatedHours\n  actualMinutes    Int              @default(0) // Changed from actualHours\n  startDate        DateTime?\n  dueDate          DateTime?\n  completedAt      DateTime? // New field to track when task was marked as done\n  createdAt        DateTime         @default(now())\n  updatedAt        DateTime         @updatedAt\n  activityLogs     ActivityLog[]\n  attachments      TaskAttachment[]\n  comments         TaskComment[]\n  assignee         User?            @relation(\"TaskAssignee\", fields: [assigneeId], references: [id])\n  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)\n  reporter         User             @relation(\"TaskReporter\", fields: [reporterId], references: [id])\n  timeEntries      TimeEntry[]\n  calendarItems    CalendarItem[]\n  departmentId     String?\n  department       Department?      @relation(fields: [departmentId], references: [id])\n\n  @@index([assigneeId], map: \"tasks_assigneeId_fkey\")\n  @@index([projectId], map: \"tasks_projectId_fkey\")\n  @@index([reporterId], map: \"tasks_reporterId_fkey\")\n  @@map(\"tasks\")\n}\n\nmodel TaskComment {\n  id        String   @id @default(cuid())\n  taskId    String\n  userId    String\n  content   String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)\n  user      User     @relation(fields: [userId], references: [id])\n\n  @@index([taskId], map: \"task_comments_taskId_fkey\")\n  @@index([userId], map: \"task_comments_userId_fkey\")\n  @@map(\"task_comments\")\n}\n\nmodel TimeEntry {\n  id          String    @id @default(cuid())\n  taskId      String\n  userId      String\n  description String?\n  minutes     Int       @default(0)\n  startedAt   DateTime?\n  stoppedAt   DateTime?\n  isRunning   Boolean   @default(false)\n  date        DateTime  @default(now())\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)\n  user        User      @relation(fields: [userId], references: [id])\n\n  @@index([taskId], map: \"time_entries_taskId_fkey\")\n  @@index([userId], map: \"time_entries_userId_fkey\")\n  @@map(\"time_entries\")\n}\n\nmodel TaskAttachment {\n  id         String   @id @default(cuid())\n  taskId     String\n  userId     String\n  filename   String\n  url        String\n  fileSize   Int?\n  mimeType   String?\n  uploadedAt DateTime @default(now())\n  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)\n  user       User     @relation(fields: [userId], references: [id])\n\n  @@index([taskId], map: \"task_attachments_taskId_fkey\")\n  @@index([userId], map: \"task_attachments_userId_fkey\")\n  @@map(\"task_attachments\")\n}\n\nmodel ActivityLog {\n  id          String   @id @default(cuid())\n  userId      String\n  projectId   String\n  taskId      String?\n  action      String\n  description String?\n  metadata    String?  @db.LongText\n  createdAt   DateTime @default(now())\n  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)\n  task        Task?    @relation(fields: [taskId], references: [id])\n  user        User     @relation(fields: [userId], references: [id])\n\n  @@index([projectId], map: \"activity_logs_projectId_fkey\")\n  @@index([taskId], map: \"activity_logs_taskId_fkey\")\n  @@index([userId], map: \"activity_logs_userId_fkey\")\n  @@map(\"activity_logs\")\n}\n\nmodel Notification {\n  id        String   @id @default(cuid())\n  type      String // e.g., 'PROJECT_CREATED', 'TASK_ASSIGNED', 'MEMBER_ADDED'\n  message   String   @db.Text\n  url       String? // A URL to redirect the user to when they click the notification\n  createdAt DateTime @default(now())\n\n  // Relation to the recipients of this notification\n  recipients NotificationRecipient[]\n}\n\nmodel NotificationRecipient {\n  id             String     @id @default(cuid())\n  recipientId    String // The ID of the User who should receive the notification\n  notificationId String\n  readAt         DateTime? // Timestamp for when the user read the notification\n  status         ReadStatus @default(UNREAD)\n\n  // You need a relationship back to your main User model.\n  // Prisma allows this even across \"conceptual\" services if they share a DB.\n  recipient    User         @relation(fields: [recipientId], references: [id], onDelete: Cascade)\n  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)\n\n  @@unique([recipientId, notificationId])\n  @@index([recipientId])\n  @@index([notificationId])\n  @@map(\"notification_recipients\")\n}\n\nmodel categories {\n  id          String     @id @default(cuid())\n  name        String     @unique @db.VarChar(255)\n  description String?    @db.Text\n  products    products[]\n}\n\nmodel products {\n  id         String        @id @default(cuid())\n  title      String        @db.VarChar(255)\n  status     ProductStatus @default(PENDING)\n  categories categories[] // Many-to-many relationship\n  url        String?       @db.VarChar(255)\n  icon       String?       @db.VarChar(255)\n  image      String?       @db.VarChar(255)\n  createdAt  DateTime      @default(now())\n  updatedAt  DateTime      @updatedAt\n}\n\nmodel SidebarGroup {\n  id        String   @id @default(cuid())\n  title     String   @unique\n  position  Int\n  isActive  Boolean  @default(true)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  items      SidebarItem[]\n  roleAccess SidebarGroupAccess[]\n}\n\nmodel SidebarItem {\n  id        String   @id @default(cuid())\n  label     String\n  href      String   @unique\n  icon      String?\n  position  Int\n  isActive  Boolean  @default(true)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  sidebarGroupId String\n  sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)\n\n  roleAccess SidebarItemAccess[]\n}\n\nmodel SidebarGroupAccess {\n  roleId         String\n  sidebarGroupId String\n  hasAccess      Boolean      @default(true)\n  sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade)\n  role           Role2        @relation(fields: [roleId], references: [id], onDelete: Cascade)\n\n  @@id([roleId, sidebarGroupId])\n  @@index([sidebarGroupId])\n  @@index([roleId])\n}\n\nmodel SidebarItemAccess {\n  roleId        String\n  sidebarItemId String\n  hasAccess     Boolean     @default(true)\n  sidebarItem   SidebarItem @relation(fields: [sidebarItemId], references: [id], onDelete: Cascade)\n  role          Role2       @relation(fields: [roleId], references: [id], onDelete: Cascade)\n\n  @@id([roleId, sidebarItemId])\n  @@index([sidebarItemId])\n  @@index([roleId])\n}\n\nenum ProductStatus {\n  PENDING\n  ACTIVE\n  INACTIVE\n}\n\nenum ReadStatus {\n  READ\n  UNREAD\n}\n\nenum AssetType {\n  DOMAIN\n  HOSTING\n  VPS\n  SSL\n  OTHER\n}\n\nenum RenewalPeriod {\n  MONTHLY\n  QUARTERLY\n  YEARLY\n  BIENNIAL\n  TRIENNIAL\n  CUSTOM\n}\n\nenum AssetStatus {\n  ACTIVE\n  EXPIRED\n  PENDING_RENEWAL\n}\n\nenum LiveStatus {\n  ONLINE\n  OFFLINE\n  UNKNOWN\n  SSL_ERROR\n  INVALID_DOMAIN // <-- Add this new status\n}\n\nenum UserType {\n  INTERNAL\n  CLIENT\n}\n\nenum Role {\n  ADMIN\n  MANAGER\n  MEMBER\n  INTERNAL\n}\n\nenum WorkspaceRole {\n  OWNER\n  ADMIN\n  MEMBER\n}\n\nenum ProjectRole {\n  LEAD\n  MEMBER\n}\n\nenum ProjectStatus {\n  ACTIVE\n  ON_HOLD\n  COMPLETED\n  ARCHIVED\n}\n\nenum TaskStatus {\n  TO_DO\n  IN_PROGRESS\n  REVIEW\n  DONE\n}\n\nenum Priority {\n  LOW\n  MEDIUM\n  HIGH\n  URGENT\n}\n\nenum ProjectType {\n  FIXED_TERM\n  ONGOING\n}\n\n// Enums for Mistake Learning\nenum MistakeImpact {\n  LOW\n  MEDIUM\n  HIGH\n}\n\nenum MistakeCategory {\n  PROCESS\n  TECHNICAL\n  HUMAN_ERROR\n}\n\nenum MistakeStatus {\n  PENDING\n  REVIEWED\n  ARCHIVED\n}\n\n// Mistake Learning Model\nmodel MistakeLog {\n  id                String          @id @default(cuid())\n  mistakeIdentified String          @db.VarChar(500)\n  impact            MistakeImpact\n  rootCause         String          @db.LongText\n  resolution        String          @db.LongText\n  learnings         String          @db.LongText\n  category          MistakeCategory\n  mistakeDate       DateTime\n  status            MistakeStatus   @default(PENDING)\n  attachments       Json? // array of { url, name?, type?, size? }\n\n  // Relations\n  authorId   String?\n  author     User?   @relation(fields: [authorId], references: [id], onDelete: Cascade)\n  reviewerId String?\n  reviewer   User?   @relation(\"ReviewedMistakes\", fields: [reviewerId], references: [id], onDelete: SetNull)\n\n  // Metadata\n  reviewNotes String?   @db.LongText\n  closedAt    DateTime?\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n\n  @@index([authorId, createdAt])\n  @@index([category, impact])\n  @@index([status, mistakeDate])\n  @@index([reviewerId])\n}\n",
-  "inlineSchemaHash": "9c498bc7534a964183068799f89135daa80b98476a8e0c235fc228323484069d",
+  "inlineSchema": "generator client {\n  provider      = \"prisma-client-js\"\n  binaryTargets = [\"native\", \"linux-musl\", \"rhel-openssl-3.0.x\"]\n  output        = \"../app/generated/client\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel Account {\n  id                String  @id @default(cuid())\n  userId            String\n  type              String\n  provider          String\n  providerAccountId String\n  refresh_token     String?\n  access_token      String?\n  expires_at        Int?\n  token_type        String?\n  scope             String?\n  id_token          String?\n  session_state     String?\n  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade, map: \"fk_accounts_user_id\")\n\n  @@unique([provider, providerAccountId])\n  @@index([userId], map: \"accounts_userId_fkey\")\n  @@map(\"accounts\")\n}\n\nmodel Session {\n  id           String   @id @default(cuid())\n  sessionToken String   @unique\n  userId       String\n  expires      DateTime\n  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade, map: \"fk_sessions_user_id\")\n\n  @@index([userId], map: \"sessions_userId_fkey\")\n  @@map(\"sessions\")\n}\n\nmodel Role2 {\n  id                 String               @id @unique @default(cuid())\n  name               String               @unique\n  createdAt          DateTime             @default(now())\n  updatedAt          DateTime             @updatedAt\n  SidebarGroupAccess SidebarGroupAccess[]\n  SidebarItemAccess  SidebarItemAccess[]\n}\n\nmodel User {\n  id                   String                @id @default(cuid())\n  userCode             String?               @unique\n  email                String                @unique\n  name                 String\n  password             String?\n  avatar               String?\n  isActive             Boolean               @default(true)\n  role                 Role                  @default(MEMBER)\n  createdAt            DateTime              @default(now())\n  updatedAt            DateTime              @updatedAt\n  resetToken           String?\n  resetTokenExpiry     DateTime?\n  departmentId         String?\n  userType             UserType              @default(INTERNAL)\n  industry             String?\n  location             String?\n  accounts             Account[]\n  activityLogs         ActivityLog[]\n  projectMemberships   ProjectMember[]\n  clientProjects       Project[]             @relation(\"clientProjects\")\n  Project              Project[]\n  sessions             Session[]\n  attachments          TaskAttachment[]\n  comments             TaskComment[]\n  assignedTasks        Task[]                @relation(\"TaskAssignee\")\n  reportedTasks        Task[]                @relation(\"TaskReporter\")\n  timeEntries          TimeEntry[]\n  department           Department?           @relation(fields: [departmentId], references: [id], map: \"fk_users_department_id\")\n  WorkspaceInvitation  WorkspaceInvitation[]\n  workspaceMemberships WorkspaceMember[]\n  ownedWorkspaces      Workspace[]           @relation(\"WorkspaceOwner\")\n\n  notifications    NotificationRecipient[]\n  calendarItems    CalendarItem[]          @relation(\"CalendarItemCreator\")\n  ReviewedMistakes MistakeLog[]            @relation(\"ReviewedMistakes\")\n  MistakeLog       MistakeLog[]\n\n  @@index([departmentId], map: \"users_departmentId_fkey\")\n  @@map(\"users\")\n}\n\nmodel WorkspaceCalendar {\n  id          String   @id @default(cuid())\n  workspaceId String\n  name        String   @default(\"Workspace Calendar\")\n  createdAt   DateTime @default(now())\n  updatedAt   DateTime @updatedAt\n\n  workspace Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade, map: \"fk_workspace_calendar_workspace_id\")\n  events    CalendarItem[]\n\n  @@unique([workspaceId])\n  @@map(\"workspace_calendars\")\n}\n\nmodel CalendarItem {\n  id          String   @id @default(cuid())\n  title       String\n  description String?\n  startTime   DateTime\n  endTime     DateTime\n  isAllDay    Boolean  @default(false)\n\n  itemType CalendarItemType @default(EVENT)\n\n  taskId    String?\n  projectId String?\n\n  createdById         String\n  workspaceCalendarId String\n\n  color    String             @default(\"#3B82F6\")\n  priority Priority           @default(MEDIUM)\n  status   CalendarItemStatus @default(SCHEDULED)\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  workspaceCalendar WorkspaceCalendar @relation(fields: [workspaceCalendarId], references: [id], onDelete: Cascade, map: \"fk_calendar_items_workspace_calendar_id\")\n  createdBy         User              @relation(\"CalendarItemCreator\", fields: [createdById], references: [id], map: \"fk_calendar_items_created_by_id\")\n  task              Task?             @relation(fields: [taskId], references: [id], map: \"fk_calendar_items_task_id\")\n  project           Project?          @relation(fields: [projectId], references: [id], map: \"fk_calendar_items_project_id\")\n\n  @@index([workspaceCalendarId])\n  @@index([createdById])\n  @@index([taskId])\n  @@index([projectId])\n  @@index([startTime])\n  @@index([endTime])\n  @@map(\"calendar_items\")\n}\n\nenum CalendarItemType {\n  TASK_DEADLINE\n  MEETING\n  EVENT\n  BREAK\n  VACATION\n  TRAINING\n  CLIENT_CALL\n  MILESTONE\n}\n\nenum CalendarItemStatus {\n  SCHEDULED\n  IN_PROGRESS\n  COMPLETED\n  CANCELLED\n  POSTPONED\n}\n\nmodel Asset {\n  id              String        @id @default(cuid())\n  assetType       AssetType\n  provider        String        @default(\"TVMServer\")\n  name            String\n  domainName      String?\n  ipAddress       String?\n  hostingPlan     String?\n  serverLocation  String?\n  purchaseDate    DateTime\n  expiryDate      DateTime\n  autoRenew       Boolean       @default(false)\n  renewalPeriod   RenewalPeriod\n  status          AssetStatus   @default(ACTIVE)\n  liveStatus      LiveStatus    @default(UNKNOWN)\n  lastChecked     DateTime?\n  controlPanelUrl String?\n  username        String?\n  password        String?\n  notes           String?\n  createdAt       DateTime      @default(now())\n  updatedAt       DateTime      @updatedAt\n\n  @@map(\"assets\")\n}\n\nmodel Department {\n  id      String    @id @default(cuid())\n  name    String    @unique\n  project Project[]\n  users   User[]\n  task    Task[]\n\n  @@map(\"departments\")\n}\n\nmodel Workspace {\n  id                  String                @id @default(cuid())\n  name                String\n  ownerId             String\n  createdAt           DateTime              @default(now())\n  updatedAt           DateTime              @updatedAt\n  projects            Project[]\n  invitations         WorkspaceInvitation[]\n  members             WorkspaceMember[]\n  owner               User                  @relation(\"WorkspaceOwner\", fields: [ownerId], references: [id], map: \"fk_workspaces_owner_id\")\n  WorkspaceCalendar   WorkspaceCalendar?\n  calendarEnabled     Boolean               @default(true)\n  defaultCalendarView String                @default(\"week\")\n  businessHoursStart  String?               @default(\"09:00\")\n  businessHoursEnd    String?               @default(\"18:00\")\n  workingDays         String                @default(\"1,2,3,4,5\")\n\n  @@index([ownerId], map: \"workspaces_ownerId_fkey\")\n  @@map(\"workspaces\")\n}\n\nmodel WorkspaceMember {\n  id          String        @id @default(cuid())\n  workspaceId String\n  userId      String\n  role        WorkspaceRole @default(MEMBER)\n  joinedAt    DateTime      @default(now())\n  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade, map: \"fk_workspace_members_user_id\")\n  workspace   Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade, map: \"fk_workspace_members_workspace_id\")\n\n  @@unique([workspaceId, userId])\n  @@index([userId], map: \"workspace_members_userId_fkey\")\n  @@map(\"workspace_members\")\n}\n\nmodel WorkspaceInvitation {\n  id           String        @id @default(cuid())\n  workspaceId  String\n  email        String\n  invitedById  String\n  role         WorkspaceRole @default(MEMBER)\n  token        String        @unique\n  accepted     Boolean       @default(false)\n  expiresAt    DateTime\n  createdAt    DateTime      @default(now())\n  temppassword String?\n  invitedBy    User          @relation(fields: [invitedById], references: [id], map: \"fk_workspace_invitations_invited_by_id\")\n  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade, map: \"fk_workspace_invitations_workspace_id\")\n\n  @@unique([workspaceId, email])\n  @@index([invitedById], map: \"workspace_invitations_invitedById_fkey\")\n  @@map(\"workspace_invitations\")\n}\n\nmodel InternalProduct {\n  id           String    @id @default(cuid())\n  name         String    @unique\n  email        String?\n  internalCode String?\n  industry     String?\n  location     String?\n  createdAt    DateTime  @default(now())\n  updatedAt    DateTime  @updatedAt\n  projects     Project[]\n}\n\nmodel Project {\n  id                String           @id @default(cuid())\n  name              String           @unique\n  description       String?\n  workspaceId       String\n  projectCode       String?          @unique\n  status            ProjectStatus    @default(ACTIVE)\n  priority          Priority         @default(MEDIUM)\n  projectType       ProjectType      @default(FIXED_TERM)\n  zohoFolderLink    String?\n  startDate         DateTime?\n  dueDate           DateTime?\n  createdBy         String\n  createdAt         DateTime         @default(now())\n  updatedAt         DateTime         @updatedAt\n  departmentId      String?\n  clientId          String?\n  isClientProject   Boolean          @default(false)\n  notes             Json?\n  activityLogs      ActivityLog[]\n  members           ProjectMember[]\n  clientUser        User?            @relation(\"clientProjects\", fields: [clientId], references: [id], map: \"fk_projects_client_user_id\")\n  creator           User             @relation(fields: [createdBy], references: [id], map: \"fk_projects_creator_id\")\n  department        Department?      @relation(fields: [departmentId], references: [id], map: \"fk_projects_department_id\")\n  workspace         Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade, map: \"fk_projects_workspace_id\")\n  internalProductId String?\n  internalProduct   InternalProduct? @relation(fields: [internalProductId], references: [id], map: \"fk_projects_internal_product_id\")\n  tasks             Task[]\n  calendarItems     CalendarItem[]\n\n  @@index([createdBy], map: \"projects_createdBy_fkey\")\n  @@index([workspaceId], map: \"projects_workspaceId_fkey\")\n  @@index([clientId], map: \"projects_clientId_fkey\")\n  @@index([departmentId], map: \"projects_departmentId_fkey\")\n  @@map(\"projects\")\n}\n\nmodel ProjectMember {\n  id         String      @id @default(cuid())\n  projectId  String\n  userId     String\n  role       ProjectRole @default(MEMBER)\n  assignedAt DateTime    @default(now())\n  project    Project     @relation(fields: [projectId], references: [id], onDelete: Cascade, map: \"fk_project_members_project_id\")\n  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade, map: \"fk_project_members_user_id\")\n\n  @@unique([projectId, userId])\n  @@index([userId], map: \"project_members_userId_fkey\")\n  @@map(\"project_members\")\n}\n\nenum TaskType {\n  TASK\n  BUG\n  FEATURE\n  IMPROVEMENT\n  EPIC\n}\n\nmodel Task {\n  id               String           @id @default(cuid())\n  title            String\n  taskCode         String?          @unique\n  description      String?\n  projectId        String\n  assigneeId       String?\n  reporterId       String\n  position         Float\n  taskType         TaskType?        @default(TASK)\n  priority         Priority         @default(MEDIUM)\n  status           TaskStatus       @default(TO_DO)\n  estimatedMinutes Int?\n  actualMinutes    Int              @default(0)\n  startDate        DateTime?\n  dueDate          DateTime?\n  completedAt      DateTime?\n  createdAt        DateTime         @default(now())\n  updatedAt        DateTime         @updatedAt\n  activityLogs     ActivityLog[]\n  attachments      TaskAttachment[]\n  comments         TaskComment[]\n  assignee         User?            @relation(\"TaskAssignee\", fields: [assigneeId], references: [id], map: \"fk_tasks_assignee_id\")\n  project          Project          @relation(fields: [projectId], references: [id], onDelete: Cascade, map: \"fk_tasks_project_id\")\n  reporter         User             @relation(\"TaskReporter\", fields: [reporterId], references: [id], map: \"fk_tasks_reporter_id\")\n  timeEntries      TimeEntry[]\n  calendarItems    CalendarItem[]\n  departmentId     String?\n  department       Department?      @relation(fields: [departmentId], references: [id], map: \"fk_tasks_department_id\")\n\n  @@index([assigneeId], map: \"tasks_assigneeId_fkey\")\n  @@index([projectId], map: \"tasks_projectId_fkey\")\n  @@index([reporterId], map: \"tasks_reporterId_fkey\")\n  @@map(\"tasks\")\n}\n\nmodel TaskComment {\n  id        String   @id @default(cuid())\n  taskId    String\n  userId    String\n  content   String\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade, map: \"fk_task_comments_task_id\")\n  user      User     @relation(fields: [userId], references: [id], map: \"fk_task_comments_user_id\")\n\n  @@index([taskId], map: \"task_comments_taskId_fkey\")\n  @@index([userId], map: \"task_comments_userId_fkey\")\n  @@map(\"task_comments\")\n}\n\nmodel TimeEntry {\n  id          String    @id @default(cuid())\n  taskId      String\n  userId      String\n  description String?\n  minutes     Int       @default(0)\n  startedAt   DateTime?\n  stoppedAt   DateTime?\n  isRunning   Boolean   @default(false)\n  date        DateTime  @default(now())\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n  task        Task      @relation(fields: [taskId], references: [id], onDelete: Cascade, map: \"fk_time_entries_task_id\")\n  user        User      @relation(fields: [userId], references: [id], map: \"fk_time_entries_user_id\")\n\n  @@index([taskId], map: \"time_entries_taskId_fkey\")\n  @@index([userId], map: \"time_entries_userId_fkey\")\n  @@map(\"time_entries\")\n}\n\nmodel TaskAttachment {\n  id         String   @id @default(cuid())\n  taskId     String\n  userId     String\n  filename   String\n  url        String\n  fileSize   Int?\n  mimeType   String?\n  uploadedAt DateTime @default(now())\n  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade, map: \"fk_task_attachments_task_id\")\n  user       User     @relation(fields: [userId], references: [id], map: \"fk_task_attachments_user_id\")\n\n  @@index([taskId], map: \"task_attachments_taskId_fkey\")\n  @@index([userId], map: \"task_attachments_userId_fkey\")\n  @@map(\"task_attachments\")\n}\n\nmodel ActivityLog {\n  id          String   @id @default(cuid())\n  userId      String\n  projectId   String\n  taskId      String?\n  action      String\n  description String?\n  metadata    String?\n  createdAt   DateTime @default(now())\n  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: \"fk_activity_logs_project_id\")\n  task        Task?    @relation(fields: [taskId], references: [id], map: \"fk_activity_logs_task_id\")\n  user        User     @relation(fields: [userId], references: [id], map: \"fk_activity_logs_user_id\")\n\n  @@index([projectId], map: \"activity_logs_projectId_fkey\")\n  @@index([taskId], map: \"activity_logs_taskId_fkey\")\n  @@index([userId], map: \"activity_logs_userId_fkey\")\n  @@map(\"activity_logs\")\n}\n\nmodel Notification {\n  id        String   @id @default(cuid())\n  type      String\n  message   String\n  url       String?\n  createdAt DateTime @default(now())\n\n  recipients NotificationRecipient[]\n}\n\nmodel NotificationRecipient {\n  id             String     @id @default(cuid())\n  recipientId    String\n  notificationId String\n  readAt         DateTime?\n  status         ReadStatus @default(UNREAD)\n\n  recipient    User         @relation(fields: [recipientId], references: [id], onDelete: Cascade, map: \"fk_notification_recipients_recipient_id\")\n  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade, map: \"fk_notification_recipients_notification_id\")\n\n  @@unique([recipientId, notificationId])\n  @@index([recipientId])\n  @@index([notificationId])\n  @@map(\"notification_recipients\")\n}\n\nmodel categories {\n  id          String     @id @default(cuid())\n  name        String     @unique @db.VarChar(255)\n  description String?\n  products    products[]\n}\n\nmodel products {\n  id         String        @id @default(cuid())\n  title      String        @db.VarChar(255)\n  status     ProductStatus @default(PENDING)\n  categories categories[]\n  url        String?       @db.VarChar(255)\n  icon       String?       @db.VarChar(255)\n  image      String?       @db.VarChar(255)\n  createdAt  DateTime      @default(now())\n  updatedAt  DateTime      @updatedAt\n}\n\nmodel SidebarGroup {\n  id        String   @id @default(cuid())\n  title     String   @unique\n  position  Int\n  isActive  Boolean  @default(true)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  items      SidebarItem[]\n  roleAccess SidebarGroupAccess[]\n}\n\nmodel SidebarItem {\n  id        String   @id @default(cuid())\n  label     String\n  href      String   @unique\n  icon      String?\n  position  Int\n  isActive  Boolean  @default(true)\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  sidebarGroupId String\n  sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade, map: \"fk_sidebar_items_sidebar_group_id\")\n\n  roleAccess SidebarItemAccess[]\n}\n\nmodel SidebarGroupAccess {\n  roleId         String\n  sidebarGroupId String\n  hasAccess      Boolean      @default(true)\n  sidebarGroup   SidebarGroup @relation(fields: [sidebarGroupId], references: [id], onDelete: Cascade, map: \"fk_sidebar_group_access_group_id\")\n  role           Role2        @relation(fields: [roleId], references: [id], onDelete: Cascade, map: \"fk_sidebar_group_access_role_id\")\n\n  @@id([roleId, sidebarGroupId])\n  @@index([sidebarGroupId])\n  @@index([roleId])\n}\n\nmodel SidebarItemAccess {\n  roleId        String\n  sidebarItemId String\n  hasAccess     Boolean     @default(true)\n  sidebarItem   SidebarItem @relation(fields: [sidebarItemId], references: [id], onDelete: Cascade, map: \"fk_sidebar_item_access_item_id\")\n  role          Role2       @relation(fields: [roleId], references: [id], onDelete: Cascade, map: \"fk_sidebar_item_access_role_id\")\n\n  @@id([roleId, sidebarItemId])\n  @@index([sidebarItemId])\n  @@index([roleId])\n}\n\nenum ProductStatus {\n  PENDING\n  ACTIVE\n  INACTIVE\n}\n\nenum ReadStatus {\n  READ\n  UNREAD\n}\n\nenum AssetType {\n  DOMAIN\n  HOSTING\n  VPS\n  SSL\n  OTHER\n}\n\nenum RenewalPeriod {\n  MONTHLY\n  QUARTERLY\n  YEARLY\n  BIENNIAL\n  TRIENNIAL\n  CUSTOM\n}\n\nenum AssetStatus {\n  ACTIVE\n  EXPIRED\n  PENDING_RENEWAL\n}\n\nenum LiveStatus {\n  ONLINE\n  OFFLINE\n  UNKNOWN\n  SSL_ERROR\n  INVALID_DOMAIN\n}\n\nenum UserType {\n  INTERNAL\n  CLIENT\n}\n\nenum Role {\n  ADMIN\n  MANAGER\n  MEMBER\n  INTERNAL\n}\n\nenum WorkspaceRole {\n  OWNER\n  ADMIN\n  MEMBER\n}\n\nenum ProjectRole {\n  LEAD\n  MEMBER\n}\n\nenum ProjectStatus {\n  ACTIVE\n  ON_HOLD\n  COMPLETED\n  ARCHIVED\n}\n\nenum TaskStatus {\n  TO_DO\n  IN_PROGRESS\n  REVIEW\n  DONE\n}\n\nenum Priority {\n  LOW\n  MEDIUM\n  HIGH\n  URGENT\n}\n\nenum ProjectType {\n  FIXED_TERM\n  ONGOING\n}\n\nenum MistakeImpact {\n  LOW\n  MEDIUM\n  HIGH\n}\n\nenum MistakeCategory {\n  PROCESS\n  TECHNICAL\n  HUMAN_ERROR\n}\n\nenum MistakeStatus {\n  PENDING\n  REVIEWED\n  ARCHIVED\n}\n\nmodel MistakeLog {\n  id                String          @id @default(cuid())\n  mistakeIdentified String          @db.VarChar(500)\n  impact            MistakeImpact\n  rootCause         String\n  resolution        String\n  learnings         String\n  category          MistakeCategory\n  mistakeDate       DateTime\n  status            MistakeStatus   @default(PENDING)\n  attachments       Json?\n\n  authorId   String?\n  author     User?   @relation(fields: [authorId], references: [id], onDelete: Cascade, map: \"fk_mistake_logs_author_id\")\n  reviewerId String?\n  reviewer   User?   @relation(\"ReviewedMistakes\", fields: [reviewerId], references: [id], onDelete: SetNull, map: \"fk_mistake_logs_reviewer_id\")\n\n  reviewNotes String?\n  closedAt    DateTime?\n  createdAt   DateTime  @default(now())\n  updatedAt   DateTime  @updatedAt\n\n  @@index([authorId, createdAt])\n  @@index([category, impact])\n  @@index([status, mistakeDate])\n  @@index([reviewerId])\n}\n",
+  "inlineSchemaHash": "a8e7d0267f83448b5cb8e7e12636fae6733be9ee474b10c39b062e78df851eeb",
   "copyEngine": true
 }
 config.dirname = '/'
