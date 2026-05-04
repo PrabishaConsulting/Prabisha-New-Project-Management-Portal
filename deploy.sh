@@ -63,6 +63,10 @@ else
     exit 1
 fi
 
+# Clean Next.js cache to ensure fresh build
+echo "🧹 Cleaning Next.js cache..."
+rm -rf .next
+
 # Build the application
 echo "🏗️ Building application..."
 pnpm build
