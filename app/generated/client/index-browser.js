@@ -7,7 +7,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 
 const {
   Decimal,
-  objectEnumValues,
+  DbNull,
+  JsonNull,
+  AnyNull,
+  NullTypes,
   makeStrictEnum,
   Public,
   getRuntime,
@@ -21,12 +24,12 @@ exports.Prisma = Prisma
 exports.$Enums = {}
 
 /**
- * Prisma Client JS version: 6.19.3
- * Query Engine version: c2990dca591cba766e3b7ef5d9e8a84796e47ab7
+ * Prisma Client JS version: 7.8.0
+ * Query Engine version: 3c6e192761c0362d496ed980de936e2f3cebcd3a
  */
 Prisma.prismaVersion = {
-  client: "6.19.3",
-  engine: "c2990dca591cba766e3b7ef5d9e8a84796e47ab7"
+  client: "7.8.0",
+  engine: "3c6e192761c0362d496ed980de936e2f3cebcd3a"
 }
 
 Prisma.PrismaClientKnownRequestError = () => {
@@ -98,15 +101,11 @@ In case this error is unexpected for you, please report it in https://pris.ly/pr
 /**
  * Shorthand utilities for JSON filtering
  */
-Prisma.DbNull = objectEnumValues.instances.DbNull
-Prisma.JsonNull = objectEnumValues.instances.JsonNull
-Prisma.AnyNull = objectEnumValues.instances.AnyNull
+Prisma.DbNull = DbNull
+Prisma.JsonNull = JsonNull
+Prisma.AnyNull = AnyNull
 
-Prisma.NullTypes = {
-  DbNull: objectEnumValues.classes.DbNull,
-  JsonNull: objectEnumValues.classes.JsonNull,
-  AnyNull: objectEnumValues.classes.AnyNull
-}
+Prisma.NullTypes = NullTypes
 
 
 
@@ -120,28 +119,6 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
   RepeatableRead: 'RepeatableRead',
   Serializable: 'Serializable'
 });
-
-exports.Prisma.AccountScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  type: 'type',
-  provider: 'provider',
-  providerAccountId: 'providerAccountId',
-  refresh_token: 'refresh_token',
-  access_token: 'access_token',
-  expires_at: 'expires_at',
-  token_type: 'token_type',
-  scope: 'scope',
-  id_token: 'id_token',
-  session_state: 'session_state'
-};
-
-exports.Prisma.SessionScalarFieldEnum = {
-  id: 'id',
-  sessionToken: 'sessionToken',
-  userId: 'userId',
-  expires: 'expires'
-};
 
 exports.Prisma.Role2ScalarFieldEnum = {
   id: 'id',
@@ -452,6 +429,116 @@ exports.Prisma.MistakeLogScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.DocumentVectorScalarFieldEnum = {
+  id: 'id',
+  documentId: 'documentId',
+  knowledgeBaseId: 'knowledgeBaseId',
+  projectId: 'projectId',
+  chunkIndex: 'chunkIndex',
+  content: 'content',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.KnowledgeBaseScalarFieldEnum = {
+  id: 'id',
+  projectId: 'projectId',
+  name: 'name',
+  type: 'type',
+  autoUpdate: 'autoUpdate',
+  indexName: 'indexName',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.DocumentScalarFieldEnum = {
+  id: 'id',
+  knowledgeBaseId: 'knowledgeBaseId',
+  source: 'source',
+  content: 'content',
+  metadata: 'metadata',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AttendanceScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  date: 'date',
+  checkInTime: 'checkInTime',
+  checkOutTime: 'checkOutTime',
+  checkInNote: 'checkInNote',
+  checkOutNote: 'checkOutNote',
+  status: 'status',
+  workHours: 'workHours',
+  overtime: 'overtime',
+  isLate: 'isLate',
+  lateMinutes: 'lateMinutes',
+  earlyExit: 'earlyExit',
+  earlyExitMinutes: 'earlyExitMinutes',
+  location: 'location',
+  ipAddress: 'ipAddress',
+  deviceInfo: 'deviceInfo',
+  verifiedBy: 'verifiedBy',
+  verifiedAt: 'verifiedAt',
+  verificationNote: 'verificationNote',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.BreakScalarFieldEnum = {
+  id: 'id',
+  attendanceId: 'attendanceId',
+  startTime: 'startTime',
+  endTime: 'endTime',
+  type: 'type',
+  duration: 'duration'
+};
+
+exports.Prisma.LeaveRequestScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  type: 'type',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  reason: 'reason',
+  status: 'status',
+  approvedBy: 'approvedBy',
+  approvedAt: 'approvedAt',
+  rejectionReason: 'rejectionReason',
+  attachments: 'attachments',
+  halfDay: 'halfDay',
+  halfDaySession: 'halfDaySession',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.HolidayScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  date: 'date',
+  description: 'description',
+  isRecurring: 'isRecurring',
+  applicableTo: 'applicableTo',
+  createdAt: 'createdAt'
+};
+
+exports.Prisma.AttendancePolicyScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  description: 'description',
+  lateGracePeriod: 'lateGracePeriod',
+  allowedLateDays: 'allowedLateDays',
+  earlyExitGracePeriod: 'earlyExitGracePeriod',
+  workHoursPerDay: 'workHoursPerDay',
+  overtimeStartAfter: 'overtimeStartAfter',
+  overtimeMultiplier: 'overtimeMultiplier',
+  halfDayHours: 'halfDayHours',
+  isActive: 'isActive',
+  applicableTo: 'applicableTo',
+  applicableValue: 'applicableValue',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -459,6 +546,10 @@ exports.Prisma.SortOrder = {
 
 exports.Prisma.NullableJsonNullValueInput = {
   DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull
+};
+
+exports.Prisma.JsonNullValueInput = {
   JsonNull: Prisma.JsonNull
 };
 
@@ -613,9 +704,51 @@ exports.MistakeStatus = exports.$Enums.MistakeStatus = {
   ARCHIVED: 'ARCHIVED'
 };
 
+exports.KBType = exports.$Enums.KBType = {
+  PRODUCT: 'PRODUCT',
+  PAGE: 'PAGE',
+  FAQ: 'FAQ',
+  DOC: 'DOC'
+};
+
+exports.AttendanceStatus = exports.$Enums.AttendanceStatus = {
+  PRESENT: 'PRESENT',
+  ABSENT: 'ABSENT',
+  LATE: 'LATE',
+  HALF_DAY: 'HALF_DAY',
+  ON_LEAVE: 'ON_LEAVE',
+  HOLIDAY: 'HOLIDAY',
+  WEEKEND: 'WEEKEND'
+};
+
+exports.BreakType = exports.$Enums.BreakType = {
+  LUNCH: 'LUNCH',
+  BREAK: 'BREAK',
+  MEETING: 'MEETING',
+  TRAINING: 'TRAINING',
+  PERSONAL: 'PERSONAL'
+};
+
+exports.LeaveType = exports.$Enums.LeaveType = {
+  ANNUAL: 'ANNUAL',
+  SICK: 'SICK',
+  CASUAL: 'CASUAL',
+  UNPAID: 'UNPAID',
+  MATERNITY: 'MATERNITY',
+  PATERNITY: 'PATERNITY',
+  BEREAVEMENT: 'BEREAVEMENT',
+  STUDY: 'STUDY',
+  OTHER: 'OTHER'
+};
+
+exports.LeaveStatus = exports.$Enums.LeaveStatus = {
+  PENDING: 'PENDING',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+  CANCELLED: 'CANCELLED'
+};
+
 exports.Prisma.ModelName = {
-  Account: 'Account',
-  Session: 'Session',
   Role2: 'Role2',
   User: 'User',
   WorkspaceCalendar: 'WorkspaceCalendar',
@@ -641,7 +774,15 @@ exports.Prisma.ModelName = {
   SidebarItem: 'SidebarItem',
   SidebarGroupAccess: 'SidebarGroupAccess',
   SidebarItemAccess: 'SidebarItemAccess',
-  MistakeLog: 'MistakeLog'
+  MistakeLog: 'MistakeLog',
+  DocumentVector: 'DocumentVector',
+  KnowledgeBase: 'KnowledgeBase',
+  Document: 'Document',
+  Attendance: 'Attendance',
+  Break: 'Break',
+  LeaveRequest: 'LeaveRequest',
+  Holiday: 'Holiday',
+  AttendancePolicy: 'AttendancePolicy'
 };
 
 /**

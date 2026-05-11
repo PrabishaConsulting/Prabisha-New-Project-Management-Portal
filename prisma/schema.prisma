@@ -43,17 +43,22 @@ model User {
   assignedTasks        Task[]                @relation("TaskAssignee")
   reportedTasks        Task[]                @relation("TaskReporter")
   timeEntries          TimeEntry[]
-  department           Department?           @relation(fields: [departmentId], references: [id], map: "fk_users_department_id")
+  department           Department?           @relation(fields: [departmentId], references: [id])
   WorkspaceInvitation  WorkspaceInvitation[]
   workspaceMemberships WorkspaceMember[]
   ownedWorkspaces      Workspace[]           @relation("WorkspaceOwner")
+  notifications        NotificationRecipient[]
+  calendarItems        CalendarItem[]        @relation("CalendarItemCreator")
+  ReviewedMistakes     MistakeLog[]          @relation("ReviewedMistakes")
+  MistakeLog           MistakeLog[]
+  attendances          Attendance[]
+  verifiedAttendances  Attendance[]          @relation("AttendanceVerifier")
+  leaveRequests        LeaveRequest[]
+  
+  // ADD THIS LINE - opposite relation for approver
+  approvedLeaveRequests LeaveRequest[] @relation("LeaveApprover")
 
-  notifications    NotificationRecipient[]
-  calendarItems    CalendarItem[]          @relation("CalendarItemCreator")
-  ReviewedMistakes MistakeLog[]            @relation("ReviewedMistakes")
-  MistakeLog       MistakeLog[]
-
-  @@index([departmentId], map: "users_departmentId_fkey")
+  @@index([departmentId])
   @@map("users")
 }
 
@@ -382,13 +387,13 @@ model TaskAttachment {
 model ActivityLog {
   id          String   @id @default(cuid())
   userId      String
-  projectId   String
+  projectId   String?
   taskId      String?
   action      String
   description String?
   metadata    String?
   createdAt   DateTime @default(now())
-  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "fk_activity_logs_project_id")
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: Cascade, map: "fk_activity_logs_project_id")
   task        Task?    @relation(fields: [taskId], references: [id], map: "fk_activity_logs_task_id")
   user        User     @relation(fields: [userId], references: [id], map: "fk_activity_logs_user_id")
 
@@ -687,4 +692,151 @@ enum KBType {
   PAGE
   FAQ
   DOC
+}
+
+// Add to your existing schema
+model Attendance {
+  id             String          @id @default(cuid())
+  userId         String
+  date           DateTime        @db.Date
+  checkInTime    DateTime
+  checkOutTime   DateTime?
+  checkInNote    String?
+  checkOutNote   String?
+  status         AttendanceStatus @default(PRESENT)
+  workHours      Float?          // Calculated work hours
+  overtime       Float?          // Overtime hours
+  isLate         Boolean         @default(false)
+  lateMinutes    Int?            // Minutes late
+  earlyExit      Boolean         @default(false)
+  earlyExitMinutes Int?
+  location       Json?           // Check-in location {lat, lng, address}
+  ipAddress      String?
+  deviceInfo     String?
+  verifiedBy     String?         // Manager/Admin who verified
+  verifiedAt     DateTime?
+  verificationNote String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verifiedByUser User?           @relation("AttendanceVerifier", fields: [verifiedBy], references: [id])
+  breaks         Break[]
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+  @@index([status])
+  @@map("attendances")
+}
+
+model Break {
+  id          String      @id @default(cuid())
+  attendanceId String
+  startTime   DateTime
+  endTime     DateTime?
+  type        BreakType   @default(BREAK)
+  duration    Int?        // Duration in minutes
+  
+  attendance  Attendance  @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@index([attendanceId])
+  @@map("breaks")
+}
+
+model LeaveRequest {
+  id             String         @id @default(cuid())
+  userId         String
+  type           LeaveType
+  startDate      DateTime       @db.Date
+  endDate        DateTime       @db.Date
+  reason         String
+  status         LeaveStatus    @default(PENDING)
+  approvedBy     String?
+  approvedAt     DateTime?
+  rejectionReason String?
+  attachments    Json?
+  halfDay        Boolean        @default(false)
+  halfDaySession String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approver User? @relation("LeaveApprover", fields: [approvedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([startDate, endDate])
+  @@map("leave_requests")
+}
+
+model Holiday {
+  id          String   @id @default(cuid())
+  name        String
+  date        DateTime @db.Date
+  description String?
+  isRecurring Boolean  @default(false) // Repeats yearly
+  applicableTo String? // DEPARTMENT, ALL, specific teams
+  createdAt   DateTime @default(now())
+
+  @@unique([date])
+  @@index([date])
+  @@map("holidays")
+}
+
+model AttendancePolicy {
+  id                 String   @id @default(cuid())
+  name               String
+  description        String?
+  lateGracePeriod    Int      @default(15)      // Grace period in minutes
+  allowedLateDays    Int      @default(3)       // Allowed late days per month
+  earlyExitGracePeriod Int    @default(15)      // Early exit grace period
+  workHoursPerDay    Float    @default(8)       // Expected work hours
+  overtimeStartAfter Float    @default(8)       // Overtime calculation starts after X hours
+  overtimeMultiplier Float    @default(1.5)     // Overtime pay multiplier
+  halfDayHours       Float    @default(4)       // Hours considered as half day
+  isActive           Boolean  @default(true)
+  applicableTo       String?  // DEPARTMENT, ALL
+  applicableValue    String?  // Department ID or "ALL"
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("attendance_policies")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  HALF_DAY
+  ON_LEAVE
+  HOLIDAY
+  WEEKEND
+}
+
+enum BreakType {
+  LUNCH
+  BREAK
+  MEETING
+  TRAINING
+  PERSONAL
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  CASUAL
+  UNPAID
+  MATERNITY
+  PATERNITY
+  BEREAVEMENT
+  STUDY
+  OTHER
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }
