@@ -159,7 +159,7 @@ function ProjectPageContent() {
   }, []);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.replace("/sign-in");
+    if (status === "unauthenticated") router.replace("/");
   }, [status, router]);
 
   useEffect(() => {

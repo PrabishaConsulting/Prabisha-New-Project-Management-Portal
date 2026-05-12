@@ -14,7 +14,7 @@ export function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const publicPaths = ['/sign-in', '/sign-up', '/' , '/forgot-password' , '/reset-password']
+  const publicPaths = ['/']
   const isPublicPath = publicPaths.includes(pathname)
 
   // If the user has a token and is on a public page, redirect to dashboard.
@@ -24,7 +24,7 @@ export function proxy(request: NextRequest) {
 
   // If the user has no token and is on a protected page, redirect to sign-in.
   if (!token && !isPublicPath) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
+    return NextResponse.redirect(new URL('/', request.url))
   }
 
   return NextResponse.next()
