@@ -49,7 +49,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   // 1. Check for a valid session and user ID
   if (!session?.user?.id) {
-    redirect("/(auth)/sign-in");
+    redirect("/(auth)/");
   }
 
   // 2. Fetch the project and include its tasks and their attachments

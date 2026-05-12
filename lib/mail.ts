@@ -1,14 +1,5 @@
 import nodemailer from "nodemailer";
 
-// --- ADD THIS CHECK AT THE TOP ---
-if (!process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-  console.error(
-    "CRITICAL: Nodemailer environment variables SMTP_USER and SMTP_PASSWORD are not set."
-  );
-  // In a real production app, you might want to throw an error here to prevent the app from starting.
-  // For now, a console error is sufficient to alert the developer.
-}
-// --- END OF CHECK ---
 type Attachment = {
   filename: string;
   content: Buffer;
@@ -25,7 +16,7 @@ type MailOptions = {
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: Number(process.env.SMTP_PORT),
-  secure: true,
+  secure: process.env.SMTP_PORT === "465", // true for port 465, false for other ports (like 587)
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASSWORD,

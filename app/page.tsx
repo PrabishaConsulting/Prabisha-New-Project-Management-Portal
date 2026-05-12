@@ -16,9 +16,13 @@ import {
   Users,
   BarChart,
   Layers,
+  Check,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent } from "@/components/ui/card"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useTheme } from "next-themes"
 import { signIn } from "next-auth/react"
 
@@ -46,77 +50,77 @@ export default function LandingPage() {
     setTheme(theme === "dark" ? "light" : "dark")
   }
 
-  // const container = {
-  //   hidden: { opacity: 0 },
-  //   show: {
-  //     opacity: 1,
-  //     transition: {
-  //       staggerChildren: 0.1,
-  //     },
-  //   },
-  // }
-
-  // const item = {
-  //   hidden: { opacity: 0, y: 20 },
-  //   show: { opacity: 1, y: 0 },
-  // }
-
-  // const features = [
-  //   {
-  //     title: "Smart Automation",
-  //     description: "Automate repetitive tasks and workflows to save time and reduce errors.",
-  //     icon: <Zap className="size-5" />,
-  //   },
-  //   {
-  //     title: "Advanced Analytics",
-  //     description: "Gain valuable insights with real-time data visualization and reporting.",
-  //     icon: <BarChart className="size-5" />,
-  //   },
-  //   {
-  //     title: "Team Collaboration",
-  //     description: "Work together seamlessly with integrated communication tools.",
-  //     icon: <Users className="size-5" />,
-  //   },
-  //   {
-  //     title: "Enterprise Security",
-  //     description: "Keep your data safe with end-to-end encryption and compliance features.",
-  //     icon: <Shield className="size-5" />,
-  //   },
-  //   {
-  //     title: "Seamless Integration",
-  //     description: "Connect with your favorite tools through our extensive API ecosystem.",
-  //     icon: <Layers className="size-5" />,
-  //   },
-  //   {
-  //     title: "24/7 Support",
-  //     description: "Get help whenever you need it with our dedicated support team.",
-  //     icon: <Star className="size-5" />,
-  //   },
-  // ]
-
   const handleLogin = async (callbackUrl = "/dashboard") => {
     try {
-      await signIn("central-auth", { callbackUrl }, { prompt: "login" });
+      await signIn("central-auth", { callbackUrl }, { prompt: "login" })
     } catch (error) {
-      console.error("Central login error:", error);
+      console.error("Central login error:", error)
     }
-  };
+  }
 
-  
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  }
+
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0 },
+  }
+
+  const features = [
+    {
+      title: "Smart Automation",
+      description: "Automate repetitive tasks and workflows to save time and reduce errors.",
+      icon: <Zap className="size-5" />,
+    },
+    {
+      title: "Advanced Analytics",
+      description: "Gain valuable insights with real-time data visualization and reporting.",
+      icon: <BarChart className="size-5" />,
+    },
+    {
+      title: "Team Collaboration",
+      description: "Work together seamlessly with integrated communication tools.",
+      icon: <Users className="size-5" />,
+    },
+    {
+      title: "Enterprise Security",
+      description: "Keep your data safe with end-to-end encryption and compliance features.",
+      icon: <Shield className="size-5" />,
+    },
+    {
+      title: "Seamless Integration",
+      description: "Connect with your favorite tools through our extensive API ecosystem.",
+      icon: <Layers className="size-5" />,
+    },
+    {
+      title: "24/7 Support",
+      description: "Get help whenever you need it with our dedicated support team.",
+      icon: <Star className="size-5" />,
+    },
+  ]
 
   return (
     <div className="flex container mx-auto min-h-[100dvh] flex-col">
       <header
-        className={`sticky top-0 z-50 w-full backdrop-blur-lg transition-all duration-300 ${isScrolled ? "bg-background/80 shadow-sm" : "bg-transparent"}`}
+        className={`sticky top-0 z-50 w-full backdrop-blur-lg transition-all duration-300 ${
+          isScrolled ? "bg-background/80 shadow-sm" : "bg-transparent"
+        }`}
       >
         <div className="container flex h-16 items-center justify-between">
           <div className="flex items-center gap-2 font-bold">
             <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground">
               P
             </div>
-            <span>{process.env.NEXT_PUBLIC_APP_NAME || ""}</span>
+            <span>{process.env.NEXT_PUBLIC_APP_NAME || "SaaSify"}</span>
           </div>
-          {/* <nav className="hidden md:flex gap-8">
+          <nav className="hidden md:flex gap-8">
             <Link
               href="#features"
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
@@ -141,16 +145,13 @@ export default function LandingPage() {
             >
               FAQ
             </Link>
-          </nav> */}
+          </nav>
           <div className="hidden md:flex gap-4 items-center">
             <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
               {mounted && theme === "dark" ? <Sun className="size-[18px]" /> : <Moon className="size-[18px]" />}
               <span className="sr-only">Toggle theme</span>
             </Button>
-            <Button
-              onClick={() => handleLogin()}
-              variant="outline"
-            >
+            <Button onClick={() => handleLogin()} variant="outline">
               Log in
             </Button>
             <Button onClick={() => handleLogin()} className="rounded-full">
@@ -190,10 +191,10 @@ export default function LandingPage() {
                 FAQ
               </Link>
               <div className="flex flex-col gap-2 pt-2 border-t">
-                <Button onClick={() => handleLogin()} className="py-2 text-sm font-medium">
+                <Button onClick={() => handleLogin()} variant="outline" className="w-full">
                   Log in
                 </Button>
-                <Button className="rounded-full">
+                <Button onClick={() => handleLogin()} className="w-full rounded-full">
                   Get Started
                   <ChevronRight className="ml-1 size-4" />
                 </Button>
@@ -218,67 +219,44 @@ export default function LandingPage() {
                 Launching Soon
               </Badge>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
-                Elevate Your Workflow with <span className=" text-primary">{process.env.NEXT_PUBLIC_APP_NAME}</span>
+                Elevate Your Workflow with{" "}
+                <span className="text-primary">{process.env.NEXT_PUBLIC_APP_NAME || "SaaSify"}</span>
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
                 The all-in-one platform that helps teams collaborate, automate, and deliver exceptional results.
                 Streamline your processes and focus on what matters most.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button onClick={() => window.location.href = "/sign-up"} size="lg" className="rounded-full h-12 px-8 text-base">
+                <Button onClick={() => handleLogin()} size="lg" className="rounded-full h-12 px-8 text-base">
                   Start Trial
                   <ArrowRight className="ml-2 size-4" />
                 </Button>
-               
+                <Button onClick={() => handleLogin()} size="lg" variant="outline" className="rounded-full h-12 px-8 text-base">
+                  Schedule a Demo
+                </Button>
               </div>
-            
             </motion.div>
-
-            {/* <motion.div
-              initial={{ opacity: 0, y: 40 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.2 }}
-              className="relative mx-auto max-w-5xl"
-            >
-              <div className="rounded-xl overflow-hidden shadow-2xl border border-border/40 bg-gradient-to-b from-background to-muted/20">
-                <Image
-                  src="https://cdn.dribbble.com/userupload/12302729/file/original-fa372845e394ee85bebe0389b9d86871.png?resize=1504x1128&vertical=center"
-                  width={1280}
-                  height={720}
-                  alt="SaaSify dashboard"
-                  className="w-full h-auto"
-                  priority
-                />
-                <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-black/10 dark:ring-white/10"></div>
-              </div>
-              <div className="absolute -bottom-6 -right-6 -z-10 h-[300px] w-[300px] rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 blur-3xl opacity-70"></div>
-              <div className="absolute -top-6 -left-6 -z-10 h-[300px] w-[300px] rounded-full bg-gradient-to-br from-secondary/30 to-primary/30 blur-3xl opacity-70"></div>
-            </motion.div> */}
           </div>
         </section>
 
         {/* Logos Section */}
-        {/* <section className="w-full py-12 border-y bg-muted/30">
+        <section className="w-full py-12 border-y bg-muted/30">
           <div className="container px-4 md:px-6">
             <div className="flex flex-col items-center justify-center space-y-4 text-center">
               <p className="text-sm font-medium text-muted-foreground">Trusted by innovative companies worldwide</p>
               <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12 lg:gap-16">
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <Image
+                  <div
                     key={i}
-                    src={`/placeholder-logo.svg`}
-                    alt={`Company logo ${i}`}
-                    width={120}
-                    height={60}
-                    className="h-8 w-auto opacity-70 grayscale transition-all hover:opacity-100 hover:grayscale-0"
+                    className="h-8 w-24 bg-gradient-to-r from-muted-foreground/20 to-muted-foreground/10 rounded-md"
                   />
                 ))}
               </div>
             </div>
           </div>
-        </section> */}
+        </section>
 
-        {/* Features Section
+        {/* Features Section */}
         <section id="features" className="w-full py-20 md:py-32">
           <div className="container px-4 md:px-6">
             <motion.div
@@ -323,7 +301,7 @@ export default function LandingPage() {
         </section>
 
         {/* How It Works Section */}
-        {/* <section className="w-full py-20 md:py-32 bg-muted/30 relative overflow-hidden">
+        <section className="w-full py-20 md:py-32 bg-muted/30 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_40%,transparent_100%)]"></div>
 
           <div className="container px-4 md:px-6 relative">
@@ -380,10 +358,10 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </section> */}
+        </section>
 
         {/* Testimonials Section */}
-        {/* <section id="testimonials" className="w-full py-20 md:py-32">
+        <section id="testimonials" className="w-full py-20 md:py-32">
           <div className="container px-4 md:px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -478,10 +456,10 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </section> */}
+        </section>
 
         {/* Pricing Section */}
-        {/* <section id="pricing" className="w-full py-20 md:py-32 bg-muted/30 relative overflow-hidden">
+        <section id="pricing" className="w-full py-20 md:py-32 bg-muted/30 relative overflow-hidden">
           <div className="absolute inset-0 -z-10 h-full w-full bg-white dark:bg-black bg-[linear-gradient(to_right,#f0f0f0_1px,transparent_1px),linear-gradient(to_bottom,#f0f0f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1f1f1f_1px,transparent_1px),linear-gradient(to_bottom,#1f1f1f_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_80%_50%_at_50%_50%,#000_40%,transparent_100%)]"></div>
 
           <div className="container px-4 md:px-6 relative">
@@ -560,7 +538,9 @@ export default function LandingPage() {
                         transition={{ duration: 0.5, delay: i * 0.1 }}
                       >
                         <Card
-                          className={`relative overflow-hidden h-full ${plan.popular ? "border-primary shadow-lg" : "border-border/40 shadow-md"} bg-gradient-to-b from-background to-muted/10 backdrop-blur`}
+                          className={`relative overflow-hidden h-full ${
+                            plan.popular ? "border-primary shadow-lg" : "border-border/40 shadow-md"
+                          } bg-gradient-to-b from-background to-muted/10 backdrop-blur`}
                         >
                           {plan.popular && (
                             <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-medium rounded-bl-lg">
@@ -583,8 +563,15 @@ export default function LandingPage() {
                               ))}
                             </ul>
                             <Button
-                              className={`w-full mt-auto rounded-full ${plan.popular ? "bg-primary hover:bg-primary/90" : "bg-muted hover:bg-muted/80"}`}
-                              variant={plan.popular ? "default" : "outline"}
+                              onClick={() => handleLogin()}
+                              className={`w-full mt-auto rounded-full ${
+                                plan.popular
+                                  ? "bg-primary hover:bg-primary/90"
+                                  : plan.name === "Enterprise"
+                                    ? "bg-muted hover:bg-muted/80"
+                                    : "bg-primary hover:bg-primary/90"
+                              }`}
+                              variant={plan.popular ? "default" : plan.name === "Enterprise" ? "outline" : "default"}
                             >
                               {plan.cta}
                             </Button>
@@ -641,7 +628,9 @@ export default function LandingPage() {
                         transition={{ duration: 0.5, delay: i * 0.1 }}
                       >
                         <Card
-                          className={`relative overflow-hidden h-full ${plan.popular ? "border-primary shadow-lg" : "border-border/40 shadow-md"} bg-gradient-to-b from-background to-muted/10 backdrop-blur`}
+                          className={`relative overflow-hidden h-full ${
+                            plan.popular ? "border-primary shadow-lg" : "border-border/40 shadow-md"
+                          } bg-gradient-to-b from-background to-muted/10 backdrop-blur`}
                         >
                           {plan.popular && (
                             <div className="absolute top-0 right-0 bg-primary text-primary-foreground px-3 py-1 text-xs font-medium rounded-bl-lg">
@@ -664,8 +653,15 @@ export default function LandingPage() {
                               ))}
                             </ul>
                             <Button
-                              className={`w-full mt-auto rounded-full ${plan.popular ? "bg-primary hover:bg-primary/90" : "bg-muted hover:bg-muted/80"}`}
-                              variant={plan.popular ? "default" : "outline"}
+                              onClick={() => handleLogin()}
+                              className={`w-full mt-auto rounded-full ${
+                                plan.popular
+                                  ? "bg-primary hover:bg-primary/90"
+                                  : plan.name === "Enterprise"
+                                    ? "bg-muted hover:bg-muted/80"
+                                    : "bg-primary hover:bg-primary/90"
+                              }`}
+                              variant={plan.popular ? "default" : plan.name === "Enterprise" ? "outline" : "default"}
                             >
                               {plan.cta}
                             </Button>
@@ -678,10 +674,10 @@ export default function LandingPage() {
               </Tabs>
             </div>
           </div>
-        </section> */}
+        </section>
 
         {/* FAQ Section */}
-        {/* <section id="faq" className="w-full py-20 md:py-32">
+        <section id="faq" className="w-full py-20 md:py-32">
           <div className="container px-4 md:px-6">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -751,10 +747,10 @@ export default function LandingPage() {
               </Accordion>
             </div>
           </div>
-        </section> */}
+        </section>
 
         {/* CTA Section */}
-        {/* <section className="w-full py-20 md:py-32 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
+        <section className="w-full py-20 md:py-32 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground relative overflow-hidden">
           <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,#ffffff10_1px,transparent_1px),linear-gradient(to_bottom,#ffffff10_1px,transparent_1px)] bg-[size:4rem_4rem]"></div>
           <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
           <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl"></div>
@@ -775,11 +771,12 @@ export default function LandingPage() {
                 our platform.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <Button size="lg" variant="secondary" className="rounded-full h-12 px-8 text-base">
+                <Button onClick={() => handleLogin()} size="lg" variant="secondary" className="rounded-full h-12 px-8 text-base">
                   Start Free Trial
                   <ArrowRight className="ml-2 size-4" />
                 </Button>
                 <Button
+                  onClick={() => handleLogin()}
                   size="lg"
                   variant="outline"
                   className="rounded-full h-12 px-8 text-base bg-transparent border-white text-white hover:bg-white/10"
@@ -792,7 +789,7 @@ export default function LandingPage() {
               </p>
             </motion.div>
           </div>
-        </section>  */}
+        </section>
       </main>
       <footer className="w-full border-t bg-background/95 backdrop-blur-sm">
         <div className="container flex flex-col gap-8 px-4 py-10 md:px-6 lg:py-16">
@@ -802,7 +799,7 @@ export default function LandingPage() {
                 <div className="size-8 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-primary-foreground">
                   P
                 </div>
-                <span>{process.env.NEXT_PUBLIC_APP_NAME}</span>
+                <span>{process.env.NEXT_PUBLIC_APP_NAME || "SaaSify"}</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Streamline your workflow with our all-in-one SaaS platform. Boost productivity and scale your business.

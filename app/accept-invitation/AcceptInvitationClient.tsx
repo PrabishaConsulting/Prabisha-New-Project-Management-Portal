@@ -31,7 +31,7 @@ export default function AcceptInvitationClient() {
                     if (res?.error) {
                         setError("Your magic link is invalid or has expired. Please log in manually.");
                         setMessage('');
-                        setTimeout(() => router.push(`/sign-in?invitationToken=${token}`), 3000);
+                        setTimeout(() => router.push(`/?invitationToken=${token}`), 3000);
                     }
                 });
         }
@@ -43,7 +43,7 @@ export default function AcceptInvitationClient() {
             setMessage('You are invited to join a workspace. Click below to accept.');
         } else if (status === 'unauthenticated' && !authToken) {
             // After signOut is complete, if there's no magic link, redirect to login.
-            const loginUrl = token ? `/sign-in?invitationToken=${token}` : '/login';
+            const loginUrl = token ? `/?invitationToken=${token}` : '/login';
             router.push(loginUrl);
         }
     }, [status, authToken, token, router]);

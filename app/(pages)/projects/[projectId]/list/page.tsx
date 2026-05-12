@@ -17,7 +17,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
   // 1. Check for a valid session and user ID
   if (!session?.user?.id) {
-    redirect("/(auth)/sign-in"); // Redirect to your sign-in page
+    redirect("/(auth)/"); // Redirect to your sign-in page
   }
 
   const currentUserId = session.user.id;
